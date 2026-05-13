@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mean Whirls — Burn Book</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --pink:      #e8527a;
+      --deep-pink: #c2185b;
+      --blush:     #fde8ef;
+      --cream:     #fff8f0;
+      --gold:      #d4a843;
+      --ink:       #2a1a24;
+      --muted:     #8c6678;
+      --white:     #ffffff;
+      --shadow:    rgba(200, 30, 90, 0.18);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--cream); font-family: 'Raleway', sans-serif; color: var(--ink); min-height: 100vh; }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.35;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    }
+
+    /* Hero */
+    .hero { background: linear-gradient(135deg, #1a0a12 0%, #3d0f25 40%, #1a0a12 100%); padding: 3rem 2rem 2.5rem; text-align: center; position: relative; overflow: hidden; border-bottom: 3px solid var(--gold); }
+    .hero::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(232,82,122,0.25) 0%, transparent 70%); pointer-events: none; }
+    .hero-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.35em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem; }
+    .hero-title { font-family: 'Pinyon Script', cursive; font-size: clamp(4rem, 12vw, 8rem); color: #fff; line-height: 0.9; text-shadow: 0 0 60px rgba(232,82,122,0.5), 2px 4px 12px rgba(0,0,0,0.6); position: relative; z-index: 1; }
+    .hero-title span { color: var(--pink); }
+    .hero-subtitle { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(0.85rem, 2vw, 1.1rem); color: rgba(255,255,255,0.55); margin-top: 1rem; letter-spacing: 0.08em; }
+    .hero-divider { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
+    .hero-divider::before, .hero-divider::after { content: ''; flex: 1; max-width: 120px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+    .hero-divider-icon { color: var(--gold); }
+
+    /* Nav */
+    .nav { display: flex; justify-content: center; flex-wrap: wrap; background: var(--deep-pink); border-bottom: 2px solid var(--gold); }
+    .nav button { background: none; border: none; padding: 0.85rem 1.5rem; font-family: 'Raleway', sans-serif; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.2s; border-bottom: 3px solid transparent; position: relative; top: 2px; }
+    .nav button:hover { color: #fff; }
+    .nav button.active { color: #fff; border-bottom-color: var(--gold); }
+
+    /* Main */
+    .main { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .section-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 900; color: var(--deep-pink); margin-bottom: 0.3rem; }
+    .section-sub { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 2rem; }
+
+    /* Entry grid */
+    .entries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+    .entry-card { background: var(--white); border: 1.5px solid rgba(200,30,90,0.12); border-radius: 2px; overflow: hidden; box-shadow: 4px 6px 24px var(--shadow); transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s; animation: fadeUp 0.5s ease both; position: relative; }
+    .entry-card::before { content: ''; position: absolute; top:0; left:0; right:0; height:3px; background: linear-gradient(90deg, var(--pink), var(--gold), var(--pink)); opacity:0; transition: opacity 0.2s; }
+    .entry-card:hover { transform: translateY(-4px) rotate(0.4deg); box-shadow: 8px 16px 40px var(--shadow); }
+    .entry-card:hover::before { opacity: 1; }
+    @keyframes fadeUp { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: translateY(0); } }
+    .entry-img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; border-bottom: 1.5px solid rgba(200,30,90,0.1); }
+    .entry-img-placeholder { width:100%; aspect-ratio:4/3; background: linear-gradient(135deg, var(--blush), #fce4ec); display:flex; align-items:center; justify-content:center; font-size:3rem; border-bottom: 1.5px solid rgba(200,30,90,0.1); }
+    .entry-body { padding: 1.25rem 1.25rem 1.5rem; }
+    .entry-subject { font-family: 'Playfair Display', serif; font-size:1.15rem; font-weight:700; color: var(--deep-pink); margin-bottom: 0.5rem; }
+    .entry-text { font-size:0.88rem; line-height:1.65; color: var(--ink); font-style:italic; quotes: '\201C' '\201D'; }
+    .entry-text::before { content: open-quote; color: var(--pink); font-size:1.4em; line-height:0; vertical-align:-0.4em; margin-right:2px; }
+    .entry-text::after  { content: close-quote; color: var(--pink); font-size:1.4em; line-height:0; vertical-align:-0.4em; margin-left:2px; }
+    .entry-meta { display:flex; align-items:center; justify-content:space-between; margin-top:0.9rem; gap:0.5rem; flex-wrap:wrap; }
+    .entry-date { font-size:0.68rem; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; }
+    .entry-author { font-size:0.72rem; color:var(--muted); }
+    .entry-author strong { color:var(--pink); }
+    .badge-mw { display:inline-flex; align-items:center; gap:0.3rem; background: linear-gradient(135deg, var(--deep-pink), var(--pink)); color:#fff; font-size:0.6rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:0.2rem 0.55rem; border-radius:20px; }
+
+    /* Empty / loading */
+    .empty { text-align:center; padding:5rem 2rem; color:var(--muted); }
+    .empty-icon { font-size:3.5rem; margin-bottom:1rem; }
+    .empty h3 { font-family:'Playfair Display',serif; font-size:1.4rem; margin-bottom:0.5rem; color:var(--deep-pink); }
+    .loading-wrap { text-align:center; padding:4rem; }
+    .spinner { display:inline-block; width:32px; height:32px; border:3px solid rgba(200,30,90,0.2); border-top-color:var(--pink); border-radius:50%; animation:spin 0.7s linear infinite; }
+    .spinner-sm { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Form */
+    .form-card { background:var(--white); border:1.5px solid rgba(200,30,90,0.14); border-radius:2px; box-shadow:4px 6px 24px var(--shadow); padding:2.5rem; max-width:600px; margin:0 auto; }
+    .form-note { background:var(--blush); border-left:3px solid var(--pink); padding:0.85rem 1rem; font-size:0.8rem; color:var(--muted); margin-bottom:1.75rem; line-height:1.6; }
+    .form-group { margin-bottom:1.4rem; }
+    .form-label { display:block; font-size:0.72rem; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:var(--deep-pink); margin-bottom:0.45rem; }
+    .form-label-note { font-weight:400; color:var(--muted); text-transform:none; letter-spacing:0; }
+    .form-input, .form-textarea { width:100%; border:1.5px solid rgba(200,30,90,0.2); border-radius:2px; padding:0.7rem 0.9rem; font-family:'Raleway',sans-serif; font-size:0.9rem; color:var(--ink); background:var(--cream); transition:border-color 0.2s, box-shadow 0.2s; outline:none; }
+    .form-input:focus, .form-textarea:focus { border-color:var(--pink); box-shadow:0 0 0 3px rgba(232,82,122,0.12); }
+    .form-textarea { min-height:120px; resize:vertical; }
+    .form-check { display:flex; align-items:center; gap:0.6rem; margin-top:0.6rem; cursor:pointer; }
+    .form-check input[type=checkbox] { width:16px; height:16px; accent-color:var(--deep-pink); cursor:pointer; }
+    .form-check-label { font-size:0.82rem; color:var(--muted); cursor:pointer; }
+    .upload-zone { border:2px dashed rgba(200,30,90,0.3); border-radius:2px; padding:2rem; text-align:center; cursor:pointer; background:var(--blush); transition:all 0.2s; position:relative; overflow:hidden; }
+    .upload-zone:hover { border-color:var(--pink); background:#fce4ec; }
+    .upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .upload-zone-icon { font-size:2rem; margin-bottom:0.5rem; }
+    .upload-zone-text { font-size:0.82rem; color:var(--muted); }
+    .upload-preview { width:100%; max-height:200px; object-fit:cover; border-radius:2px; display:none; margin-top:0.75rem; border:1.5px solid rgba(200,30,90,0.15); }
+
+    .btn { display:inline-flex; align-items:center; gap:0.5rem; padding:0.85rem 2rem; font-family:'Raleway',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; border:none; border-radius:2px; cursor:pointer; transition:all 0.2s; }
+    .btn-primary { background:linear-gradient(135deg, var(--deep-pink), var(--pink)); color:#fff; box-shadow:0 4px 16px rgba(194,24,91,0.35); }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(194,24,91,0.45); }
+    .btn-primary:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+    .alert { padding:1rem 1.25rem; border-radius:2px; font-size:0.85rem; margin-top:1rem; }
+    .alert-success { background:#e8f5e9; border-left:3px solid #4caf50; color:#1b5e20; }
+    .alert-error   { background:#fce4ec; border-left:3px solid var(--pink); color:var(--deep-pink); }
+
+    /* Admin */
+    .admin-login { max-width:380px; margin:4rem auto; background:var(--white); border:1.5px solid rgba(200,30,90,0.14); padding:2.5rem; box-shadow:4px 6px 24px var(--shadow); border-radius:2px; }
+    .admin-table { width:100%; border-collapse:collapse; font-size:0.84rem; }
+    .admin-table th { background:var(--deep-pink); color:#fff; padding:0.7rem 1rem; text-align:left; font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:600; }
+    .admin-table td { padding:0.7rem 1rem; border-bottom:1px solid var(--blush); vertical-align:top; }
+    .admin-table tr:hover td { background:var(--blush); }
+    .admin-table img { width:60px; height:45px; object-fit:cover; border-radius:1px; }
+    .badge { display:inline-block; padding:0.2rem 0.6rem; border-radius:20px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; }
+    .badge-pending  { background:#fff9c4; color:#f57f17; }
+    .badge-approved { background:#e8f5e9; color:#2e7d32; }
+    .admin-action { background:none; border:1.5px solid; border-radius:2px; padding:0.3rem 0.7rem; font-size:0.7rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:all 0.2s; margin-right:0.4rem; }
+    .admin-action.approve { border-color:#4caf50; color:#2e7d32; }
+    .admin-action.approve:hover { background:#4caf50; color:#fff; }
+    .admin-action.reject  { border-color:var(--pink); color:var(--deep-pink); }
+    .admin-action.reject:hover  { background:var(--pink); color:#fff; }
+
+    .footer { text-align:center; padding:2rem; font-size:0.72rem; color:var(--muted); border-top:1px solid rgba(200,30,90,0.1); margin-top:4rem; letter-spacing:0.08em; }
+    .footer strong { color:var(--pink); }
+
+    @media (max-width:600px) {
+      .main { padding:2rem 1rem; } .form-card { padding:1.5rem; }
+      .admin-table { font-size:0.76rem; } .admin-table th, .admin-table td { padding:0.5rem 0.6rem; }
+      .nav button { padding:0.75rem 1rem; font-size:0.65rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hero">
+    <p class="hero-eyebrow">2026 Whirlyball Nationals</p>
+    <h1 class="hero-title">Mean <span>Whirls</span></h1>
+    <p class="hero-subtitle">Burn Book &mdash; The Official Record of Everything</p>
+    <div class="hero-divider"><span class="hero-divider-icon">🏒</span></div>
+  </header>
+
+  <nav class="nav">
+    <button class="nav-btn active" data-tab="book">📖 The Burn Book</button>
+    <button class="nav-btn" data-tab="submit">✍️ Submit an Entry</button>
+    <button class="nav-btn" data-tab="admin">🔐 Admin</button>
+  </nav>
+
+  <main class="main">
+
+    <!-- BURN BOOK -->
+    <div id="tab-book" class="tab-panel active">
+      <div style="margin-bottom:2rem">
+        <h2 class="section-title">The Burn Book</h2>
+        <p class="section-sub">Moderated &amp; approved entries only &mdash; you can't sit with us if you're not in here.</p>
+      </div>
+      <div id="entries-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div id="tab-submit" class="tab-panel">
+      <h2 class="section-title">Submit an Entry</h2>
+      <p class="section-sub">All submissions are reviewed before appearing in the book.</p>
+      <div class="form-card">
+        <div class="form-note">
+          📌 Entries are moderated by the Mean Whirls crew before going live. Your name is required so we can reach you — but you can choose to appear as Anonymous in the book. Keep it fun, not felonious.
+        </div>
+        <div class="form-group">
+          <label class="form-label">Who Are We Burning? *</label>
+          <input class="form-input" id="f-subject" placeholder="Their name or nickname" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">The Burn *</label>
+          <textarea class="form-textarea" id="f-text" placeholder="Tell us everything. Don't hold back. We won't."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Name *</label>
+          <input class="form-input" id="f-submitter" placeholder="Required — only shared if you allow it" />
+          <label class="form-check">
+            <input type="checkbox" id="f-anonymous" />
+            <span class="form-check-label">Show me as <strong>Anonymous</strong> in the burn book</span>
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number <span class="form-label-note">(optional — only used if we need to follow up)</span></label>
+          <input class="form-input" id="f-phone" type="tel" placeholder="e.g. 630-555-0199" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Photo <span class="form-label-note">(optional)</span></label>
+          <div class="upload-zone" id="upload-zone">
+            <input type="file" id="f-image" accept="image/*" />
+            <div class="upload-zone-icon">📷</div>
+            <div class="upload-zone-text" id="upload-text">Drag &amp; drop or click to upload</div>
+            <img id="upload-preview" class="upload-preview" alt="preview" />
+          </div>
+        </div>
+        <button class="btn btn-primary" id="submit-btn">💗 Submit to the Burn Book</button>
+        <div id="submit-status" style="display:none" class="alert"></div>
+      </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div id="tab-admin" class="tab-panel">
+      <h2 class="section-title">Admin Panel</h2>
+      <p class="section-sub">Moderate pending submissions before they go live.</p>
+      <div id="admin-login-box" class="admin-login">
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.25rem">Enter the admin password to access the moderation panel.</p>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" id="admin-pass" type="password" placeholder="••••••••••" />
+        </div>
+        <button class="btn btn-primary" id="admin-login-btn">🔐 Enter</button>
+      </div>
+      <div id="admin-panel" style="display:none">
+        <div style="overflow-x:auto">
+          <table class="admin-table">
+            <thead><tr>
+              <th>Photo</th><th>Subject</th><th>Burn</th>
+              <th>Submitted By</th><th>Displays As</th><th>Phone</th>
+              <th>Date</th><th>Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="admin-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    <strong>Mean Whirls</strong> &mdash; 2026 Whirlyball Nationals &nbsp;|&nbsp; On Wednesdays we wear pink &nbsp;💗
+  </footer>
+
+  <script>
+    // ============================================================
+    // CONFIGURATION
+    // ============================================================
+    const SCRIPT_URL     = 'https://script.google.com/macros/s/AKfycbwfiGEg1mxzSmDeGh8laKDVMtF9OzydGRE3YOMGe5M_d2QqZNPpcWWJqAntQqNvKDPe/exec';  // ends in /exec
+    const ADMIN_PASSWORD = 'meanwhirls2026';
+    const CODENAME       = 'BananaDuck';
+
+    // ── Utility ───────────────────────────────────────────────────
+    function esc(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // GET request — used for all reads and moderation
+    async function apiGet(params) {
+      const url = SCRIPT_URL + '?' + new URLSearchParams(params).toString();
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }
+
+    // POST with no-cors — used only for submissions (supports large images)
+    // Because no-cors means we can't read the response, we poll for the
+    // new entry to confirm it arrived.
+    async function apiPost(payload) {
+      await fetch(SCRIPT_URL, {
+        method:  'POST',
+        mode:    'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      // no-cors gives opaque response — we treat the send as success
+      // and rely on the sheet being updated
+    }
+
+    // ── Tabs ──────────────────────────────────────────────────────
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab === 'book') loadEntries();
+      });
+    });
+
+    // ── Burn Book ─────────────────────────────────────────────────
+    function renderEntries(entries) {
+      const el = document.getElementById('entries-container');
+      if (!entries.length) {
+        el.innerHTML = `<div class="empty"><div class="empty-icon">📓</div><h3>The burn book is empty</h3><p style="font-size:.85rem">No approved entries yet. Submit one!</p></div>`;
+        return;
+      }
+      const grid = document.createElement('div');
+      grid.className = 'entries-grid';
+      entries.forEach((e, i) => {
+        const card       = document.createElement('div');
+        card.className   = 'entry-card';
+        card.style.animationDelay = (i * 0.06) + 's';
+        const imgHtml    = e.imageUrl ? `<img class="entry-img" src="${esc(e.imageUrl)}" alt="${esc(e.subject)}" />` : `<div class="entry-img-placeholder">💅</div>`;
+        const authorHtml = e.isMeanWhirls ? `<span class="badge-mw">🏒 MeanWhirls</span>` : `<span class="entry-author">by <strong>${esc(e.displayAuthor)}</strong></span>`;
+        card.innerHTML   = `${imgHtml}<div class="entry-body"><div class="entry-subject">${esc(e.subject)}</div><p class="entry-text">${esc(e.text)}</p><div class="entry-meta"><span class="entry-date">${esc(e.date)}</span>${authorHtml}</div></div>`;
+        grid.appendChild(card);
+      });
+      el.innerHTML = '';
+      el.appendChild(grid);
+    }
+
+    async function loadEntries() {
+      document.getElementById('entries-container').innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
+      try {
+        const data = await apiGet({ action: 'getApproved' });
+        renderEntries(data.entries || []);
+      } catch(err) {
+        document.getElementById('entries-container').innerHTML = `<div class="empty"><div class="empty-icon">😬</div><h3>Could not load entries</h3><p style="font-size:.85rem">Error: ${esc(err.message)}</p></div>`;
+      }
+    }
+
+    loadEntries();
+
+    // ── Image upload ──────────────────────────────────────────────
+    let selectedFile = null;
+
+    document.getElementById('f-image').addEventListener('change', function() { handleImageFile(this.files[0]); });
+    document.getElementById('upload-zone').addEventListener('dragover',  e => { e.preventDefault(); e.currentTarget.style.borderColor='var(--pink)'; });
+    document.getElementById('upload-zone').addEventListener('dragleave', e => { e.currentTarget.style.borderColor=''; });
+    document.getElementById('upload-zone').addEventListener('drop', e => {
+      e.preventDefault(); e.currentTarget.style.borderColor='';
+      handleImageFile(e.dataTransfer.files[0]);
+    });
+
+    function handleImageFile(file) {
+      if (!file) return;
+      selectedFile = file;
+      document.getElementById('upload-text').textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = document.getElementById('upload-preview');
+        img.src = ev.target.result; img.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ── Submit ────────────────────────────────────────────────────
+    function showStatus(type, msg) {
+      const el = document.getElementById('submit-status');
+      el.className = 'alert alert-' + type;
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    document.getElementById('submit-btn').addEventListener('click', async () => {
+      const subject   = document.getElementById('f-subject').value.trim();
+      const text      = document.getElementById('f-text').value.trim();
+      const submitter = document.getElementById('f-submitter').value.trim();
+      const anonymous = document.getElementById('f-anonymous').checked;
+      const phone     = document.getElementById('f-phone').value.trim();
+
+      if (!subject)   { showStatus('error', 'Who are we burning? Their name is required.'); return; }
+      if (!text)      { showStatus('error', 'The burn is required. Give us something to work with.'); return; }
+      if (!submitter) { showStatus('error', 'Your name is required (even if displayed as Anonymous).'); return; }
+
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-sm"></span> Submitting...';
+      document.getElementById('submit-status').style.display = 'none';
+
+      const isCodename    = submitter.toLowerCase() === CODENAME.toLowerCase();
+      const displayAuthor = isCodename ? 'MeanWhirls' : (anonymous ? 'Anonymous' : submitter);
+
+      // Read image as base64 if provided
+      let imageBase64 = '';
+      let imageName   = '';
+      if (selectedFile) {
+        imageBase64 = await new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload  = ev => res(ev.target.result.split(',')[1]);
+          r.onerror = rej;
+          r.readAsDataURL(selectedFile);
+        });
+        imageName = selectedFile.name;
+      }
+
+      try {
+        await apiPost({
+          action:        'submit',
+          subject,
+          text,
+          submitter,
+          phone,
+          displayAuthor,
+          isMeanWhirls:  isCodename,
+          autoApprove:   isCodename,
+          imageBase64,
+          imageName,
+        });
+
+        // Since no-cors POST gives no response, we just show success
+        showStatus('success', isCodename
+          ? '🏒 Mean Whirls entry posted immediately — no moderation needed!'
+          : '✅ Entry submitted! It will appear after moderation. On Wednesdays we wear pink. 💗');
+        resetForm();
+      } catch(err) {
+        showStatus('error', 'Something went wrong submitting. Please try again.');
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '💗 Submit to the Burn Book';
+    });
+
+    function resetForm() {
+      ['f-subject','f-text','f-submitter','f-phone'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('f-anonymous').checked = false;
+      selectedFile = null;
+      document.getElementById('upload-text').textContent = 'Drag & drop or click to upload';
+      const prev = document.getElementById('upload-preview');
+      prev.style.display = 'none'; prev.src = '';
+      document.getElementById('f-image').value = '';
+    }
+
+    // ── Admin ─────────────────────────────────────────────────────
+    document.getElementById('admin-pass').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('admin-login-btn').click();
+    });
+
+    document.getElementById('admin-login-btn').addEventListener('click', () => {
+      if (document.getElementById('admin-pass').value === ADMIN_PASSWORD) {
+        document.getElementById('admin-login-box').style.display = 'none';
+        document.getElementById('admin-panel').style.display = 'block';
+        loadAdminEntries();
+      } else {
+        alert('Wrong password. So not fetch.');
+      }
+    });
+
+    async function loadAdminEntries() {
+      const tbody = document.getElementById('admin-tbody');
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem">Loading...</td></tr>';
+      try {
+        const data = await apiGet({ action: 'getAll', pass: ADMIN_PASSWORD });
+        if (data.error) throw new Error(data.error);
+        renderAdminEntries(data.entries || []);
+      } catch(err) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--deep-pink);padding:2rem">Failed to load: ${esc(err.message)}</td></tr>`;
+      }
+    }
+
+    function renderAdminEntries(entries) {
+      const tbody = document.getElementById('admin-tbody');
+      if (!entries.length) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem">No entries yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = '';
+      entries.forEach(e => {
+        const tr         = document.createElement('tr');
+        const authorCell = e.isMeanWhirls ? `<span class="badge-mw">🏒 MeanWhirls</span>` : `<span style="font-size:.82rem">${esc(e.displayAuthor)}</span>`;
+        const approveBtn = e.status !== 'approved' ? `<button class="admin-action approve" onclick="moderate('${esc(e.id)}','approve')">✓ Approve</button>` : '';
+        tr.innerHTML     = `
+          <td>${e.imageUrl ? `<img src="${esc(e.imageUrl)}" alt="" />` : '—'}</td>
+          <td style="font-weight:600">${esc(e.subject)}</td>
+          <td style="max-width:200px;font-size:.8rem;font-style:italic">${esc(e.text)}</td>
+          <td style="font-size:.82rem">${esc(e.submitter)}</td>
+          <td>${authorCell}</td>
+          <td style="font-size:.78rem;color:var(--muted)">${esc(e.phone || '—')}</td>
+          <td style="white-space:nowrap;font-size:.75rem">${esc(e.date)}</td>
+          <td><span class="badge badge-${esc(e.status)}">${esc(e.status)}</span></td>
+          <td style="white-space:nowrap">${approveBtn}<button class="admin-action reject" onclick="moderate('${esc(e.id)}','reject')">✕ Remove</button></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function moderate(id, decision) {
+      try {
+        await apiGet({ action:'moderate', id, decision, pass:ADMIN_PASSWORD });
+        loadAdminEntries();
+      } catch { alert('Action failed. Try again.'); }
+    }
+  </script>
+</body>
+</html>
