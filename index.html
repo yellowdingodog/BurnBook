@@ -30,7 +30,7 @@
     .hero { background: linear-gradient(135deg, #1a0a12 0%, #3d0f25 40%, #1a0a12 100%); padding: 3rem 2rem 2.5rem; text-align: center; position: relative; overflow: hidden; border-bottom: 3px solid var(--gold); }
     .hero::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(232,82,122,0.25) 0%, transparent 70%); pointer-events: none; }
     .hero-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.35em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem; }
-    .hero-title { font-family: 'Pinyon Script', cursive; font-size: clamp(4rem, 12vw, 8rem); color: #fff; line-height: 0.9; text-shadow: 0 0 60px rgba(232,82,122,0.5), 2px 4px 12px rgba(0,0,0,0.6); position: relative; z-index: 1; }
+    .hero-title { font-family: 'Pinyon Script', cursive; font-size: clamp(4rem, 12vw, 8rem); color: #fff; line-height: 0.9; text-shadow: 0 0 60px rgba(232,82,122,0.5), 2px 4px 12px rgba(0,0,0,0.6); position: relative; z-index: 1; cursor: pointer; }
     .hero-title span { color: var(--pink); }
     .hero-subtitle { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(0.85rem, 2vw, 1.1rem); color: rgba(255,255,255,0.55); margin-top: 1rem; letter-spacing: 0.08em; }
     .hero-divider { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
@@ -47,74 +47,101 @@
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
     .section-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 900; color: var(--deep-pink); margin-bottom: 0.3rem; }
-    .section-sub { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 2rem; }
+    .section-sub { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 1.25rem; }
+
+    /* ── Filter bar ── */
+    .filter-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.75rem; align-items: center; }
+    .filter-tag { background: var(--blush); border: 1.5px solid rgba(200,30,90,0.2); border-radius: 20px; padding: 0.3rem 0.85rem; font-size: 0.72rem; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+    .filter-tag:hover, .filter-tag.active { background: var(--deep-pink); border-color: var(--deep-pink); color: #fff; }
+    .filter-clear { font-size: 0.7rem; color: var(--muted); cursor: pointer; text-decoration: underline; }
+    .filter-clear:hover { color: var(--deep-pink); }
 
     /* ── Entry grid ── */
     .entries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-    .entry-card { background: var(--white); border: 1.5px solid rgba(200,30,90,0.12); border-radius: 2px; overflow: hidden; box-shadow: 4px 6px 24px var(--shadow); transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s; animation: fadeUp 0.5s ease both; position: relative; }
+    .entry-card { background: var(--white); border: 1.5px solid rgba(200,30,90,0.12); border-radius: 2px; overflow: hidden; box-shadow: 4px 6px 24px var(--shadow); transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s; animation: fadeUp 0.5s ease both; position: relative; cursor: pointer; }
     .entry-card::before { content: ''; position: absolute; top:0; left:0; right:0; height:3px; background: linear-gradient(90deg, var(--pink), var(--gold), var(--pink)); opacity:0; transition: opacity 0.2s; z-index: 1; }
     .entry-card:hover { transform: translateY(-4px) rotate(0.4deg); box-shadow: 8px 16px 40px var(--shadow); }
     .entry-card:hover::before { opacity: 1; }
     @keyframes fadeUp { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: translateY(0); } }
 
-    .entry-img-wrap { position: relative; width: 100%; overflow: hidden; cursor: zoom-in; border-bottom: 1.5px solid rgba(200,30,90,0.1); }
-    .entry-img { width: 100%; display: block; object-fit: cover; aspect-ratio: 4/3; transition: transform 0.3s ease; }
-    .entry-img-wrap:hover .entry-img { transform: scale(1.03); }
-    .entry-img-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0); display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
-    .entry-img-wrap:hover .entry-img-overlay { background: rgba(0,0,0,0.18); }
-    .entry-img-overlay-icon { color: #fff; font-size: 2rem; opacity: 0; transition: opacity 0.2s; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-    .entry-img-wrap:hover .entry-img-overlay-icon { opacity: 1; }
-    .entry-img-placeholder { width:100%; aspect-ratio:4/3; background: linear-gradient(135deg, var(--blush), #fce4ec); display:flex; align-items:center; justify-content:center; font-size:3.5rem; border-bottom: 1.5px solid rgba(200,30,90,0.1); }
-    .entry-img-placeholder img { width:100%; height:100%; object-fit:cover; cursor:zoom-in; }
+    .entry-img-wrap { position: relative; width: 100%; border-bottom: 1.5px solid rgba(200,30,90,0.1); background: linear-gradient(135deg, #2a1a24, #3d0f25); display: flex; align-items: center; justify-content: center; min-height: 180px; }
+    .entry-img { width: 100%; max-height: 260px; display: block; object-fit: contain; }
+    .entry-img-num { position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(0,0,0,0.55); color: #fff; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; padding: 0.2rem 0.55rem; border-radius: 20px; }
+    .entry-img-placeholder { width:100%; min-height:180px; background: linear-gradient(135deg, var(--blush), #fce4ec); display:flex; align-items:center; justify-content:center; font-size:3.5rem; border-bottom: 1.5px solid rgba(200,30,90,0.1); position:relative; }
+    .entry-img-placeholder img { width:100%; max-height:260px; object-fit:contain; }
 
-    .entry-body { padding: 1.25rem 1.25rem 1rem; }
-    .entry-subject { font-family: 'Playfair Display', serif; font-size:1.15rem; font-weight:700; color: var(--deep-pink); margin-bottom: 0.5rem; }
-    .entry-text { font-size:0.88rem; line-height:1.65; color: var(--ink); font-style:italic; quotes: '\201C' '\201D'; }
-    .entry-text::before { content: open-quote; color: var(--pink); font-size:1.4em; line-height:0; vertical-align:-0.4em; margin-right:2px; }
-    .entry-text::after  { content: close-quote; color: var(--pink); font-size:1.4em; line-height:0; vertical-align:-0.4em; margin-left:2px; }
-    .entry-meta { display:flex; align-items:center; justify-content:space-between; margin-top:0.9rem; flex-wrap:wrap; gap:0.5rem; }
-    .entry-author { font-size:0.72rem; color:var(--muted); }
-    .entry-author strong { color:var(--pink); }
+    .entry-body { padding: 1.1rem 1.25rem 0.6rem; }
+    .entry-subject { font-family: 'Playfair Display', serif; font-size:1.1rem; font-weight:700; color: var(--deep-pink); margin-bottom: 0.45rem; }
+    .entry-text { font-size:0.85rem; line-height:1.6; color: var(--ink); font-style:italic; quotes: '\201C' '\201D'; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+    .entry-text::before { content: open-quote; color: var(--pink); font-size:1.3em; line-height:0; vertical-align:-0.4em; margin-right:2px; }
+    .entry-text::after  { content: close-quote; color: var(--pink); font-size:1.3em; line-height:0; vertical-align:-0.4em; margin-left:2px; }
+    .entry-text:empty::before, .entry-text:empty::after { content: none; }
 
-    /* Lacrosse stick SVG badge — no hockey stick anywhere */
-    .badge-mw {
-      display:inline-flex; align-items:center; gap:0.35rem;
-      background: linear-gradient(135deg, var(--deep-pink), var(--pink));
-      color:#fff; font-size:0.6rem; font-weight:700;
-      letter-spacing:0.1em; text-transform:uppercase;
-      padding:0.2rem 0.6rem 0.2rem 0.45rem; border-radius:20px;
-    }
-    .badge-mw svg { width:13px; height:13px; flex-shrink:0; }
+    .entry-hashtags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.6rem; }
+    .entry-hashtag { font-size: 0.63rem; font-weight: 600; color: var(--deep-pink); background: var(--blush); padding: 0.12rem 0.45rem; border-radius: 20px; cursor: pointer; transition: all 0.2s; }
+    .entry-hashtag:hover { background: var(--deep-pink); color: #fff; }
 
-    .edit-btn {
-      background: none; border: 1.5px solid rgba(200,30,90,0.25); border-radius: 2px;
-      padding: 0.25rem 0.65rem; font-family: 'Raleway', sans-serif;
-      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--muted); cursor: pointer; transition: all 0.2s;
-    }
+    .entry-footer { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1.25rem 0.85rem; flex-wrap: wrap; gap: 0.4rem; }
+    .vote-row { display: flex; align-items: center; gap: 0.4rem; }
+    .vote-btn { background: none; border: 1.5px solid rgba(200,30,90,0.2); border-radius: 20px; padding: 0.22rem 0.55rem; font-size: 0.72rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.25rem; color: var(--muted); }
+    .vote-btn:hover { border-color: var(--pink); color: var(--deep-pink); }
+    .vote-btn.voted-up   { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
+    .vote-btn.voted-down { background: #fce4ec; border-color: var(--pink); color: var(--deep-pink); }
+    .vote-score { font-size: 0.7rem; color: var(--muted); font-weight: 600; min-width: 1.5rem; text-align: center; }
+
+    .entry-meta { display: flex; align-items: center; gap: 0.4rem; }
+    .entry-author { font-size: 0.68rem; color: var(--muted); }
+    .entry-author strong { color: var(--pink); }
+    .badge-mw { display:inline-flex; align-items:center; gap:0.3rem; background: linear-gradient(135deg, var(--deep-pink), var(--pink)); color:#fff; font-size:0.58rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:0.18rem 0.5rem 0.18rem 0.38rem; border-radius:20px; }
+    .badge-mw svg { width:12px; height:12px; flex-shrink:0; }
+    .edit-btn { background: none; border: 1.5px solid rgba(200,30,90,0.2); border-radius: 2px; padding: 0.2rem 0.5rem; font-family: 'Raleway', sans-serif; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: all 0.2s; }
     .edit-btn:hover { border-color: var(--pink); color: var(--deep-pink); background: var(--blush); }
 
-    /* ── Lightbox ── */
-    .lightbox { display:none; position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,0.92); align-items:center; justify-content:center; flex-direction:column; gap:1rem; padding:1.5rem; }
-    .lightbox.open { display:flex; animation: lbIn 0.2s ease; }
-    @keyframes lbIn { from { opacity:0; } to { opacity:1; } }
-    .lightbox > img { max-width:90vw; max-height:80vh; object-fit:contain; border:2px solid rgba(255,255,255,0.15); border-radius:2px; box-shadow: 0 8px 48px rgba(0,0,0,0.6); }
-    .lightbox-close { position:fixed; top:1.25rem; right:1.5rem; background:none; border:none; color:#fff; font-size:2rem; cursor:pointer; opacity:0.8; transition:opacity 0.2s; z-index:9001; }
-    .lightbox-close:hover { opacity:1; }
-    .lightbox-actions { display:flex; gap:1rem; }
-    .lightbox-btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.55rem 1.25rem; border:1.5px solid rgba(255,255,255,0.4); border-radius:2px; background:rgba(255,255,255,0.08); color:#fff; font-family:'Raleway',sans-serif; font-size:0.72rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; text-decoration:none; transition:all 0.2s; }
-    .lightbox-btn:hover { background:rgba(255,255,255,0.18); border-color:#fff; }
-
-    /* ── Edit modal ── */
-    .modal-overlay { display:none; position:fixed; inset:0; z-index:8000; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; padding:1.5rem; }
-    .modal-overlay.open { display:flex; animation: lbIn 0.2s ease; }
-    .modal { background:var(--white); border-radius:2px; max-width:580px; width:100%; max-height:90vh; overflow-y:auto; box-shadow: 0 16px 64px rgba(0,0,0,0.4); }
-    .modal-header { background: linear-gradient(135deg, #1a0a12, #3d0f25); padding: 1.25rem 1.5rem; display:flex; align-items:center; justify-content:space-between; border-bottom: 2px solid var(--gold); }
-    .modal-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:#fff; }
-    .modal-close { background:none; border:none; color:rgba(255,255,255,0.7); font-size:1.5rem; cursor:pointer; line-height:1; }
-    .modal-close:hover { color:#fff; }
-    .modal-body { padding: 1.5rem; }
-    .modal-note { background:var(--blush); border-left:3px solid var(--pink); padding:0.75rem 1rem; font-size:0.78rem; color:var(--muted); margin-bottom:1.25rem; line-height:1.6; }
+    /* ── Detail page ── */
+    #detail-page { display: none; }
+    .detail-back { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); cursor: pointer; margin-bottom: 1.75rem; border: 1.5px solid rgba(200,30,90,0.2); padding: 0.45rem 1rem; border-radius: 2px; transition: all 0.2s; background: none; }
+    .detail-back:hover { border-color: var(--pink); color: var(--deep-pink); background: var(--blush); }
+    .detail-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: start; }
+    @media (max-width:700px) { .detail-wrap { grid-template-columns: 1fr; } }
+    .detail-img-panel { background: linear-gradient(135deg, #1a0a12, #3d0f25); border-radius: 2px; overflow: hidden; box-shadow: 4px 6px 32px var(--shadow); display: flex; align-items: center; justify-content: center; min-height: 280px; position: relative; }
+    .detail-img { max-width: 100%; max-height: 520px; object-fit: contain; display: block; }
+    .detail-img-num { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.6); color: #fff; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; padding: 0.25rem 0.7rem; border-radius: 20px; }
+    .detail-placeholder { width: 100%; min-height: 280px; display: flex; align-items: center; justify-content: center; font-size: 5rem; background: linear-gradient(135deg, var(--blush), #fce4ec); }
+    .detail-placeholder img { max-width: 100%; max-height: 520px; object-fit: contain; }
+    .detail-img-actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+    .detail-action-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.25rem; border: 1.5px solid rgba(200,30,90,0.3); border-radius: 2px; background: var(--white); color: var(--deep-pink); font-family: 'Raleway', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+    .detail-action-btn:hover { background: var(--deep-pink); color: #fff; border-color: var(--deep-pink); }
+    .detail-action-btn.danger { color: #c62828; border-color: #ef9a9a; }
+    .detail-action-btn.danger:hover { background: #c62828; color: #fff; border-color: #c62828; }
+    .detail-info { display: flex; flex-direction: column; gap: 1.25rem; }
+    .detail-num-badge { font-size: 0.68rem; font-weight: 700; color: var(--gold); letter-spacing: 0.15em; text-transform: uppercase; }
+    .detail-subject { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--deep-pink); line-height: 1.1; }
+    .detail-text { font-size: 1rem; line-height: 1.75; color: var(--ink); font-style: italic; quotes: '\201C' '\201D'; }
+    .detail-text::before { content: open-quote; color: var(--pink); font-size: 1.5em; line-height: 0; vertical-align: -0.4em; margin-right: 3px; }
+    .detail-text::after  { content: close-quote; color: var(--pink); font-size: 1.5em; line-height: 0; vertical-align: -0.4em; margin-left: 3px; }
+    .detail-text:empty::before, .detail-text:empty::after { content: none; }
+    .detail-hashtags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .detail-hashtag { font-size: 0.72rem; font-weight: 600; color: var(--deep-pink); background: var(--blush); padding: 0.2rem 0.65rem; border-radius: 20px; cursor: pointer; transition: all 0.2s; }
+    .detail-hashtag:hover { background: var(--deep-pink); color: #fff; }
+    .detail-meta-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .detail-vote-row { display: flex; align-items: center; gap: 0.6rem; }
+    .detail-vote-btn { background: var(--white); border: 1.5px solid rgba(200,30,90,0.2); border-radius: 20px; padding: 0.4rem 1rem; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--muted); font-family: 'Raleway', sans-serif; }
+    .detail-vote-btn:hover { border-color: var(--pink); color: var(--deep-pink); }
+    .detail-vote-btn.voted-up   { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
+    .detail-vote-btn.voted-down { background: #fce4ec; border-color: var(--pink); color: var(--deep-pink); }
+    .detail-vote-score { font-size: 0.9rem; font-weight: 700; color: var(--muted); }
+    .detail-edit-btn { background: none; border: 1.5px solid rgba(200,30,90,0.25); border-radius: 2px; padding: 0.35rem 0.85rem; font-family: 'Raleway', sans-serif; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+    .detail-edit-btn:hover { border-color: var(--pink); color: var(--deep-pink); background: var(--blush); }
+    .share-box { background: var(--blush); border: 1.5px solid rgba(200,30,90,0.15); border-radius: 2px; padding: 1rem; flex: 1; min-width: 200px; }
+    .share-box-title { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--deep-pink); margin-bottom: 0.6rem; }
+    .share-url-row { display: flex; gap: 0.5rem; }
+    .share-url { flex: 1; background: var(--white); border: 1.5px solid rgba(200,30,90,0.2); border-radius: 2px; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: var(--muted); font-family: 'Raleway', sans-serif; outline: none; }
+    .share-copy-btn { background: var(--deep-pink); border: none; border-radius: 2px; padding: 0.5rem 1rem; color: #fff; font-family: 'Raleway', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+    .share-copy-btn:hover { background: var(--pink); }
+    .share-platforms { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
+    .share-platform { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.85rem; border-radius: 2px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-decoration: none; transition: all 0.2s; border: none; color: #fff; }
+    .share-fb { background: #1877f2; } .share-fb:hover { background: #1660c5; }
+    .share-tw { background: #1da1f2; } .share-tw:hover { background: #0c85d0; }
 
     /* ── Empty / loading ── */
     .empty { text-align:center; padding:5rem 2rem; color:var(--muted); }
@@ -142,8 +169,8 @@
     .upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
     .upload-zone-icon { font-size:1.75rem; margin-bottom:0.4rem; }
     .upload-zone-text { font-size:0.8rem; color:var(--muted); }
-    .upload-preview { width:100%; max-height:180px; object-fit:cover; border-radius:2px; display:none; margin-top:0.6rem; border:1.5px solid rgba(200,30,90,0.15); }
-    .current-img { width:100%; max-height:140px; object-fit:cover; border-radius:2px; display:block; margin-bottom:0.6rem; border:1.5px solid rgba(200,30,90,0.15); opacity:0.75; }
+    .upload-preview { width:100%; max-height:180px; object-fit:contain; border-radius:2px; display:none; margin-top:0.6rem; border:1.5px solid rgba(200,30,90,0.15); }
+    .current-img { width:100%; max-height:140px; object-fit:contain; border-radius:2px; display:block; margin-bottom:0.6rem; border:1.5px solid rgba(200,30,90,0.15); opacity:0.75; }
 
     .btn { display:inline-flex; align-items:center; gap:0.5rem; padding:0.85rem 2rem; font-family:'Raleway',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; border:none; border-radius:2px; cursor:pointer; transition:all 0.2s; }
     .btn-primary { background:linear-gradient(135deg, var(--deep-pink), var(--pink)); color:#fff; box-shadow:0 4px 16px rgba(194,24,91,0.35); }
@@ -156,28 +183,41 @@
     /* ── Admin ── */
     .admin-login { max-width:380px; margin:4rem auto; background:var(--white); border:1.5px solid rgba(200,30,90,0.14); padding:2.5rem; box-shadow:4px 6px 24px var(--shadow); border-radius:2px; }
     .admin-section-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--deep-pink); margin: 2rem 0 1rem; padding-bottom:0.5rem; border-bottom:1.5px solid var(--blush); }
+    .admin-section-title.urgent { color: #c62828; border-bottom-color: #ffcdd2; }
     .admin-table { width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:2rem; }
     .admin-table th { background:var(--deep-pink); color:#fff; padding:0.65rem 0.85rem; text-align:left; font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:600; }
+    .admin-table th.urgent-hdr { background: #c62828; }
     .admin-table td { padding:0.65rem 0.85rem; border-bottom:1px solid var(--blush); vertical-align:top; }
     .admin-table tr:hover td { background:var(--blush); }
-    .admin-table img { width:55px; height:42px; object-fit:cover; border-radius:1px; cursor:zoom-in; }
+    .admin-table img { width:55px; height:42px; object-fit:contain; border-radius:1px; cursor:zoom-in; background:#f0e0e8; }
     .badge { display:inline-block; padding:0.2rem 0.6rem; border-radius:20px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; }
     .badge-pending  { background:#fff9c4; color:#f57f17; }
     .badge-approved { background:#e8f5e9; color:#2e7d32; }
+    .badge-hidden   { background:#ffcdd2; color:#c62828; }
     .admin-action { background:none; border:1.5px solid; border-radius:2px; padding:0.28rem 0.6rem; font-size:0.67rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; transition:all 0.2s; margin-right:0.3rem; margin-bottom:0.3rem; white-space:nowrap; }
-    .aa-approve   { border-color:#4caf50; color:#2e7d32; }
-    .aa-approve:hover   { background:#4caf50; color:#fff; }
-    .aa-unapprove { border-color:#ff9800; color:#e65100; }
-    .aa-unapprove:hover { background:#ff9800; color:#fff; }
-    .aa-edit      { border-color:var(--gold); color:#7a5c00; }
-    .aa-edit:hover      { background:var(--gold); color:#fff; }
-    .aa-reject    { border-color:var(--pink); color:var(--deep-pink); }
-    .aa-reject:hover    { background:var(--pink); color:#fff; }
-    .aa-accept    { border-color:#4caf50; color:#2e7d32; }
-    .aa-accept:hover    { background:#4caf50; color:#fff; }
+    .aa-approve   { border-color:#4caf50; color:#2e7d32; } .aa-approve:hover   { background:#4caf50; color:#fff; }
+    .aa-unapprove { border-color:#ff9800; color:#e65100; } .aa-unapprove:hover { background:#ff9800; color:#fff; }
+    .aa-edit      { border-color:var(--gold); color:#7a5c00; } .aa-edit:hover      { background:var(--gold); color:#fff; }
+    .aa-reject    { border-color:var(--pink); color:var(--deep-pink); } .aa-reject:hover    { background:var(--pink); color:#fff; }
+    .aa-accept    { border-color:#4caf50; color:#2e7d32; } .aa-accept:hover    { background:#4caf50; color:#fff; }
+    .aa-delete    { border-color:#c62828; color:#c62828; } .aa-delete:hover    { background:#c62828; color:#fff; }
+    .aa-restore   { border-color:#1565c0; color:#1565c0; } .aa-restore:hover   { background:#1565c0; color:#fff; }
 
-    /* diff highlight */
-    .diff-new { background:#e8f5e9; border-radius:2px; padding:0 2px; }
+    /* ── Modal ── */
+    .modal-overlay { display:none; position:fixed; inset:0; z-index:8000; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; padding:1.5rem; }
+    .modal-overlay.open { display:flex; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    .modal { background:var(--white); border-radius:2px; max-width:580px; width:100%; max-height:90vh; overflow-y:auto; box-shadow: 0 16px 64px rgba(0,0,0,0.4); }
+    .modal-header { background: linear-gradient(135deg, #1a0a12, #3d0f25); padding: 1.25rem 1.5rem; display:flex; align-items:center; justify-content:space-between; border-bottom: 2px solid var(--gold); position:sticky; top:0; z-index:1; }
+    .modal-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:#fff; }
+    .modal-close { background:none; border:none; color:rgba(255,255,255,0.7); font-size:1.5rem; cursor:pointer; }
+    .modal-close:hover { color:#fff; }
+    .modal-body { padding: 1.5rem; }
+    .modal-note { background:var(--blush); border-left:3px solid var(--pink); padding:0.75rem 1rem; font-size:0.78rem; color:var(--muted); margin-bottom:1.25rem; line-height:1.6; }
+
+    /* Toast */
+    .toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(4rem); background:var(--ink); color:#fff; padding:0.65rem 1.5rem; border-radius:20px; font-size:0.8rem; font-weight:600; z-index:9999; transition:transform 0.3s ease, opacity 0.3s ease; opacity:0; pointer-events:none; }
+    .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
 
     .footer { text-align:center; padding:2rem; font-size:0.72rem; color:var(--muted); border-top:1px solid rgba(200,30,90,0.1); margin-top:4rem; letter-spacing:0.08em; }
     .footer strong { color:var(--pink); }
@@ -193,7 +233,7 @@
 
   <header class="hero">
     <p class="hero-eyebrow">2026 Whirlyball Nationals</p>
-    <h1 class="hero-title">Mean <span>Whirls</span></h1>
+    <h1 class="hero-title" onclick="goHome()">Mean <span>Whirls</span></h1>
     <p class="hero-subtitle">Burn Book &mdash; The Official Record of Everything</p>
     <div class="hero-divider"></div>
   </header>
@@ -208,11 +248,56 @@
 
     <!-- BURN BOOK -->
     <div id="tab-book" class="tab-panel active">
-      <div style="margin-bottom:2rem">
-        <h2 class="section-title">The Burn Book</h2>
-        <p class="section-sub">Moderated &amp; approved entries only &mdash; we are mean but we are picky.</p>
+      <div id="book-grid-view">
+        <div style="margin-bottom:1rem">
+          <h2 class="section-title">The Burn Book</h2>
+          <p class="section-sub">Moderated &amp; approved entries only &mdash; we are mean but we are picky.</p>
+        </div>
+        <div id="filter-bar" class="filter-bar" style="display:none">
+          <span style="font-size:0.72rem;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase">Filter:</span>
+          <span id="filter-tags"></span>
+          <span class="filter-clear" id="filter-clear" style="display:none" onclick="clearFilter()">✕ clear</span>
+        </div>
+        <div id="entries-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
       </div>
-      <div id="entries-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
+
+      <div id="detail-page">
+        <button class="detail-back" onclick="closeDetail()">← Back to Burn Book</button>
+        <div class="detail-wrap">
+          <div>
+            <div class="detail-img-panel" id="detail-img-panel">
+              <div class="detail-placeholder" id="detail-placeholder" style="display:none"></div>
+              <img id="detail-img" class="detail-img" src="" alt="" style="display:none" />
+              <div class="detail-img-num" id="detail-img-num"></div>
+            </div>
+            <div class="detail-img-actions">
+              <a class="detail-action-btn" id="detail-download" href="" download target="_blank" style="display:none">⬇ Download</a>
+              <div class="share-box">
+                <div class="share-box-title">Share this entry</div>
+                <div class="share-url-row">
+                  <input class="share-url" id="share-url" readonly />
+                  <button class="share-copy-btn" onclick="copyShareUrl()">Copy</button>
+                </div>
+                <div class="share-platforms">
+                  <a class="share-platform share-fb" id="share-fb" href="" target="_blank">📘 Facebook</a>
+                  <a class="share-platform share-tw" id="share-tw" href="" target="_blank">🐦 Twitter/X</a>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:0.75rem">
+              <button class="detail-action-btn danger" onclick="openDeleteRequestModal(currentDetailEntry)">🗑 Request Removal</button>
+            </div>
+          </div>
+          <div class="detail-info">
+            <div class="detail-num-badge" id="detail-num-badge"></div>
+            <div class="detail-subject" id="detail-subject"></div>
+            <p class="detail-text" id="detail-text"></p>
+            <div class="detail-hashtags" id="detail-hashtags"></div>
+            <div class="detail-vote-row" id="detail-vote-row"></div>
+            <div class="detail-meta-row" id="detail-meta-row"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- SUBMIT -->
@@ -220,28 +305,27 @@
       <h2 class="section-title">Submit an Entry</h2>
       <p class="section-sub">All submissions are reviewed before appearing in the book.</p>
       <div class="form-card">
-        <div class="form-note">
-          📌 Entries are moderated by the Mean Whirls crew before going live. Your name is required so we can reach you — but you can choose to appear as Anonymous in the book. Keep it fun, not felonious.
-        </div>
+        <div class="form-note">📌 Entries are moderated before going live. Your name is required but you can appear as Anonymous. Keep it fun, not felonious.</div>
         <div class="form-group">
           <label class="form-label">Who Are We Burning? *</label>
           <input class="form-input" id="f-subject" placeholder="Their name or nickname" />
         </div>
         <div class="form-group">
-          <label class="form-label">The Burn *</label>
+          <label class="form-label">The Burn <span class="form-label-note">(optional)</span></label>
           <textarea class="form-textarea" id="f-text" placeholder="Tell us everything. Don't hold back. We won't."></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">Your Name *</label>
           <input class="form-input" id="f-submitter" placeholder="Required — only shared if you allow it" />
-          <label class="form-check">
-            <input type="checkbox" id="f-anonymous" />
-            <span class="form-check-label">Show me as <strong>Anonymous</strong> in the burn book</span>
-          </label>
+          <label class="form-check"><input type="checkbox" id="f-anonymous" /><span class="form-check-label">Show me as <strong>Anonymous</strong></span></label>
         </div>
         <div class="form-group">
-          <label class="form-label">Phone Number <span class="form-label-note">(optional — only used if we need to follow up)</span></label>
+          <label class="form-label">Phone <span class="form-label-note">(optional)</span></label>
           <input class="form-input" id="f-phone" type="tel" placeholder="e.g. 630-555-0199" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hashtags <span class="form-label-note">(optional — space-separated, e.g. #wild #classic)</span></label>
+          <input class="form-input" id="f-hashtags" placeholder="#wild #classic #legend" />
         </div>
         <div class="form-group">
           <label class="form-label">Photo <span class="form-label-note">(optional)</span></label>
@@ -249,7 +333,7 @@
             <input type="file" id="f-image" accept="image/*" />
             <div class="upload-zone-icon">📷</div>
             <div class="upload-zone-text" id="upload-text">Drag &amp; drop or click to upload</div>
-            <img id="upload-preview" class="upload-preview" alt="preview" />
+            <img id="upload-preview" class="upload-preview" alt="" />
           </div>
         </div>
         <button class="btn btn-primary" id="submit-btn">💗 Submit to the Burn Book</button>
@@ -260,8 +344,7 @@
     <!-- ADMIN -->
     <div id="tab-admin" class="tab-panel">
       <h2 class="section-title">Admin Panel</h2>
-      <p class="section-sub">Moderate submissions and review proposed edits.</p>
-
+      <p class="section-sub">Moderate submissions, edits, and removal requests.</p>
       <div id="admin-login-box" class="admin-login">
         <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.25rem">Enter the admin password to access the moderation panel.</p>
         <div class="form-group">
@@ -270,28 +353,39 @@
         </div>
         <button class="btn btn-primary" id="admin-login-btn">🔐 Enter</button>
       </div>
-
       <div id="admin-panel" style="display:none">
-        <p class="admin-section-title">All Entries</p>
+
+        <!-- DELETION REQUESTS — top, urgent -->
+        <p class="admin-section-title urgent">⚠️ Removal Requests</p>
         <div style="overflow-x:auto">
-          <table class="admin-table" id="entries-table">
+          <table class="admin-table" id="deletions-table">
             <thead><tr>
-              <th>Photo</th><th>Subject</th><th>Burn</th>
-              <th>Submitted By</th><th>Displays As</th><th>Phone</th>
-              <th>Status</th><th>Actions</th>
+              <th class="urgent-hdr">#</th>
+              <th class="urgent-hdr">Subject</th>
+              <th class="urgent-hdr">Reason</th>
+              <th class="urgent-hdr">Requestor Phone</th>
+              <th class="urgent-hdr">Requested</th>
+              <th class="urgent-hdr">Actions</th>
             </tr></thead>
-            <tbody id="admin-tbody"></tbody>
+            <tbody id="deletions-tbody"></tbody>
           </table>
         </div>
 
+        <!-- PENDING EDITS -->
         <p class="admin-section-title">Pending Edits</p>
         <div style="overflow-x:auto">
-          <table class="admin-table" id="edits-table">
-            <thead><tr>
-              <th>Original ID</th><th>Proposed Subject</th><th>Proposed Burn</th>
-              <th>New Photo</th><th>Submitted By</th><th>Displays As</th><th>When</th><th>Actions</th>
-            </tr></thead>
+          <table class="admin-table">
+            <thead><tr><th>#</th><th>Proposed Subject</th><th>Proposed Burn</th><th>Tags</th><th>New Photo</th><th>Submitted By</th><th>When</th><th>Actions</th></tr></thead>
             <tbody id="edits-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- ALL ENTRIES -->
+        <p class="admin-section-title">All Entries</p>
+        <div style="overflow-x:auto">
+          <table class="admin-table">
+            <thead><tr><th>#</th><th>Photo</th><th>Subject</th><th>Burn</th><th>Tags</th><th>Submitter</th><th>Displays As</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="admin-tbody"></tbody>
           </table>
         </div>
       </div>
@@ -303,16 +397,6 @@
     <strong>Mean Whirls</strong> &mdash; 2026 Whirlyball Nationals &nbsp;|&nbsp; On Wednesdays we wear pink &nbsp;💗
   </footer>
 
-  <!-- Lightbox -->
-  <div class="lightbox" id="lightbox">
-    <button class="lightbox-close" id="lightbox-close">✕</button>
-    <img id="lightbox-img" src="" alt="Full image" />
-    <div class="lightbox-actions">
-      <a class="lightbox-btn" id="lightbox-download" href="" download target="_blank">⬇ Download</a>
-      <a class="lightbox-btn" id="lightbox-open" href="" target="_blank">↗ Open in new tab</a>
-    </div>
-  </div>
-
   <!-- Edit Modal -->
   <div class="modal-overlay" id="edit-modal">
     <div class="modal">
@@ -321,35 +405,37 @@
         <button class="modal-close" id="edit-modal-close">✕</button>
       </div>
       <div class="modal-body">
-        <div class="modal-note" id="edit-modal-note">
-          ✏️ Please only edit your own entry. Edits go through moderation before appearing. If the submitter name was misspelled, you can correct it here.
-        </div>
+        <div class="modal-note" id="edit-modal-note"></div>
         <input type="hidden" id="edit-entry-id" />
         <input type="hidden" id="edit-existing-image" />
+        <input type="hidden" id="edit-orig-subject" />
+        <input type="hidden" id="edit-orig-text" />
+        <input type="hidden" id="edit-orig-hashtags" />
         <div class="form-group">
           <label class="form-label">Burn Victim Name *</label>
-          <input class="form-input" id="edit-subject" placeholder="Their name or nickname" />
+          <input class="form-input" id="edit-subject" />
         </div>
         <div class="form-group">
-          <label class="form-label">The Burn *</label>
+          <label class="form-label">The Burn <span class="form-label-note">(optional)</span></label>
           <textarea class="form-textarea" id="edit-text"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hashtags <span class="form-label-note">(space-separated — replaces all existing tags)</span></label>
+          <input class="form-input" id="edit-hashtags" placeholder="#wild #classic" />
         </div>
         <div class="form-group" id="edit-submitter-group">
           <label class="form-label">Your Name *</label>
           <input class="form-input" id="edit-submitter" placeholder="Required" />
-          <label class="form-check">
-            <input type="checkbox" id="edit-anonymous" />
-            <span class="form-check-label">Show me as <strong>Anonymous</strong> in the burn book</span>
-          </label>
+          <label class="form-check"><input type="checkbox" id="edit-anonymous" /><span class="form-check-label">Show me as <strong>Anonymous</strong></span></label>
         </div>
         <div class="form-group">
-          <label class="form-label">Photo <span class="form-label-note">(upload to replace current photo)</span></label>
-          <img id="edit-current-img" class="current-img" src="" alt="Current photo" style="display:none" />
+          <label class="form-label">Photo <span class="form-label-note">(upload to replace current)</span></label>
+          <img id="edit-current-img" class="current-img" src="" alt="" style="display:none" />
           <div class="upload-zone" id="edit-upload-zone">
             <input type="file" id="edit-image" accept="image/*" />
             <div class="upload-zone-icon">📷</div>
-            <div class="upload-zone-text" id="edit-upload-text">Drag &amp; drop or click to replace photo</div>
-            <img id="edit-upload-preview" class="upload-preview" alt="preview" />
+            <div class="upload-zone-text" id="edit-upload-text">Drag &amp; drop or click to replace</div>
+            <img id="edit-upload-preview" class="upload-preview" alt="" />
           </div>
         </div>
         <button class="btn btn-primary" id="edit-submit-btn">💗 Submit Edit for Review</button>
@@ -358,498 +444,745 @@
     </div>
   </div>
 
+  <!-- Delete Request Modal -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">🗑 Request Removal</span>
+        <button class="modal-close" id="delete-modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-note">
+          We take removal requests seriously. Once submitted, this entry will be immediately hidden from public view while we review your request. Please tell us why you'd like it removed.
+        </div>
+        <input type="hidden" id="del-entry-id" />
+        <div class="form-group">
+          <label class="form-label">Your Name *</label>
+          <input class="form-input" id="del-name" placeholder="Required" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reason for Removal *</label>
+          <textarea class="form-textarea" id="del-reason" placeholder="Tell us why you'd like this entry removed..." style="min-height:90px"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number <span class="form-label-note">(optional — in case we need to follow up)</span></label>
+          <input class="form-input" id="del-phone" type="tel" placeholder="e.g. 630-555-0199" />
+        </div>
+        <button class="btn btn-primary" id="del-submit-btn">🗑 Submit Removal Request</button>
+        <div id="del-status" style="display:none" class="alert"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
   <script>
     // ============================================================
     // CONFIGURATION
     // ============================================================
-    const SCRIPT_URL     = 'https://script.google.com/macros/s/AKfycbwfiGEg1mxzSmDeGh8laKDVMtF9OzydGRE3YOMGe5M_d2QqZNPpcWWJqAntQqNvKDPe/exec';  // ends in /exec
-    const ADMIN_PASSWORD = 'meanwhirls2026';              // change freely
+    const SUPABASE_URL  = 'https://dhguaomtjclcldkkhlmt.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZ3Vhb210amNsY2xka2tobG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MjI5MzQsImV4cCI6MjA5NDI5ODkzNH0.hfaNxo9m1Tkpn8pIVoyTXcIRhf9jbpkTlw0kTpn6gyY';
+    const BUCKET        = 'burnbook-images';
+    const ADMIN_PASSWORD = 'meanwhirls2026';
 
-    // Placeholder emoji and default image URL are loaded from the Config sheet.
-    // Add rows to Config:  placeholderemoji | 💅   and/or  placeholderimage | https://...
-    // These are set after the config fetch below. Fallbacks used if not in sheet.
-    let PLACEHOLDER_EMOJI     = '💅';
-    let PLACEHOLDER_IMAGE_URL = '';
-
-    // Whirlyball scoop SVG for the MeanWhirls badge
     const SCOOP_SVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Scoop bowl (round pocket) -->
-      <path d="M4 4 C4 1, 14 1, 14 4 C14 8, 10 11, 9 11 C8 11, 4 8, 4 4 Z"
-            stroke="white" stroke-width="1.3" fill="none" stroke-linejoin="round"/>
-      <!-- Mesh lines inside bowl -->
+      <path d="M4 4 C4 1, 14 1, 14 4 C14 8, 10 11, 9 11 C8 11, 4 8, 4 4 Z" stroke="white" stroke-width="1.3" fill="none" stroke-linejoin="round"/>
       <line x1="9" y1="1.5" x2="9" y2="10.5" stroke="white" stroke-width="0.7" opacity="0.7"/>
       <line x1="6" y1="2.2" x2="7.5" y2="10.2" stroke="white" stroke-width="0.7" opacity="0.7"/>
       <line x1="12" y1="2.2" x2="10.5" y2="10.2" stroke="white" stroke-width="0.7" opacity="0.7"/>
       <line x1="5" y1="5" x2="13" y2="5" stroke="white" stroke-width="0.7" opacity="0.7"/>
       <line x1="4.5" y1="7.5" x2="13.2" y2="7" stroke="white" stroke-width="0.7" opacity="0.7"/>
-      <!-- Handle -->
       <line x1="9" y1="11" x2="21" y2="22" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
     </svg>`;
 
-    // ── Utilities ─────────────────────────────────────────────
-    function esc(s) {
-      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-    async function apiGet(params) {
-      const url = SCRIPT_URL + '?' + new URLSearchParams(params).toString();
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
+    // Runtime config from Supabase
+    let PLACEHOLDER_EMOJI     = '💅';
+    let PLACEHOLDER_IMAGE_URL = '';
+    let CODENAME              = 'BananaDuck';
+    let CODENAME_DISPLAY      = 'B******D***';
+
+    let activeFilter       = null;
+    let allEntries         = [];
+    let allVoteCounts      = {};
+    let currentDetailEntry = null;
+    let myVotes            = JSON.parse(localStorage.getItem('mw_votes') || '{}');
+
+    // ── Supabase helpers ──────────────────────────────────────
+    const SB = SUPABASE_URL;
+    const H  = { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+SUPABASE_ANON };
+
+    async function sbGet(table, params='') {
+      const res = await fetch(`${SB}/rest/v1/${table}?${params}`, { headers:H });
+      if (!res.ok) throw new Error(await res.text());
       return res.json();
     }
-    async function apiPost(payload) {
-      await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    async function sbPost(table, body) {
+      const res = await fetch(`${SB}/rest/v1/${table}`, { method:'POST', headers:{...H,'Prefer':'return=representation'}, body:JSON.stringify(body) });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
     }
-    async function readFileBase64(file) {
-      return new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload  = ev => res(ev.target.result.split(',')[1]);
-        r.onerror = rej;
-        r.readAsDataURL(file);
-      });
+    async function sbPatch(table, params, body) {
+      const res = await fetch(`${SB}/rest/v1/${table}?${params}`, { method:'PATCH', headers:{...H,'Prefer':'return=representation'}, body:JSON.stringify(body) });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
     }
-
-    // ── Lightbox ──────────────────────────────────────────────
-    const lightbox = document.getElementById('lightbox');
-    function openLightbox(url) {
-      document.getElementById('lightbox-img').src = url;
-      document.getElementById('lightbox-download').href = url;
-      document.getElementById('lightbox-open').href = url;
-      lightbox.classList.add('open');
-      document.body.style.overflow = 'hidden';
+    async function sbDelete(table, params) {
+      const res = await fetch(`${SB}/rest/v1/${table}?${params}`, { method:'DELETE', headers:H });
+      if (!res.ok) throw new Error(await res.text());
     }
-    function closeLightbox() {
-      lightbox.classList.remove('open');
-      document.body.style.overflow = '';
-      document.getElementById('lightbox-img').src = '';
+    async function sbUpsert(table, body, onConflict) {
+      const url = `${SB}/rest/v1/${table}` + (onConflict ? `?on_conflict=${onConflict}` : '');
+      const res = await fetch(url, { method:'POST', headers:{...H,'Prefer':'resolution=merge-duplicates,return=representation'}, body:JSON.stringify(body) });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
     }
-    document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
-
-    // ── Edit Modal ────────────────────────────────────────────
-    const editModal = document.getElementById('edit-modal');
-    let editImageFile = null;
-    let editAdminMode = false;
-
-    function openEditModal(entry, isAdmin) {
-      editAdminMode = !!isAdmin;
-      document.getElementById('edit-entry-id').value       = entry.id;
-      document.getElementById('edit-subject').value        = entry.subject;
-      document.getElementById('edit-text').value           = entry.text;
-      document.getElementById('edit-submitter').value      = '';   // always blank
-      document.getElementById('edit-anonymous').checked    = entry.displayAuthor === 'Anonymous';
-      document.getElementById('edit-existing-image').value = entry.imageUrl || '';
-      document.getElementById('edit-status').style.display = 'none';
-      editImageFile = null;
-      document.getElementById('edit-upload-text').textContent = 'Drag & drop or click to replace photo';
-      document.getElementById('edit-upload-preview').style.display = 'none';
-      document.getElementById('edit-upload-preview').src = '';
-      document.getElementById('edit-image').value = '';
-
-      const noteEl = document.getElementById('edit-modal-note');
-      const subGrp = document.getElementById('edit-submitter-group');
-      const submitBtn = document.getElementById('edit-submit-btn');
-      if (isAdmin) {
-        noteEl.textContent = '✏️ Admin edit — changes will be applied immediately without moderation.';
-        subGrp.style.display = 'none';
-        submitBtn.textContent = '✏️ Apply Edit Now';
-      } else {
-        noteEl.textContent = '✏️ Please only edit your own entry. Edits go through moderation before appearing. If the submitter name was misspelled, you can correct it here.';
-        subGrp.style.display = 'block';
-        submitBtn.innerHTML = '💗 Submit Edit for Review';
-      }
-
-      const curImg = document.getElementById('edit-current-img');
-      if (entry.imageUrl) { curImg.src = entry.imageUrl; curImg.style.display = 'block'; }
-      else { curImg.style.display = 'none'; }
-
-      editModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
+    async function uploadImage(file) {
+      const ext  = file.name.split('.').pop().toLowerCase() || 'jpg';
+      const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const res  = await fetch(`${SB}/storage/v1/object/${BUCKET}/${path}`, { method:'POST', headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':file.type}, body:file });
+      if (!res.ok) throw new Error('Image upload failed: ' + await res.text());
+      return `${SB}/storage/v1/object/public/${BUCKET}/${path}`;
     }
-
-    function closeEditModal() {
-      editModal.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-
-    document.getElementById('edit-modal-close').addEventListener('click', closeEditModal);
-    editModal.addEventListener('click', e => { if (e.target === editModal) closeEditModal(); });
-
-    document.getElementById('edit-image').addEventListener('change', function() {
-      if (this.files[0]) handleEditImage(this.files[0]);
-    });
-    document.getElementById('edit-upload-zone').addEventListener('dragover',  e => { e.preventDefault(); });
-    document.getElementById('edit-upload-zone').addEventListener('drop', e => {
-      e.preventDefault(); if (e.dataTransfer.files[0]) handleEditImage(e.dataTransfer.files[0]);
-    });
-    function handleEditImage(file) {
-      editImageFile = file;
-      document.getElementById('edit-upload-text').textContent = file.name;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const p = document.getElementById('edit-upload-preview');
-        p.src = ev.target.result; p.style.display = 'block';
-        document.getElementById('edit-current-img').style.display = 'none';
-      };
-      reader.readAsDataURL(file);
-    }
-
-    document.getElementById('edit-submit-btn').addEventListener('click', async () => {
-      const subject   = document.getElementById('edit-subject').value.trim();
-      const text      = document.getElementById('edit-text').value.trim();
-      const submitter = document.getElementById('edit-submitter').value.trim();
-      const anonymous = document.getElementById('edit-anonymous').checked;
-      const entryId   = document.getElementById('edit-entry-id').value;
-      const existingImg = document.getElementById('edit-existing-image').value;
-
-      if (!subject)   { showEditStatus('error', 'Burn victim name is required.'); return; }
-      if (!text)      { showEditStatus('error', 'The burn text is required.'); return; }
-      if (!editAdminMode && !submitter) { showEditStatus('error', 'Your name is required.'); return; }
-
-      const btn = document.getElementById('edit-submit-btn');
-      btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Submitting...';
-
-      const displayAuthor = anonymous ? 'Anonymous' : (submitter || 'MeanWhirls');
-      let imageBase64 = '', imageName = '';
-      if (editImageFile) {
-        imageBase64 = await readFileBase64(editImageFile);
-        imageName   = editImageFile.name;
-      }
-
+    async function getIpHash() {
       try {
-        await apiPost({ action:'submitEdit', originalId:entryId, subject, text, submitter, displayAuthor, existingImageUrl:existingImg, imageBase64, imageName, adminBypass: editAdminMode });
-        const msg = editAdminMode
-          ? '✅ Edit applied immediately!'
-          : '✅ Edit submitted for review! The Mean Whirls crew will apply it shortly. On Wednesdays we wear pink. 💗';
-        showEditStatus('success', msg);
-        setTimeout(closeEditModal, 3000);
-      } catch(err) {
-        showEditStatus('error', 'Something went wrong. Please try again.');
-      }
-      btn.disabled = false; btn.innerHTML = '💗 Submit Edit for Review';
-    });
-
-    function showEditStatus(type, msg) {
-      const el = document.getElementById('edit-status');
-      el.className = 'alert alert-' + type; el.textContent = msg; el.style.display = 'block';
+        const cached = sessionStorage.getItem('mw_iphash');
+        if (cached) return cached;
+        const { ip } = await (await fetch('https://api.ipify.org?format=json')).json();
+        let hash = 0;
+        for (let i=0;i<ip.length;i++){hash=((hash<<5)-hash)+ip.charCodeAt(i);hash|=0;}
+        const h = 'v'+Math.abs(hash).toString(36);
+        sessionStorage.setItem('mw_iphash', h);
+        return h;
+      } catch { return 'anon_'+Math.random().toString(36).slice(2); }
     }
 
-    // ── Escape key closes topmost modal/lightbox ──────────────
-    document.addEventListener('keydown', e => {
-      if (e.key !== 'Escape') return;
-      if (lightbox.classList.contains('open')) { closeLightbox(); return; }
-      if (editModal.classList.contains('open')) { closeEditModal(); return; }
-    });
+    // ── Utilities ─────────────────────────────────────────────
+    function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function parseHashtags(str){ return (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[]; }
+    function arraysEqual(a,b){ return a.length===b.length && [...a].sort().join()===([...b]).sort().join(); }
+    function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+
+    // ── Init ──────────────────────────────────────────────────
+    async function init() {
+      try {
+        const cfg = await sbGet('config');
+        cfg.forEach(r => {
+          if (r.key==='codename')         CODENAME              = r.value;
+          if (r.key==='codename_display') CODENAME_DISPLAY      = r.value;
+          if (r.key==='placeholderemoji') PLACEHOLDER_EMOJI     = r.value;
+          if (r.key==='placeholderimage') PLACEHOLDER_IMAGE_URL = r.value;
+        });
+      } catch(e) {}
+      const hash = window.location.hash;
+      if (hash.startsWith('#entry-')) {
+        await loadEntries();
+        const entry = allEntries.find(e=>e.id===hash.slice(7));
+        if (entry) openDetail(entry);
+      } else {
+        loadEntries();
+      }
+    }
 
     // ── Tabs ──────────────────────────────────────────────────
     document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
         btn.classList.add('active');
-        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-        if (btn.dataset.tab === 'book') loadEntries();
+        document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab==='book'){ closeDetail(); loadEntries(); }
       });
     });
+    function goHome(){ document.querySelector('.nav-btn[data-tab="book"]').click(); }
 
-    // ── Placeholder ───────────────────────────────────────────
-    function makePlaceholder() {
-      if (PLACEHOLDER_IMAGE_URL) {
-        const wrap = document.createElement('div');
-        wrap.className = 'entry-img-placeholder';
-        wrap.style.cssText = 'padding:0;cursor:zoom-in';
-        const img = document.createElement('img');
-        img.src = PLACEHOLDER_IMAGE_URL;
-        img.addEventListener('click', () => openLightbox(PLACEHOLDER_IMAGE_URL));
-        wrap.appendChild(img);
-        return wrap;
+    // ── Detail ────────────────────────────────────────────────
+    function openDetail(entry) {
+      currentDetailEntry = entry;
+      document.getElementById('book-grid-view').style.display = 'none';
+      document.getElementById('detail-page').style.display    = 'block';
+      window.location.hash = 'entry-' + entry.id;
+
+      const imgEl=document.getElementById('detail-img');
+      const phEl =document.getElementById('detail-placeholder');
+      const dlBtn=document.getElementById('detail-download');
+      const numBadge=document.getElementById('detail-img-num');
+
+      if (entry.image_url) {
+        imgEl.src=entry.image_url; imgEl.style.display='block'; phEl.style.display='none';
+        dlBtn.href=entry.image_url; dlBtn.style.display='inline-flex';
+      } else {
+        imgEl.style.display='none';
+        phEl.innerHTML = PLACEHOLDER_IMAGE_URL ? `<img src="${esc(PLACEHOLDER_IMAGE_URL)}" style="max-width:100%;max-height:520px;object-fit:contain"/>` : (PLACEHOLDER_EMOJI||'💅');
+        phEl.style.display='flex'; dlBtn.style.display='none';
       }
-      const div = document.createElement('div');
-      div.className = 'entry-img-placeholder';
-      div.textContent = PLACEHOLDER_EMOJI || '💅';
-      return div;
+      numBadge.textContent = entry.ui_order ? '#'+entry.ui_order : '';
+
+      document.getElementById('detail-num-badge').textContent = entry.ui_order ? 'Entry #'+entry.ui_order : '';
+      document.getElementById('detail-subject').textContent   = entry.subject;
+      document.getElementById('detail-text').textContent      = entry.text || '';
+
+      const hEl=document.getElementById('detail-hashtags'); hEl.innerHTML='';
+      (entry.hashtags||[]).forEach(tag=>{
+        const t=document.createElement('span'); t.className='detail-hashtag'; t.textContent=tag;
+        t.addEventListener('click',()=>{ closeDetail(); setTimeout(()=>setFilter(tag),100); });
+        hEl.appendChild(t);
+      });
+
+      renderDetailVotes(entry);
+
+      const metaEl=document.getElementById('detail-meta-row'); metaEl.innerHTML='';
+      if (entry.is_mean_whirls){ const b=document.createElement('span'); b.className='badge-mw'; b.innerHTML=SCOOP_SVG+'MeanWhirls'; metaEl.appendChild(b); }
+      else { const a=document.createElement('span'); a.className='entry-author'; a.innerHTML=`by <strong>${esc(entry.display_author)}</strong>`; metaEl.appendChild(a); }
+      const eb=document.createElement('button'); eb.className='detail-edit-btn'; eb.textContent='✏️ Edit';
+      eb.addEventListener('click',()=>openEditModal(entry,false)); metaEl.appendChild(eb);
+
+      const shareUrl=window.location.origin+window.location.pathname+'#entry-'+entry.id;
+      const enc=encodeURIComponent(shareUrl);
+      const txt=encodeURIComponent('Check out this Mean Whirls Burn Book entry: '+entry.subject);
+      document.getElementById('share-url').value=shareUrl;
+      document.getElementById('share-fb').href=`https://www.facebook.com/sharer/sharer.php?u=${enc}`;
+      document.getElementById('share-tw').href=`https://twitter.com/intent/tweet?url=${enc}&text=${txt}`;
     }
 
-    function makeMWBadge() {
-      const span = document.createElement('span');
-      span.className = 'badge-mw';
-      span.innerHTML = SCOOP_SVG + 'MeanWhirls';
-      return span;
+    function closeDetail(){
+      document.getElementById('book-grid-view').style.display='block';
+      document.getElementById('detail-page').style.display='none';
+      currentDetailEntry=null;
+      history.replaceState(null,'',window.location.pathname);
+    }
+    function copyShareUrl(){ navigator.clipboard.writeText(document.getElementById('share-url').value).then(()=>showToast('Link copied! 💗')); }
+
+    function renderDetailVotes(entry){
+      const vc=allVoteCounts[entry.id]||{up:0,down:0};
+      const mv=myVotes[entry.id]||0;
+      const score=vc.up-vc.down;
+      const vEl=document.getElementById('detail-vote-row'); vEl.innerHTML='';
+      const upBtn=document.createElement('button');
+      upBtn.className='detail-vote-btn'+(mv===1?' voted-up':'');
+      upBtn.innerHTML=`👍 <span id="dv-up">${vc.up}</span>`;
+      upBtn.addEventListener('click',()=>castVote(entry.id,1,true));
+      const downBtn=document.createElement('button');
+      downBtn.className='detail-vote-btn'+(mv===-1?' voted-down':'');
+      downBtn.innerHTML=`👎 <span id="dv-down">${vc.down}</span>`;
+      downBtn.addEventListener('click',()=>castVote(entry.id,-1,true));
+      const scoreEl=document.createElement('span'); scoreEl.className='detail-vote-score'; scoreEl.id='dv-score';
+      scoreEl.textContent=(score>0?'+':'')+score;
+      vEl.appendChild(upBtn); vEl.appendChild(downBtn); vEl.appendChild(scoreEl);
+    }
+
+    // ── Filter ────────────────────────────────────────────────
+    function setFilter(tag){
+      activeFilter=tag;
+      document.getElementById('filter-clear').style.display=tag?'inline':'none';
+      document.querySelectorAll('.filter-tag').forEach(el=>el.classList.toggle('active',el.dataset.tag===tag));
+      renderEntries(tag?allEntries.filter(e=>(e.hashtags||[]).includes(tag)):allEntries);
+    }
+    function clearFilter(){ setFilter(null); }
+    function buildFilterBar(entries){
+      const counts={};
+      entries.forEach(e=>(e.hashtags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;}));
+      const tags=Object.keys(counts).sort();
+      const bar=document.getElementById('filter-bar');
+      const wrap=document.getElementById('filter-tags');
+      if (!tags.length){ bar.style.display='none'; return; }
+      bar.style.display='flex'; wrap.innerHTML='';
+      tags.forEach(tag=>{
+        const el=document.createElement('span'); el.className='filter-tag'; el.dataset.tag=tag;
+        el.textContent=`${tag} (${counts[tag]})`;
+        el.addEventListener('click',()=>setFilter(activeFilter===tag?null:tag));
+        wrap.appendChild(el);
+      });
+    }
+
+    // ── Placeholder ───────────────────────────────────────────
+    function makePlaceholder(num){
+      if (PLACEHOLDER_IMAGE_URL){
+        const wrap=document.createElement('div'); wrap.className='entry-img-wrap';
+        if(num){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+num;wrap.appendChild(n);}
+        const img=document.createElement('img'); img.className='entry-img'; img.src=PLACEHOLDER_IMAGE_URL; img.style.objectFit='contain';
+        wrap.appendChild(img); return wrap;
+      }
+      const div=document.createElement('div'); div.className='entry-img-placeholder';
+      if(num){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+num;div.appendChild(n);}
+      div.appendChild(document.createTextNode(PLACEHOLDER_EMOJI||'💅'));
+      return div;
+    }
+    function makeMWBadge(){ const s=document.createElement('span'); s.className='badge-mw'; s.innerHTML=SCOOP_SVG+'MeanWhirls'; return s; }
+
+    // ── Voting ────────────────────────────────────────────────
+    async function castVote(entryId, vote, isDetail){
+      const current=myVotes[entryId];
+      const newVote=(current===vote)?null:vote;
+      try {
+        const ipHash=await getIpHash();
+        if (newVote===null){ await sbDelete('votes',`entry_id=eq.${entryId}&ip_hash=eq.${ipHash}`); delete myVotes[entryId]; }
+        else { await sbUpsert('votes',{entry_id:entryId,ip_hash:ipHash,vote:newVote},'entry_id,ip_hash'); myVotes[entryId]=newVote; }
+        localStorage.setItem('mw_votes',JSON.stringify(myVotes));
+        const votes=await sbGet('votes',`entry_id=eq.${entryId}&select=vote`);
+        const up=votes.filter(v=>v.vote===1).length;
+        const down=votes.filter(v=>v.vote===-1).length;
+        allVoteCounts[entryId]={up,down};
+        const mv=myVotes[entryId]||0;
+        const upEl=document.querySelector(`[data-vote-up="${entryId}"]`);
+        const downEl=document.querySelector(`[data-vote-down="${entryId}"]`);
+        const scoreEl=document.querySelector(`[data-vote-score="${entryId}"]`);
+        if(upEl){upEl.className='vote-btn'+(mv===1?' voted-up':'');upEl.querySelector('span').textContent=up;}
+        if(downEl){downEl.className='vote-btn'+(mv===-1?' voted-down':'');downEl.querySelector('span').textContent=down;}
+        if(scoreEl){const s=up-down;scoreEl.textContent=(s>0?'+':'')+s;}
+        if(isDetail&&currentDetailEntry?.id===entryId) renderDetailVotes({...currentDetailEntry});
+      } catch(e){ showToast('Vote failed — try again.'); }
+    }
+
+    function makeVoteRow(entry){
+      const vc=allVoteCounts[entry.id]||{up:0,down:0};
+      const mv=myVotes[entry.id]||0;
+      const score=vc.up-vc.down;
+      const row=document.createElement('div'); row.className='vote-row';
+      const upBtn=document.createElement('button');
+      upBtn.className='vote-btn'+(mv===1?' voted-up':''); upBtn.dataset.voteUp=entry.id;
+      upBtn.innerHTML=`👍 <span>${vc.up}</span>`;
+      upBtn.addEventListener('click',e=>{e.stopPropagation();castVote(entry.id,1,false);});
+      const downBtn=document.createElement('button');
+      downBtn.className='vote-btn'+(mv===-1?' voted-down':''); downBtn.dataset.voteDown=entry.id;
+      downBtn.innerHTML=`👎 <span>${vc.down}</span>`;
+      downBtn.addEventListener('click',e=>{e.stopPropagation();castVote(entry.id,-1,false);});
+      const scoreEl=document.createElement('span'); scoreEl.className='vote-score'; scoreEl.dataset.voteScore=entry.id;
+      scoreEl.textContent=(score>0?'+':'')+score;
+      row.appendChild(upBtn); row.appendChild(downBtn); row.appendChild(scoreEl);
+      return row;
     }
 
     // ── Burn Book ─────────────────────────────────────────────
-    function renderEntries(entries) {
-      const el = document.getElementById('entries-container');
-      if (!entries.length) {
-        el.innerHTML = `<div class="empty"><div class="empty-icon">📓</div><h3>The burn book is empty</h3><p style="font-size:.85rem">No approved entries yet. Submit one!</p></div>`;
+    async function loadEntries(){
+      document.getElementById('entries-container').innerHTML='<div class="loading-wrap"><div class="spinner"></div></div>';
+      try {
+        const [entries,votes]=await Promise.all([
+          sbGet('entries','status=eq.approved&hidden=eq.false&order=ui_order.asc.nullslast,created_at.asc'),
+          sbGet('votes','select=entry_id,vote')
+        ]);
+        allVoteCounts={};
+        votes.forEach(v=>{
+          if(!allVoteCounts[v.entry_id])allVoteCounts[v.entry_id]={up:0,down:0};
+          if(v.vote===1)allVoteCounts[v.entry_id].up++;
+          if(v.vote===-1)allVoteCounts[v.entry_id].down++;
+        });
+        allEntries=entries;
+        buildFilterBar(entries);
+        renderEntries(activeFilter?entries.filter(e=>(e.hashtags||[]).includes(activeFilter)):entries);
+      } catch(err){
+        document.getElementById('entries-container').innerHTML=`<div class="empty"><div class="empty-icon">😬</div><h3>Could not load entries</h3><p>${esc(err.message)}</p></div>`;
+      }
+    }
+
+    function renderEntries(entries){
+      const el=document.getElementById('entries-container');
+      if(!entries.length){
+        el.innerHTML=`<div class="empty"><div class="empty-icon">📓</div><h3>The burn book is empty</h3><p style="font-size:.85rem">${activeFilter?'No entries with '+activeFilter:'No approved entries yet. Submit one!'}</p></div>`;
         return;
       }
-      const grid = document.createElement('div');
-      grid.className = 'entries-grid';
-      entries.forEach((e, i) => {
-        const card = document.createElement('div');
-        card.className = 'entry-card';
-        card.style.animationDelay = (i * 0.06) + 's';
+      const grid=document.createElement('div'); grid.className='entries-grid';
+      entries.forEach((e,i)=>{
+        const card=document.createElement('div'); card.className='entry-card'; card.style.animationDelay=(i*0.05)+'s';
+        card.addEventListener('click',()=>openDetail(e));
+        if(e.image_url){
+          const wrap=document.createElement('div'); wrap.className='entry-img-wrap';
+          if(e.ui_order){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+e.ui_order;wrap.appendChild(n);}
+          const img=document.createElement('img'); img.className='entry-img'; img.src=e.image_url; img.alt=e.subject;
+          wrap.appendChild(img); card.appendChild(wrap);
+        } else { card.appendChild(makePlaceholder(e.ui_order)); }
 
-        // Image
-        if (e.imageUrl) {
-          const wrap = document.createElement('div');
-          wrap.className = 'entry-img-wrap';
-          const img = document.createElement('img');
-          img.className = 'entry-img'; img.src = e.imageUrl; img.alt = e.subject;
-          const overlay = document.createElement('div');
-          overlay.className = 'entry-img-overlay';
-          overlay.innerHTML = '<span class="entry-img-overlay-icon">🔍</span>';
-          wrap.appendChild(img); wrap.appendChild(overlay);
-          wrap.addEventListener('click', () => openLightbox(e.imageUrl));
-          card.appendChild(wrap);
-        } else {
-          card.appendChild(makePlaceholder());
+        const body=document.createElement('div'); body.className='entry-body';
+        body.innerHTML=`<div class="entry-subject">${esc(e.subject)}</div>`;
+        if(e.text){ const p=document.createElement('p'); p.className='entry-text'; p.textContent=e.text; body.appendChild(p); }
+        if(e.hashtags&&e.hashtags.length){
+          const tagRow=document.createElement('div'); tagRow.className='entry-hashtags';
+          e.hashtags.forEach(tag=>{
+            const t=document.createElement('span'); t.className='entry-hashtag'; t.textContent=tag;
+            t.addEventListener('click',ev=>{ev.stopPropagation();setFilter(tag);}); tagRow.appendChild(t);
+          });
+          body.appendChild(tagRow);
         }
-
-        // Body
-        const body = document.createElement('div');
-        body.className = 'entry-body';
-
-        const meta = document.createElement('div');
-        meta.className = 'entry-meta';
-
-        if (e.isMeanWhirls) {
-          meta.appendChild(makeMWBadge());
-        } else {
-          const auth = document.createElement('span');
-          auth.className = 'entry-author';
-          auth.innerHTML = `by <strong>${esc(e.displayAuthor)}</strong>`;
-          meta.appendChild(auth);
-        }
-
-        // Edit button
-        const editBtn = document.createElement('button');
-        editBtn.className = 'edit-btn';
-        editBtn.textContent = '✏️ Edit';
-        editBtn.addEventListener('click', () => openEditModal(e));
-        meta.appendChild(editBtn);
-
-        body.innerHTML = `<div class="entry-subject">${esc(e.subject)}</div><p class="entry-text">${esc(e.text)}</p>`;
-        body.appendChild(meta);
         card.appendChild(body);
-        grid.appendChild(card);
+
+        const footer=document.createElement('div'); footer.className='entry-footer';
+        footer.addEventListener('click',ev=>ev.stopPropagation());
+        footer.appendChild(makeVoteRow(e));
+        const meta=document.createElement('div'); meta.className='entry-meta';
+        if(e.is_mean_whirls) meta.appendChild(makeMWBadge());
+        else{ const a=document.createElement('span'); a.className='entry-author'; a.innerHTML=`by <strong>${esc(e.display_author)}</strong>`; meta.appendChild(a); }
+        const eb=document.createElement('button'); eb.className='edit-btn'; eb.textContent='✏️'; eb.title='Edit';
+        eb.addEventListener('click',ev=>{ev.stopPropagation();openEditModal(e,false);}); meta.appendChild(eb);
+        footer.appendChild(meta); card.appendChild(footer); grid.appendChild(card);
       });
-      el.innerHTML = '';
-      el.appendChild(grid);
+      el.innerHTML=''; el.appendChild(grid);
     }
 
-    async function loadEntries() {
-      document.getElementById('entries-container').innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
+    // ── Submit ────────────────────────────────────────────────
+    let selectedFile=null;
+    document.getElementById('f-image').addEventListener('change',function(){if(this.files[0])handleFile(this.files[0],'upload-text','upload-preview',f=>selectedFile=f);});
+    document.getElementById('upload-zone').addEventListener('dragover',e=>e.preventDefault());
+    document.getElementById('upload-zone').addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0],'upload-text','upload-preview',f=>selectedFile=f);});
+    function handleFile(file,textId,previewId,setter){
+      setter(file); document.getElementById(textId).textContent=file.name;
+      const r=new FileReader(); r.onload=ev=>{const p=document.getElementById(previewId);p.src=ev.target.result;p.style.display='block';}; r.readAsDataURL(file);
+    }
+    function showStatus(type,msg){const el=document.getElementById('submit-status');el.className='alert alert-'+type;el.textContent=msg;el.style.display='block';}
+
+    document.getElementById('submit-btn').addEventListener('click',async()=>{
+      const subject=document.getElementById('f-subject').value.trim();
+      const text=document.getElementById('f-text').value.trim();
+      const submitter=document.getElementById('f-submitter').value.trim();
+      const anonymous=document.getElementById('f-anonymous').checked;
+      const phone=document.getElementById('f-phone').value.trim();
+      const hashtagRaw=document.getElementById('f-hashtags').value.trim();
+      if(!subject){showStatus('error','Who are we burning? Subject is required.');return;}
+      if(!submitter){showStatus('error','Your name is required.');return;}
+      const btn=document.getElementById('submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
+      document.getElementById('submit-status').style.display='none';
+      const isCode=submitter.toLowerCase()===CODENAME.toLowerCase();
+      const displayAuthor=isCode?'MeanWhirls':(anonymous?'Anonymous':submitter);
+      const hashtags=parseHashtags(hashtagRaw);
       try {
-        const data = await apiGet({ action: 'getApproved' });
-        renderEntries(data.entries || []);
-      } catch(err) {
-        document.getElementById('entries-container').innerHTML = `<div class="empty"><div class="empty-icon">😬</div><h3>Could not load entries</h3><p style="font-size:.85rem">Error: ${esc(err.message)}</p></div>`;
-      }
-    }
-
-    // Fetch config (placeholder settings) from the sheet, then load entries
-    async function initConfig() {
-      try {
-        const cfg = await apiGet({ action: 'getConfig' });
-        if (cfg.placeholderEmoji)    PLACEHOLDER_EMOJI     = cfg.placeholderEmoji;
-        if (cfg.placeholderImageUrl) PLACEHOLDER_IMAGE_URL = cfg.placeholderImageUrl;
-      } catch(e) {
-        // silently fall back to hardcoded defaults
-      }
-      loadEntries();
-    }
-    initConfig();
-
-    // ── Submit form ───────────────────────────────────────────
-    let selectedFile = null;
-
-    document.getElementById('f-image').addEventListener('change', function() { handleImageFile(this.files[0]); });
-    document.getElementById('upload-zone').addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.style.borderColor='var(--pink)'; });
-    document.getElementById('upload-zone').addEventListener('dragleave', e => { e.currentTarget.style.borderColor=''; });
-    document.getElementById('upload-zone').addEventListener('drop', e => {
-      e.preventDefault(); e.currentTarget.style.borderColor='';
-      handleImageFile(e.dataTransfer.files[0]);
-    });
-    function handleImageFile(file) {
-      if (!file) return;
-      selectedFile = file;
-      document.getElementById('upload-text').textContent = file.name;
-      const reader = new FileReader();
-      reader.onload = ev => { const p = document.getElementById('upload-preview'); p.src = ev.target.result; p.style.display = 'block'; };
-      reader.readAsDataURL(file);
-    }
-
-    function showStatus(type, msg) {
-      const el = document.getElementById('submit-status');
-      el.className = 'alert alert-' + type; el.textContent = msg; el.style.display = 'block';
-    }
-
-    document.getElementById('submit-btn').addEventListener('click', async () => {
-      const subject   = document.getElementById('f-subject').value.trim();
-      const text      = document.getElementById('f-text').value.trim();
-      const submitter = document.getElementById('f-submitter').value.trim();
-      const anonymous = document.getElementById('f-anonymous').checked;
-      const phone     = document.getElementById('f-phone').value.trim();
-
-      if (!subject)   { showStatus('error', 'Who are we burning? Their name is required.'); return; }
-      if (!text)      { showStatus('error', 'The burn is required. Give us something to work with.'); return; }
-      if (!submitter) { showStatus('error', 'Your name is required (even if displayed as Anonymous).'); return; }
-
-      const btn = document.getElementById('submit-btn');
-      btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Submitting...';
-      document.getElementById('submit-status').style.display = 'none';
-
-      const displayAuthor = anonymous ? 'Anonymous' : submitter;
-      let imageBase64 = '', imageName = '';
-      if (selectedFile) { imageBase64 = await readFileBase64(selectedFile); imageName = selectedFile.name; }
-
-      try {
-        await apiPost({ action:'submit', subject, text, submitter, phone, displayAuthor, imageBase64, imageName });
-        showStatus('success', '✅ Entry submitted! It will appear after moderation. On Wednesdays we wear pink. 💗');
-        resetForm();
-      } catch(err) {
-        showStatus('error', 'Something went wrong submitting. Please try again.');
-      }
-      btn.disabled = false; btn.innerHTML = '💗 Submit to the Burn Book';
+        let imageUrl='';
+        if(selectedFile)imageUrl=await uploadImage(selectedFile);
+        const existing=await sbGet('entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');
+        const nextOrder=((existing[0]?.ui_order)||0)+1;
+        await sbPost('entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,phone,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false});
+        showStatus('success',isCode?'🏒 Mean Whirls entry posted!':'✅ Submitted! Appears after moderation. 💗');
+        resetSubmitForm();
+      }catch(err){showStatus('error','Something went wrong: '+err.message);}
+      btn.disabled=false;btn.innerHTML='💗 Submit to the Burn Book';
     });
 
-    function resetForm() {
-      ['f-subject','f-text','f-submitter','f-phone'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('f-anonymous').checked = false;
-      selectedFile = null;
-      document.getElementById('upload-text').textContent = 'Drag & drop or click to upload';
-      const p = document.getElementById('upload-preview'); p.style.display = 'none'; p.src = '';
-      document.getElementById('f-image').value = '';
+    function resetSubmitForm(){
+      ['f-subject','f-text','f-submitter','f-phone','f-hashtags'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('f-anonymous').checked=false;selectedFile=null;
+      document.getElementById('upload-text').textContent='Drag & drop or click to upload';
+      const p=document.getElementById('upload-preview');p.style.display='none';p.src='';
+      document.getElementById('f-image').value='';
     }
+
+    // ── Delete request modal ──────────────────────────────────
+    const deleteModal=document.getElementById('delete-modal');
+    function openDeleteRequestModal(entry){
+      if(!entry)return;
+      document.getElementById('del-entry-id').value=entry.id;
+      document.getElementById('del-name').value='';
+      document.getElementById('del-reason').value='';
+      document.getElementById('del-phone').value='';
+      document.getElementById('del-status').style.display='none';
+      deleteModal.classList.add('open'); document.body.style.overflow='hidden';
+    }
+    function closeDeleteModal(){ deleteModal.classList.remove('open'); document.body.style.overflow=''; }
+    document.getElementById('delete-modal-close').addEventListener('click',closeDeleteModal);
+    deleteModal.addEventListener('click',e=>{if(e.target===deleteModal)closeDeleteModal();});
+
+    document.getElementById('del-submit-btn').addEventListener('click',async()=>{
+      const entryId=document.getElementById('del-entry-id').value;
+      const name=document.getElementById('del-name').value.trim();
+      const reason=document.getElementById('del-reason').value.trim();
+      const phone=document.getElementById('del-phone').value.trim();
+      if(!name){showDelStatus('error','Your name is required.');return;}
+      if(!reason){showDelStatus('error','Please provide a reason for removal.');return;}
+      const btn=document.getElementById('del-submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
+      document.getElementById('del-status').style.display='none';
+
+      const isCode=name.toLowerCase()===CODENAME.toLowerCase();
+      try {
+        // Immediately hide the entry
+        await sbPatch('entries',`id=eq.${entryId}`,{hidden:true});
+        if(isCode){
+          // Codename = permanent delete immediately
+          await sbDelete('entries',`id=eq.${entryId}`);
+          showDelStatus('success','✅ Entry removed immediately.');
+          setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500);
+        } else {
+          // Log the request
+          await sbPost('deletion_requests',{entry_id:entryId,reason,phone});
+          showDelStatus('success','✅ Request submitted. The entry is now hidden while we review it. Thank you.');
+          setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},2500);
+        }
+      }catch(err){showDelStatus('error','Something went wrong: '+err.message);}
+      btn.disabled=false;btn.innerHTML='🗑 Submit Removal Request';
+    });
+    function showDelStatus(type,msg){const el=document.getElementById('del-status');el.className='alert alert-'+type;el.textContent=msg;el.style.display='block';}
+
+    // ── Edit modal ────────────────────────────────────────────
+    const editModal=document.getElementById('edit-modal');
+    let editImageFile=null;
+    let editAdminMode=false;
+
+    function openEditModal(entry,isAdmin){
+      editAdminMode=!!isAdmin;
+      document.getElementById('edit-entry-id').value        =entry.id;
+      document.getElementById('edit-subject').value         =entry.subject;
+      document.getElementById('edit-text').value            =entry.text||'';
+      document.getElementById('edit-hashtags').value        =(entry.hashtags||[]).join(' ');
+      document.getElementById('edit-submitter').value       ='';
+      document.getElementById('edit-anonymous').checked     =entry.display_author==='Anonymous';
+      document.getElementById('edit-existing-image').value  =entry.image_url||'';
+      document.getElementById('edit-orig-subject').value    =entry.subject;
+      document.getElementById('edit-orig-text').value       =entry.text||'';
+      document.getElementById('edit-orig-hashtags').value   =(entry.hashtags||[]).sort().join(' ');
+      document.getElementById('edit-status').style.display  ='none';
+      editImageFile=null;
+      document.getElementById('edit-upload-text').textContent='Drag & drop or click to replace';
+      document.getElementById('edit-upload-preview').style.display='none';
+      document.getElementById('edit-image').value='';
+      const noteEl=document.getElementById('edit-modal-note');
+      const subGrp=document.getElementById('edit-submitter-group');
+      const btn=document.getElementById('edit-submit-btn');
+      if(isAdmin){noteEl.textContent='✏️ Admin edit — applied immediately.';subGrp.style.display='none';btn.textContent='✏️ Apply Now';}
+      else{noteEl.textContent='✏️ Only edit your own entry. Changes go through moderation. Hashtag-only changes are applied immediately.';subGrp.style.display='block';btn.innerHTML='💗 Submit Edit for Review';}
+      const curImg=document.getElementById('edit-current-img');
+      if(entry.image_url){curImg.src=entry.image_url;curImg.style.display='block';}else{curImg.style.display='none';}
+      editModal.classList.add('open');document.body.style.overflow='hidden';
+    }
+    function closeEditModal(){editModal.classList.remove('open');document.body.style.overflow='';}
+    document.getElementById('edit-modal-close').addEventListener('click',closeEditModal);
+    editModal.addEventListener('click',e=>{if(e.target===editModal)closeEditModal();});
+    document.getElementById('edit-image').addEventListener('change',function(){if(this.files[0])handleEditImage(this.files[0]);});
+    document.getElementById('edit-upload-zone').addEventListener('dragover',e=>e.preventDefault());
+    document.getElementById('edit-upload-zone').addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])handleEditImage(e.dataTransfer.files[0]);});
+    function handleEditImage(file){
+      editImageFile=file;document.getElementById('edit-upload-text').textContent=file.name;
+      const r=new FileReader();r.onload=ev=>{const p=document.getElementById('edit-upload-preview');p.src=ev.target.result;p.style.display='block';document.getElementById('edit-current-img').style.display='none';};r.readAsDataURL(file);
+    }
+
+    document.getElementById('edit-submit-btn').addEventListener('click',async()=>{
+      const entryId    =document.getElementById('edit-entry-id').value;
+      const subject    =document.getElementById('edit-subject').value.trim();
+      const text       =document.getElementById('edit-text').value.trim();
+      const submitter  =document.getElementById('edit-submitter').value.trim();
+      const anonymous  =document.getElementById('edit-anonymous').checked;
+      const hashtagRaw =document.getElementById('edit-hashtags').value.trim();
+      const existingImg=document.getElementById('edit-existing-image').value;
+      const origSubject=document.getElementById('edit-orig-subject').value;
+      const origText   =document.getElementById('edit-orig-text').value;
+      const origTagsStr=document.getElementById('edit-orig-hashtags').value;
+
+      if(!subject){showEditStatus('error','Burn victim name required.');return;}
+      if(!editAdminMode&&!submitter){showEditStatus('error','Your name is required.');return;}
+
+      const btn=document.getElementById('edit-submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
+      const hashtags=parseHashtags(hashtagRaw);
+      const origTags=origTagsStr?origTagsStr.split(' ').filter(Boolean):[];
+      const displayAuthor=anonymous?'Anonymous':(submitter||'MeanWhirls');
+
+      // Detect if ONLY hashtags changed (no subject, text, image change)
+      const onlyTagsChanged = !editImageFile &&
+        subject===origSubject &&
+        text===origText &&
+        !arraysEqual(hashtags,origTags);
+      const nothingChanged = !editImageFile &&
+        subject===origSubject &&
+        text===origText &&
+        arraysEqual(hashtags,origTags);
+
+      if(nothingChanged){showEditStatus('error','No changes detected.');btn.disabled=false;btn.innerHTML='💗 Submit Edit for Review';return;}
+
+      try {
+        let imageUrl=existingImg;
+        if(editImageFile)imageUrl=await uploadImage(editImageFile);
+
+        if(editAdminMode){
+          await sbPatch('entries',`id=eq.${entryId}`,{subject,text,image_url:imageUrl,display_author:displayAuthor,hashtags});
+          showEditStatus('success','✅ Edit applied!');
+          setTimeout(()=>{closeEditModal();loadEntries();if(currentDetailEntry?.id===entryId)openDetail({...currentDetailEntry,subject,text,image_url:imageUrl,display_author:displayAuthor,hashtags});},1500);
+        } else {
+          const isCode=submitter.toLowerCase()===CODENAME.toLowerCase();
+          if(isCode||onlyTagsChanged){
+            // Auto-apply: codename OR hashtag-only change
+            const patch={hashtags};
+            if(!onlyTagsChanged){patch.subject=subject;patch.text=text;patch.image_url=imageUrl;}
+            if(isCode){patch.display_author='MeanWhirls';patch.is_mean_whirls=true;}
+            await sbPatch('entries',`id=eq.${entryId}`,patch);
+            showEditStatus('success',onlyTagsChanged?'✅ Hashtags updated!':'🏒 Mean Whirls edit applied!');
+            setTimeout(()=>{closeEditModal();loadEntries();},1500);
+          } else {
+            await sbPost('pending_edits',{entry_id:entryId,subject,text,image_url:imageUrl,submitter,display_author:displayAuthor,hashtags});
+            showEditStatus('success','✅ Edit submitted for review!');
+            setTimeout(closeEditModal,3000);
+          }
+        }
+      }catch(err){showEditStatus('error','Something went wrong: '+err.message);}
+      btn.disabled=false;btn.textContent=editAdminMode?'✏️ Apply Now':'💗 Submit Edit for Review';
+    });
+    function showEditStatus(type,msg){const el=document.getElementById('edit-status');el.className='alert alert-'+type;el.textContent=msg;el.style.display='block';}
 
     // ── Admin ─────────────────────────────────────────────────
-    document.getElementById('admin-pass').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('admin-login-btn').click();
-    });
-    document.getElementById('admin-login-btn').addEventListener('click', () => {
-      if (document.getElementById('admin-pass').value === ADMIN_PASSWORD) {
-        document.getElementById('admin-login-box').style.display = 'none';
-        document.getElementById('admin-panel').style.display = 'block';
-        loadAdminEntries();
-        loadPendingEdits();
-      } else {
-        alert('Wrong password. So not fetch.');
-      }
+    document.addEventListener('keydown',e=>{
+      if(e.key!=='Escape')return;
+      if(deleteModal.classList.contains('open')){closeDeleteModal();return;}
+      if(editModal.classList.contains('open')){closeEditModal();return;}
+      if(document.getElementById('detail-page').style.display!=='none'){closeDetail();}
     });
 
-    async function loadAdminEntries() {
-      const tbody = document.getElementById('admin-tbody');
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1.5rem">Loading...</td></tr>';
+    document.getElementById('admin-pass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('admin-login-btn').click();});
+    document.getElementById('admin-login-btn').addEventListener('click',async()=>{
+      const entered=document.getElementById('admin-pass').value;
       try {
-        const data = await apiGet({ action:'getAll', pass:ADMIN_PASSWORD });
-        if (data.error) throw new Error(data.error);
-        renderAdminEntries(data.entries || []);
-      } catch(err) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--deep-pink);padding:1.5rem">Failed to load: ${esc(err.message)}</td></tr>`;
-      }
+        const cfg=await sbGet('config','key=eq.adminpass');
+        const stored=cfg[0]?.value||ADMIN_PASSWORD;
+        if(entered===stored){unlockAdmin();}else{alert('Wrong password. So not fetch.');}
+      }catch{if(entered===ADMIN_PASSWORD){unlockAdmin();}else{alert('Wrong password. So not fetch.');}}
+    });
+    function unlockAdmin(){
+      document.getElementById('admin-login-box').style.display='none';
+      document.getElementById('admin-panel').style.display='block';
+      loadDeletionRequests();loadPendingEdits();loadAdminEntries();
     }
 
-    function renderAdminEntries(entries) {
-      const tbody = document.getElementById('admin-tbody');
-      if (!entries.length) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1.5rem">No entries yet.</td></tr>';
-        return;
-      }
-      tbody.innerHTML = '';
-      entries.forEach(e => {
-        const tr = document.createElement('tr');
-        const authorCell = e.isMeanWhirls
-          ? `<span class="badge-mw">${SCOOP_SVG}MeanWhirls</span>`
-          : `<span style="font-size:.82rem">${esc(e.displayAuthor)}</span>`;
-        const imgCell = e.imageUrl
-          ? `<img src="${esc(e.imageUrl)}" alt="" onclick="openLightbox('${esc(e.imageUrl)}')" />`
-          : '—';
-
-        const approveBtn   = e.status !== 'approved'  ? `<button class="admin-action aa-approve"   onclick="moderate('${e.id}','approve')">✓ Approve</button>`   : '';
-        const unapproveBtn = e.status === 'approved'   ? `<button class="admin-action aa-unapprove" onclick="moderate('${e.id}','unapprove')">⏸ Unapprove</button>` : '';
-        const editBtn      = `<button class="admin-action aa-edit" onclick="adminEdit('${e.id}')">✏️ Edit</button>`;
-        const rejectBtn    = `<button class="admin-action aa-reject" onclick="moderate('${e.id}','reject')">✕ Remove</button>`;
-
-        tr.innerHTML = `
-          <td>${imgCell}</td>
-          <td style="font-weight:600">${esc(e.subject)}</td>
-          <td style="max-width:180px;font-size:.78rem;font-style:italic">${esc(e.text)}</td>
-          <td style="font-size:.8rem">${esc(e.submitter)}</td>
-          <td>${authorCell}</td>
-          <td style="font-size:.76rem;color:var(--muted)">${esc(e.phone||'—')}</td>
-          <td><span class="badge badge-${esc(e.status)}">${esc(e.status)}</span></td>
-          <td style="min-width:180px">${approveBtn}${unapproveBtn}${editBtn}${rejectBtn}</td>`;
-        tbody.appendChild(tr);
-      });
+    // ── Deletion requests ─────────────────────────────────────
+    async function loadDeletionRequests(){
+      const tbody=document.getElementById('deletions-tbody');
+      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem">Loading...</td></tr>';
+      try {
+        const reqs=await sbGet('deletion_requests','order=created_at.desc');
+        if(!reqs.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem">No removal requests.</td></tr>';return;}
+        // Get entry details
+        const ids=[...new Set(reqs.map(r=>r.entry_id))];
+        const entries=await sbGet('entries',`id=in.(${ids.join(',')})&select=id,subject,ui_order,hidden`);
+        const entryMap={};entries.forEach(e=>entryMap[e.id]=e);
+        tbody.innerHTML='';
+        reqs.forEach(req=>{
+          const entry=entryMap[req.entry_id]||{};
+          const tr=document.createElement('tr');
+          tr.innerHTML=`
+            <td style="font-weight:700;color:var(--gold)">#${entry.ui_order||'?'}</td>
+            <td style="font-weight:600">${esc(entry.subject||'(deleted)')}</td>
+            <td style="max-width:200px;font-size:.8rem">${esc(req.reason)}</td>
+            <td style="font-size:.78rem;color:var(--muted)">${esc(req.phone||'—')}</td>
+            <td style="font-size:.74rem;color:var(--muted)">${esc(new Date(req.created_at).toLocaleDateString())}</td>
+            <td style="min-width:160px">
+              <button class="admin-action aa-delete" onclick="adminDeleteEntry('${req.entry_id}','${req.id}')">✕ Delete Entry</button>
+              <button class="admin-action aa-restore" onclick="adminRestoreEntry('${req.entry_id}','${req.id}')">↩ Restore</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+      }catch(err){tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--deep-pink);padding:1.5rem">Failed: ${esc(err.message)}</td></tr>`;}
     }
 
-    async function adminEdit(id) {
-      // Fetch the full entry then open the edit modal
+    async function adminDeleteEntry(entryId,reqId){
+      if(!confirm('Permanently delete this entry? This cannot be undone.'))return;
       try {
-        const data = await apiGet({ action:'getEntry', id });
-        if (data.error) throw new Error(data.error);
-        openEditModal(data.entry, true);
-      } catch(err) {
-        alert('Could not load entry: ' + err.message);
-      }
+        await sbDelete('entries',`id=eq.${entryId}`);
+        await sbDelete('deletion_requests',`id=eq.${reqId}`);
+        showToast('Entry deleted.');
+        loadDeletionRequests();loadAdminEntries();
+      }catch(err){alert('Failed: '+err.message);}
     }
-
-    async function moderate(id, decision) {
+    async function adminRestoreEntry(entryId,reqId){
       try {
-        await apiGet({ action:'moderate', id, decision, pass:ADMIN_PASSWORD });
-        loadAdminEntries();
-      } catch { alert('Action failed. Try again.'); }
+        await sbPatch('entries',`id=eq.${entryId}`,{hidden:false});
+        await sbDelete('deletion_requests',`id=eq.${reqId}`);
+        showToast('Entry restored and request dismissed.');
+        loadDeletionRequests();loadAdminEntries();
+      }catch(err){alert('Failed: '+err.message);}
     }
 
     // ── Pending edits ─────────────────────────────────────────
-    async function loadPendingEdits() {
-      const tbody = document.getElementById('edits-tbody');
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1.5rem">Loading...</td></tr>';
+    async function loadPendingEdits(){
+      const tbody=document.getElementById('edits-tbody');
+      tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1.5rem">Loading...</td></tr>';
       try {
-        const data = await apiGet({ action:'getPendingEdits', pass:ADMIN_PASSWORD });
-        if (data.error) throw new Error(data.error);
-        renderPendingEdits(data.edits || []);
-      } catch(err) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--deep-pink);padding:1.5rem">Failed to load: ${esc(err.message)}</td></tr>`;
-      }
+        const edits=await sbGet('pending_edits','order=created_at.desc');
+        if(!edits.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1.5rem">No pending edits.</td></tr>';return;}
+        const ids=[...new Set(edits.map(e=>e.entry_id))];
+        const originals=await sbGet('entries',`id=in.(${ids.join(',')})&select=id,ui_order`);
+        const orderMap={};originals.forEach(o=>orderMap[o.id]=o.ui_order);
+        tbody.innerHTML='';
+        edits.forEach(ed=>{
+          const tr=document.createElement('tr');
+          const imgCell=ed.image_url?`<img src="${esc(ed.image_url)}" style="width:55px;height:42px;object-fit:contain;background:#f0e0e8;border-radius:1px;cursor:zoom-in" />`:'—';
+          const tags=(ed.hashtags||[]).join(' ')||'—';
+          tr.innerHTML=`
+            <td style="font-weight:700;color:var(--gold)">#${orderMap[ed.entry_id]||'?'}</td>
+            <td style="font-weight:600">${esc(ed.subject)}</td>
+            <td style="max-width:160px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td>
+            <td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td>
+            <td>${imgCell}</td>
+            <td style="font-size:.8rem">${esc(ed.submitter)}</td>
+            <td style="font-size:.74rem;color:var(--muted)">${esc(new Date(ed.created_at).toLocaleDateString())}</td>
+            <td>
+              <button class="admin-action aa-accept" onclick='acceptEdit(${JSON.stringify(JSON.stringify(ed))})'>✓ Accept</button>
+              <button class="admin-action aa-reject" onclick="rejectEdit('${ed.id}')">✕ Reject</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+      }catch(err){tbody.innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--deep-pink);padding:1.5rem">Failed: ${esc(err.message)}</td></tr>`;}
+    }
+    async function acceptEdit(jsonStr){
+      const ed=JSON.parse(jsonStr);
+      try {
+        const patch={subject:ed.subject,text:ed.text,image_url:ed.image_url,display_author:ed.display_author};
+        if(ed.hashtags)patch.hashtags=ed.hashtags;
+        await sbPatch('entries',`id=eq.${ed.entry_id}`,patch);
+        await sbDelete('pending_edits',`id=eq.${ed.id}`);
+        loadPendingEdits();loadAdminEntries();
+      }catch(err){alert('Failed: '+err.message);}
+    }
+    async function rejectEdit(id){
+      try{await sbDelete('pending_edits',`id=eq.${id}`);loadPendingEdits();}
+      catch(err){alert('Failed: '+err.message);}
     }
 
-    function renderPendingEdits(edits) {
-      const tbody = document.getElementById('edits-tbody');
-      if (!edits.length) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1.5rem">No pending edits.</td></tr>';
-        return;
-      }
-      tbody.innerHTML = '';
-      edits.forEach(ed => {
-        const tr = document.createElement('tr');
-        const imgCell = ed.imageUrl
-          ? `<img src="${esc(ed.imageUrl)}" alt="" style="width:55px;height:42px;object-fit:cover;cursor:zoom-in;border-radius:1px" onclick="openLightbox('${esc(ed.imageUrl)}')" />`
-          : '(no change)';
-        tr.innerHTML = `
-          <td style="font-size:.75rem;color:var(--muted)">${esc(ed.originalId)}</td>
-          <td style="font-weight:600">${esc(ed.subject)}</td>
-          <td style="max-width:180px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td>
-          <td>${imgCell}</td>
-          <td style="font-size:.8rem">${esc(ed.submitter)}</td>
-          <td style="font-size:.8rem">${esc(ed.displayAuthor)}</td>
-          <td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${esc(ed.submittedAt)}</td>
-          <td style="min-width:160px">
-            <button class="admin-action aa-accept" onclick="moderateEdit('${esc(ed.editId)}','accept')">✓ Accept</button>
-            <button class="admin-action aa-reject" onclick="moderateEdit('${esc(ed.editId)}','reject')">✕ Reject</button>
-          </td>`;
-        tbody.appendChild(tr);
-      });
+    // ── All entries ───────────────────────────────────────────
+    async function loadAdminEntries(){
+      const tbody=document.getElementById('admin-tbody');
+      tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:1.5rem">Loading...</td></tr>';
+      try {
+        const entries=await sbGet('entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
+        if(!entries.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:1.5rem">No entries yet.</td></tr>';return;}
+        tbody.innerHTML='';
+        entries.forEach(e=>{
+          const tr=document.createElement('tr');
+          // Show masked codename in Displays As column if submitter matches codename
+          const isCodeSubmitter=e.submitter&&e.submitter.toLowerCase()===CODENAME.toLowerCase();
+          const displayAsCell=e.is_mean_whirls
+            ?`<span class="badge-mw">${SCOOP_SVG}MeanWhirls</span>`
+            :`<span style="font-size:.82rem">${esc(e.display_author)}</span>`;
+          const submitterCell=isCodeSubmitter
+            ?`<span style="font-size:.82rem;font-style:italic;color:var(--muted)">${esc(CODENAME_DISPLAY)}</span>`
+            :`<span style="font-size:.8rem">${esc(e.submitter)}</span>`;
+          const imgCell=e.image_url?`<img src="${esc(e.image_url)}" style="object-fit:contain;background:#f0e0e8"/>`:'—';
+          const tags=(e.hashtags||[]).join(' ')||'—';
+          const statusLabel=e.hidden?'hidden':e.status;
+          const approveBtn  =(!e.hidden&&e.status!=='approved')?`<button class="admin-action aa-approve" onclick="adminModerate('${e.id}','approve')">✓ Approve</button>`:'';
+          const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="admin-action aa-unapprove" onclick="adminModerate('${e.id}','unapprove')">⏸ Unapprove</button>`:'';
+          tr.innerHTML=`
+            <td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td>
+            <td>${imgCell}</td>
+            <td style="font-weight:600">${esc(e.subject)}</td>
+            <td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td>
+            <td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td>
+            <td>${submitterCell}</td>
+            <td>${displayAsCell}</td>
+            <td style="font-size:.76rem;color:var(--muted)">${esc(e.phone||'—')}</td>
+            <td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${esc(statusLabel)}</span></td>
+            <td style="min-width:210px">
+              ${approveBtn}${unapproveBtn}
+              <button class="admin-action aa-edit" onclick='adminEditEntry(${JSON.stringify(JSON.stringify(e))})'>✏️ Edit</button>
+              <button class="admin-action aa-reject" onclick="adminModerate('${e.id}','reject')">✕ Remove</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+      }catch(err){tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;color:var(--deep-pink);padding:1.5rem">Failed: ${esc(err.message)}</td></tr>`;}
     }
 
-    async function moderateEdit(editId, decision) {
+    function adminEditEntry(jsonStr){openEditModal(JSON.parse(jsonStr),true);}
+    async function adminModerate(id,decision){
       try {
-        await apiGet({ action:'moderateEdit', editId, decision, pass:ADMIN_PASSWORD });
-        loadPendingEdits();
+        if(decision==='approve')    await sbPatch('entries',`id=eq.${id}`,{status:'approved',hidden:false});
+        else if(decision==='unapprove') await sbPatch('entries',`id=eq.${id}`,{status:'pending'});
+        else await sbDelete('entries',`id=eq.${id}`);
         loadAdminEntries();
-      } catch { alert('Action failed. Try again.'); }
+      }catch(err){alert('Failed: '+err.message);}
     }
+
+    // ── Go ────────────────────────────────────────────────────
+    init();
   </script>
 </body>
 </html>
