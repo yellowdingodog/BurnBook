@@ -17,131 +17,159 @@
       --ink:       #2a1a24;
       --muted:     #8c6678;
       --white:     #ffffff;
-      --shadow:    rgba(200, 30, 90, 0.18);
+      --shadow:    rgba(200,30,90,0.18);
+      --orange:    #ff6d00;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--cream); font-family: 'Raleway', sans-serif; color: var(--ink); min-height: 100vh; }
-    body::before {
-      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 100; opacity: 0.35;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--cream); font-family:'Raleway',sans-serif; color:var(--ink); min-height:100vh; }
+    body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:100; opacity:0.35;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); }
 
     /* ── Hero ── */
-    .hero { background: linear-gradient(135deg, #1a0a12 0%, #3d0f25 40%, #1a0a12 100%); padding: 3rem 2rem 2.5rem; text-align: center; position: relative; overflow: hidden; border-bottom: 3px solid var(--gold); }
-    .hero::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(232,82,122,0.25) 0%, transparent 70%); pointer-events: none; }
-    .hero-eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.35em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem; }
-    .hero-title { font-family: 'Pinyon Script', cursive; font-size: clamp(4rem, 12vw, 8rem); color: #fff; line-height: 0.9; text-shadow: 0 0 60px rgba(232,82,122,0.5), 2px 4px 12px rgba(0,0,0,0.6); position: relative; z-index: 1; cursor: pointer; }
-    .hero-title span { color: var(--pink); }
-    .hero-subtitle { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(0.85rem, 2vw, 1.1rem); color: rgba(255,255,255,0.55); margin-top: 1rem; letter-spacing: 0.08em; }
-    .hero-divider { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
-    .hero-divider::before, .hero-divider::after { content: ''; flex: 1; max-width: 120px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+    .hero { background:linear-gradient(135deg,#1a0a12 0%,#3d0f25 40%,#1a0a12 100%); padding:3rem 2rem 2.5rem; text-align:center; position:relative; overflow:hidden; border-bottom:3px solid var(--gold); }
+    .hero::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 50% 0%,rgba(232,82,122,0.25) 0%,transparent 70%); pointer-events:none; }
+    .hero-eyebrow { font-size:0.7rem; font-weight:600; letter-spacing:0.35em; text-transform:uppercase; color:var(--gold); margin-bottom:0.75rem; }
+    .hero-title { font-family:'Pinyon Script',cursive; font-size:clamp(4rem,12vw,8rem); color:#fff; line-height:0.9; text-shadow:0 0 60px rgba(232,82,122,0.5),2px 4px 12px rgba(0,0,0,0.6); position:relative; z-index:1; cursor:pointer; }
+    .hero-title span { color:var(--pink); }
+    .hero-subtitle { font-family:'Playfair Display',serif; font-style:italic; font-size:clamp(0.85rem,2vw,1.1rem); color:rgba(255,255,255,0.55); margin-top:1rem; letter-spacing:0.08em; }
+    .hero-divider { display:flex; align-items:center; justify-content:center; gap:1rem; margin-top:1.5rem; }
+    .hero-divider::before,.hero-divider::after { content:''; flex:1; max-width:120px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
 
     /* ── Nav ── */
-    .nav { display: flex; justify-content: center; flex-wrap: wrap; background: var(--deep-pink); border-bottom: 2px solid var(--gold); }
-    .nav button { background: none; border: none; padding: 0.85rem 1.5rem; font-family: 'Raleway', sans-serif; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.2s; border-bottom: 3px solid transparent; position: relative; top: 2px; }
-    .nav button:hover { color: #fff; }
-    .nav button.active { color: #fff; border-bottom-color: var(--gold); }
+    .nav { display:flex; justify-content:center; flex-wrap:wrap; background:var(--deep-pink); border-bottom:2px solid var(--gold); }
+    .nav button { background:none; border:none; padding:0.85rem 1.25rem; font-family:'Raleway',sans-serif; font-size:0.72rem; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:rgba(255,255,255,0.7); cursor:pointer; transition:all 0.2s; border-bottom:3px solid transparent; position:relative; top:2px; }
+    .nav button:hover { color:#fff; }
+    .nav button.active { color:#fff; border-bottom-color:var(--gold); }
 
     /* ── Main ── */
-    .main { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem; }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
-    .section-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 900; color: var(--deep-pink); margin-bottom: 0.3rem; }
-    .section-sub { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 1.25rem; }
+    .main { max-width:1100px; margin:0 auto; padding:3rem 1.5rem; }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+    .section-title { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:900; color:var(--deep-pink); margin-bottom:0.3rem; }
+    .section-sub { font-size:0.8rem; color:var(--muted); letter-spacing:0.05em; margin-bottom:1.25rem; }
 
     /* ── Filter bar ── */
-    .filter-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.75rem; align-items: center; }
-    .filter-tag { background: var(--blush); border: 1.5px solid rgba(200,30,90,0.2); border-radius: 20px; padding: 0.3rem 0.85rem; font-size: 0.72rem; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.2s; }
-    .filter-tag:hover, .filter-tag.active { background: var(--deep-pink); border-color: var(--deep-pink); color: #fff; }
-    .filter-clear { font-size: 0.7rem; color: var(--muted); cursor: pointer; text-decoration: underline; }
-    .filter-clear:hover { color: var(--deep-pink); }
+    .filter-bar { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1.75rem; align-items:center; }
+    .filter-tag { background:var(--blush); border:1.5px solid rgba(200,30,90,0.2); border-radius:20px; padding:0.3rem 0.85rem; font-size:0.72rem; font-weight:600; color:var(--muted); cursor:pointer; transition:all 0.2s; }
+    .filter-tag:hover,.filter-tag.active { background:var(--deep-pink); border-color:var(--deep-pink); color:#fff; }
+    .filter-clear { font-size:0.7rem; color:var(--muted); cursor:pointer; text-decoration:underline; }
+    .filter-clear:hover { color:var(--deep-pink); }
 
     /* ── Entry grid ── */
-    .entries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-    .entry-card { background: var(--white); border: 1.5px solid rgba(200,30,90,0.12); border-radius: 2px; overflow: hidden; box-shadow: 4px 6px 24px var(--shadow); transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s; animation: fadeUp 0.5s ease both; position: relative; cursor: pointer; }
-    .entry-card::before { content: ''; position: absolute; top:0; left:0; right:0; height:3px; background: linear-gradient(90deg, var(--pink), var(--gold), var(--pink)); opacity:0; transition: opacity 0.2s; z-index: 1; }
-    .entry-card:hover { transform: translateY(-4px) rotate(0.4deg); box-shadow: 8px 16px 40px var(--shadow); }
-    .entry-card:hover::before { opacity: 1; }
-    @keyframes fadeUp { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: translateY(0); } }
+    .entries-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1.5rem; }
+    .entry-card { background:var(--white); border:1.5px solid rgba(200,30,90,0.12); border-radius:2px; overflow:hidden; box-shadow:4px 6px 24px var(--shadow); transition:transform 0.25s cubic-bezier(.34,1.56,.64,1),box-shadow 0.25s; animation:fadeUp 0.5s ease both; position:relative; cursor:pointer; }
+    .entry-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--pink),var(--gold),var(--pink)); opacity:0; transition:opacity 0.2s; z-index:1; }
+    .entry-card:hover { transform:translateY(-4px) rotate(0.4deg); box-shadow:8px 16px 40px var(--shadow); }
+    .entry-card:hover::before { opacity:1; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
 
-    .entry-img-wrap { position: relative; width: 100%; border-bottom: 1.5px solid rgba(200,30,90,0.1); background: linear-gradient(135deg, #2a1a24, #3d0f25); display: flex; align-items: center; justify-content: center; min-height: 180px; }
-    .entry-img { width: 100%; max-height: 260px; display: block; object-fit: contain; }
-    .entry-img-num { position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(0,0,0,0.55); color: #fff; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; padding: 0.2rem 0.55rem; border-radius: 20px; }
-    .entry-img-placeholder { width:100%; min-height:180px; background: linear-gradient(135deg, var(--blush), #fce4ec); display:flex; align-items:center; justify-content:center; font-size:3.5rem; border-bottom: 1.5px solid rgba(200,30,90,0.1); position:relative; }
-    .entry-img-placeholder img { width:100%; max-height:260px; object-fit:contain; }
+    /* Images */
+    .entry-img-wrap { position:relative; width:100%; border-bottom:1.5px solid rgba(200,30,90,0.1); background:linear-gradient(135deg,#2a1a24,#3d0f25); display:flex; align-items:center; justify-content:center; min-height:180px; }
+    .entry-img { width:100%; max-height:260px; display:block; object-fit:contain; }
+    .entry-img-num { position:absolute; top:8px; left:8px; z-index:2; background:rgba(0,0,0,0.55); color:#fff; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; padding:0.2rem 0.55rem; border-radius:20px; }
+    .entry-img-placeholder { width:100%; min-height:180px; aspect-ratio:4/3; background:linear-gradient(135deg,var(--blush),#fce4ec); display:flex; align-items:center; justify-content:center; font-size:3.5rem; border-bottom:1.5px solid rgba(200,30,90,0.1); position:relative; }
+    .entry-img-placeholder img { width:100%; height:100%; object-fit:contain; }
 
-    .entry-body { padding: 1.1rem 1.25rem 0.6rem; }
-    .entry-subject { font-family: 'Playfair Display', serif; font-size:1.1rem; font-weight:700; color: var(--deep-pink); margin-bottom: 0.45rem; }
-    .entry-text { font-size:0.85rem; line-height:1.6; color: var(--ink); font-style:italic; quotes: '\201C' '\201D'; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-    .entry-text::before { content: open-quote; color: var(--pink); font-size:1.3em; line-height:0; vertical-align:-0.4em; margin-right:2px; }
-    .entry-text::after  { content: close-quote; color: var(--pink); font-size:1.3em; line-height:0; vertical-align:-0.4em; margin-left:2px; }
-    .entry-text:empty::before, .entry-text:empty::after { content: none; }
+    .entry-body { padding:1.1rem 1.25rem 0.6rem; }
+    .entry-subject { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--deep-pink); margin-bottom:0.45rem; }
+    .entry-text { font-size:0.85rem; line-height:1.6; color:var(--ink); font-style:italic; quotes:'\201C' '\201D'; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+    .entry-text::before { content:open-quote; color:var(--pink); font-size:1.3em; line-height:0; vertical-align:-0.4em; margin-right:2px; }
+    .entry-text::after  { content:close-quote; color:var(--pink); font-size:1.3em; line-height:0; vertical-align:-0.4em; margin-left:2px; }
+    .entry-text:empty::before,.entry-text:empty::after { content:none; }
+    .entry-hashtags { display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.6rem; }
+    .entry-hashtag { font-size:0.63rem; font-weight:600; color:var(--deep-pink); background:var(--blush); padding:0.12rem 0.45rem; border-radius:20px; cursor:pointer; transition:all 0.2s; }
+    .entry-hashtag:hover { background:var(--deep-pink); color:#fff; }
 
-    .entry-hashtags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.6rem; }
-    .entry-hashtag { font-size: 0.63rem; font-weight: 600; color: var(--deep-pink); background: var(--blush); padding: 0.12rem 0.45rem; border-radius: 20px; cursor: pointer; transition: all 0.2s; }
-    .entry-hashtag:hover { background: var(--deep-pink); color: #fff; }
+    /* ── Heat vote — compact (card) ── */
+    .entry-footer { display:flex; align-items:center; justify-content:space-between; padding:0.5rem 1.25rem 0.85rem; flex-wrap:wrap; gap:0.4rem; }
+    .heat-compact { display:flex; align-items:center; gap:0.4rem; }
+    .heat-fire-btn { background:none; border:1.5px solid rgba(200,30,90,0.2); border-radius:20px; padding:0.22rem 0.65rem; font-size:0.8rem; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:0.3rem; color:var(--muted); }
+    .heat-fire-btn:hover { border-color:var(--orange); color:var(--orange); }
+    .heat-fire-btn.voted { background:#fff3e0; border-color:var(--orange); color:var(--orange); }
+    .heat-avg { font-size:0.7rem; font-weight:700; color:var(--muted); }
+    .heat-avg.hot { color:var(--orange); }
 
-    .entry-footer { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1.25rem 0.85rem; flex-wrap: wrap; gap: 0.4rem; }
-    .vote-row { display: flex; align-items: center; gap: 0.4rem; }
-    .vote-btn { background: none; border: 1.5px solid rgba(200,30,90,0.2); border-radius: 20px; padding: 0.22rem 0.55rem; font-size: 0.72rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.25rem; color: var(--muted); }
-    .vote-btn:hover { border-color: var(--pink); color: var(--deep-pink); }
-    .vote-btn.voted-up   { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
-    .vote-btn.voted-down { background: #fce4ec; border-color: var(--pink); color: var(--deep-pink); }
-    .vote-score { font-size: 0.7rem; color: var(--muted); font-weight: 600; min-width: 1.5rem; text-align: center; }
+    /* ── Heat vote — full (detail) ── */
+    .heat-full { display:flex; flex-direction:column; gap:0.75rem; }
+    .heat-full-label { font-size:0.72rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--deep-pink); }
+    .heat-scale { display:flex; gap:0.35rem; flex-wrap:wrap; }
+    .heat-pip { width:38px; height:38px; border-radius:50%; border:2px solid rgba(200,30,90,0.2); background:var(--white); font-size:0.78rem; font-weight:700; cursor:pointer; transition:all 0.18s; display:flex; align-items:center; justify-content:center; color:var(--muted); }
+    .heat-pip:hover { border-color:var(--orange); color:var(--orange); transform:scale(1.12); }
+    .heat-pip.selected { background:var(--orange); border-color:var(--orange); color:#fff; transform:scale(1.15); box-shadow:0 2px 10px rgba(255,109,0,0.4); }
+    .heat-pip.range { background:#fff3e0; border-color:#ffb74d; color:#e65100; }
+    .heat-clear { font-size:0.7rem; color:var(--muted); cursor:pointer; text-decoration:underline; align-self:flex-start; }
+    .heat-clear:hover { color:var(--deep-pink); }
+    .heat-result { font-size:1rem; font-weight:700; }
+    .heat-result span { font-size:1.6rem; }
 
-    .entry-meta { display: flex; align-items: center; gap: 0.4rem; }
-    .entry-author { font-size: 0.68rem; color: var(--muted); }
-    .entry-author strong { color: var(--pink); }
-    .badge-mw { display:inline-flex; align-items:center; gap:0.3rem; background: linear-gradient(135deg, var(--deep-pink), var(--pink)); color:#fff; font-size:0.58rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:0.18rem 0.5rem 0.18rem 0.38rem; border-radius:20px; }
+    .entry-meta { display:flex; align-items:center; gap:0.4rem; }
+    .entry-author { font-size:0.68rem; color:var(--muted); }
+    .entry-author strong { color:var(--pink); }
+    .badge-mw { display:inline-flex; align-items:center; gap:0.3rem; background:linear-gradient(135deg,var(--deep-pink),var(--pink)); color:#fff; font-size:0.58rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:0.18rem 0.5rem 0.18rem 0.38rem; border-radius:20px; }
     .badge-mw svg { width:12px; height:12px; flex-shrink:0; }
-    .edit-btn { background: none; border: 1.5px solid rgba(200,30,90,0.2); border-radius: 2px; padding: 0.2rem 0.5rem; font-family: 'Raleway', sans-serif; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: all 0.2s; }
-    .edit-btn:hover { border-color: var(--pink); color: var(--deep-pink); background: var(--blush); }
+    .edit-btn { background:none; border:1.5px solid rgba(200,30,90,0.2); border-radius:2px; padding:0.2rem 0.5rem; font-family:'Raleway',sans-serif; font-size:0.6rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); cursor:pointer; transition:all 0.2s; }
+    .edit-btn:hover { border-color:var(--pink); color:var(--deep-pink); background:var(--blush); }
 
     /* ── Detail page ── */
-    #detail-page { display: none; }
-    .detail-back { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); cursor: pointer; margin-bottom: 1.75rem; border: 1.5px solid rgba(200,30,90,0.2); padding: 0.45rem 1rem; border-radius: 2px; transition: all 0.2s; background: none; }
-    .detail-back:hover { border-color: var(--pink); color: var(--deep-pink); background: var(--blush); }
-    .detail-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: start; }
-    @media (max-width:700px) { .detail-wrap { grid-template-columns: 1fr; } }
-    .detail-img-panel { background: linear-gradient(135deg, #1a0a12, #3d0f25); border-radius: 2px; overflow: hidden; box-shadow: 4px 6px 32px var(--shadow); display: flex; align-items: center; justify-content: center; min-height: 280px; position: relative; }
-    .detail-img { max-width: 100%; max-height: 520px; object-fit: contain; display: block; }
-    .detail-img-num { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.6); color: #fff; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; padding: 0.25rem 0.7rem; border-radius: 20px; }
-    .detail-placeholder { width: 100%; min-height: 280px; display: flex; align-items: center; justify-content: center; font-size: 5rem; background: linear-gradient(135deg, var(--blush), #fce4ec); }
-    .detail-placeholder img { max-width: 100%; max-height: 520px; object-fit: contain; }
-    .detail-img-actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
-    .detail-action-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.25rem; border: 1.5px solid rgba(200,30,90,0.3); border-radius: 2px; background: var(--white); color: var(--deep-pink); font-family: 'Raleway', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; text-decoration: none; transition: all 0.2s; }
-    .detail-action-btn:hover { background: var(--deep-pink); color: #fff; border-color: var(--deep-pink); }
-    .detail-action-btn.danger { color: #c62828; border-color: #ef9a9a; }
-    .detail-action-btn.danger:hover { background: #c62828; color: #fff; border-color: #c62828; }
-    .detail-info { display: flex; flex-direction: column; gap: 1.25rem; }
-    .detail-num-badge { font-size: 0.68rem; font-weight: 700; color: var(--gold); letter-spacing: 0.15em; text-transform: uppercase; }
-    .detail-subject { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--deep-pink); line-height: 1.1; }
-    .detail-text { font-size: 1rem; line-height: 1.75; color: var(--ink); font-style: italic; quotes: '\201C' '\201D'; }
-    .detail-text::before { content: open-quote; color: var(--pink); font-size: 1.5em; line-height: 0; vertical-align: -0.4em; margin-right: 3px; }
-    .detail-text::after  { content: close-quote; color: var(--pink); font-size: 1.5em; line-height: 0; vertical-align: -0.4em; margin-left: 3px; }
-    .detail-text:empty::before, .detail-text:empty::after { content: none; }
-    .detail-hashtags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-    .detail-hashtag { font-size: 0.72rem; font-weight: 600; color: var(--deep-pink); background: var(--blush); padding: 0.2rem 0.65rem; border-radius: 20px; cursor: pointer; transition: all 0.2s; }
-    .detail-hashtag:hover { background: var(--deep-pink); color: #fff; }
-    .detail-meta-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-    .detail-vote-row { display: flex; align-items: center; gap: 0.6rem; }
-    .detail-vote-btn { background: var(--white); border: 1.5px solid rgba(200,30,90,0.2); border-radius: 20px; padding: 0.4rem 1rem; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--muted); font-family: 'Raleway', sans-serif; }
-    .detail-vote-btn:hover { border-color: var(--pink); color: var(--deep-pink); }
-    .detail-vote-btn.voted-up   { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
-    .detail-vote-btn.voted-down { background: #fce4ec; border-color: var(--pink); color: var(--deep-pink); }
-    .detail-vote-score { font-size: 0.9rem; font-weight: 700; color: var(--muted); }
-    .detail-edit-btn { background: none; border: 1.5px solid rgba(200,30,90,0.25); border-radius: 2px; padding: 0.35rem 0.85rem; font-family: 'Raleway', sans-serif; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: all 0.2s; }
-    .detail-edit-btn:hover { border-color: var(--pink); color: var(--deep-pink); background: var(--blush); }
-    .share-box { background: var(--blush); border: 1.5px solid rgba(200,30,90,0.15); border-radius: 2px; padding: 1rem; flex: 1; min-width: 200px; }
-    .share-box-title { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--deep-pink); margin-bottom: 0.6rem; }
-    .share-url-row { display: flex; gap: 0.5rem; }
-    .share-url { flex: 1; background: var(--white); border: 1.5px solid rgba(200,30,90,0.2); border-radius: 2px; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: var(--muted); font-family: 'Raleway', sans-serif; outline: none; }
-    .share-copy-btn { background: var(--deep-pink); border: none; border-radius: 2px; padding: 0.5rem 1rem; color: #fff; font-family: 'Raleway', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
-    .share-copy-btn:hover { background: var(--pink); }
-    .share-platforms { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
-    .share-platform { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.85rem; border-radius: 2px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-decoration: none; transition: all 0.2s; border: none; color: #fff; }
-    .share-fb { background: #1877f2; } .share-fb:hover { background: #1660c5; }
-    .share-tw { background: #1da1f2; } .share-tw:hover { background: #0c85d0; }
+    #detail-page { display:none; }
+    .detail-back { display:inline-flex; align-items:center; gap:0.5rem; font-size:0.75rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); cursor:pointer; margin-bottom:1.75rem; border:1.5px solid rgba(200,30,90,0.2); padding:0.45rem 1rem; border-radius:2px; transition:all 0.2s; background:none; }
+    .detail-back:hover { border-color:var(--pink); color:var(--deep-pink); background:var(--blush); }
+    .detail-wrap { display:grid; grid-template-columns:1fr 1fr; gap:2.5rem; align-items:start; }
+    @media(max-width:700px){.detail-wrap{grid-template-columns:1fr;}}
+    .detail-img-panel { background:linear-gradient(135deg,#1a0a12,#3d0f25); border-radius:2px; overflow:hidden; box-shadow:4px 6px 32px var(--shadow); display:flex; align-items:center; justify-content:center; min-height:280px; position:relative; }
+    .detail-img { max-width:100%; max-height:520px; object-fit:contain; display:block; }
+    .detail-img-num { position:absolute; top:12px; left:12px; background:rgba(0,0,0,0.6); color:#fff; font-size:0.7rem; font-weight:700; letter-spacing:0.1em; padding:0.25rem 0.7rem; border-radius:20px; }
+    .detail-placeholder { width:100%; min-height:280px; display:flex; align-items:center; justify-content:center; font-size:5rem; background:linear-gradient(135deg,var(--blush),#fce4ec); }
+    .detail-placeholder img { max-width:100%; max-height:520px; object-fit:contain; }
+    .detail-img-actions { display:flex; gap:0.75rem; margin-top:1rem; flex-wrap:wrap; align-items:stretch; }
+    .detail-action-btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.6rem 1.25rem; border:1.5px solid rgba(200,30,90,0.3); border-radius:2px; background:var(--white); color:var(--deep-pink); font-family:'Raleway',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; text-decoration:none; transition:all 0.2s; }
+    .detail-action-btn:hover { background:var(--deep-pink); color:#fff; border-color:var(--deep-pink); }
+    .detail-action-btn.danger { color:#c62828; border-color:#ef9a9a; }
+    .detail-action-btn.danger:hover { background:#c62828; color:#fff; border-color:#c62828; }
+    .detail-info { display:flex; flex-direction:column; gap:1.25rem; }
+    .detail-num-badge { font-size:0.68rem; font-weight:700; color:var(--gold); letter-spacing:0.15em; text-transform:uppercase; }
+    .detail-subject { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; color:var(--deep-pink); line-height:1.1; }
+    .detail-text { font-size:1rem; line-height:1.75; color:var(--ink); font-style:italic; quotes:'\201C' '\201D'; }
+    .detail-text::before { content:open-quote; color:var(--pink); font-size:1.5em; line-height:0; vertical-align:-0.4em; margin-right:3px; }
+    .detail-text::after  { content:close-quote; color:var(--pink); font-size:1.5em; line-height:0; vertical-align:-0.4em; margin-left:3px; }
+    .detail-text:empty::before,.detail-text:empty::after { content:none; }
+    .detail-hashtags { display:flex; flex-wrap:wrap; gap:0.4rem; }
+    .detail-hashtag { font-size:0.72rem; font-weight:600; color:var(--deep-pink); background:var(--blush); padding:0.2rem 0.65rem; border-radius:20px; cursor:pointer; transition:all 0.2s; }
+    .detail-hashtag:hover { background:var(--deep-pink); color:#fff; }
+    .detail-meta-row { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
+    .detail-edit-btn { background:none; border:1.5px solid rgba(200,30,90,0.25); border-radius:2px; padding:0.35rem 0.85rem; font-family:'Raleway',sans-serif; font-size:0.68rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); cursor:pointer; transition:all 0.2s; }
+    .detail-edit-btn:hover { border-color:var(--pink); color:var(--deep-pink); background:var(--blush); }
+    .share-box { background:var(--blush); border:1.5px solid rgba(200,30,90,0.15); border-radius:2px; padding:1rem; flex:1; min-width:200px; }
+    .share-box-title { font-size:0.68rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--deep-pink); margin-bottom:0.6rem; }
+    .share-url-row { display:flex; gap:0.5rem; }
+    .share-url { flex:1; background:var(--white); border:1.5px solid rgba(200,30,90,0.2); border-radius:2px; padding:0.5rem 0.75rem; font-size:0.75rem; color:var(--muted); font-family:'Raleway',sans-serif; outline:none; }
+    .share-copy-btn { background:var(--deep-pink); border:none; border-radius:2px; padding:0.5rem 1rem; color:#fff; font-family:'Raleway',sans-serif; font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; white-space:nowrap; transition:all 0.2s; }
+    .share-copy-btn:hover { background:var(--pink); }
+    .share-platforms { display:flex; gap:0.5rem; margin-top:0.75rem; flex-wrap:wrap; }
+    .share-platform { display:inline-flex; align-items:center; gap:0.35rem; padding:0.35rem 0.85rem; border-radius:2px; font-size:0.68rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; text-decoration:none; transition:all 0.2s; border:none; color:#fff; }
+    .share-fb { background:#1877f2; } .share-fb:hover { background:#1660c5; }
+    .share-tw { background:#1da1f2; } .share-tw:hover { background:#0c85d0; }
+
+    /* ── Hottest Burns page ── */
+    #tab-hot .section-title { color:var(--orange); }
+    .hot-controls { display:flex; align-items:center; gap:1rem; margin-bottom:2rem; flex-wrap:wrap; }
+    .hot-controls label { font-size:0.72rem; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); }
+    .hot-controls select { border:1.5px solid rgba(200,30,90,0.2); border-radius:2px; padding:0.5rem 0.85rem; font-family:'Raleway',sans-serif; font-size:0.85rem; color:var(--ink); background:var(--white); outline:none; cursor:pointer; }
+    .hot-list { display:flex; flex-direction:column; gap:1.25rem; }
+    .hot-card { display:grid; grid-template-columns:auto 1fr auto; gap:1.25rem; align-items:center; background:var(--white); border:1.5px solid rgba(200,30,90,0.12); border-radius:2px; padding:1rem 1.25rem; box-shadow:4px 6px 20px var(--shadow); cursor:pointer; transition:all 0.2s; animation:fadeUp 0.4s ease both; }
+    .hot-card:hover { transform:translateX(4px); box-shadow:6px 10px 28px var(--shadow); }
+    .hot-rank { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; color:var(--gold); min-width:2.5rem; text-align:center; }
+    .hot-rank.tie-rank { color:var(--muted); font-size:1.6rem; }
+    .hot-img { width:80px; height:60px; object-fit:contain; border-radius:2px; background:linear-gradient(135deg,var(--blush),#fce4ec); display:flex; align-items:center; justify-content:center; font-size:2rem; overflow:hidden; flex-shrink:0; }
+    .hot-img img { width:100%; height:100%; object-fit:contain; }
+    .hot-body { flex:1; min-width:0; }
+    .hot-subject { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:var(--deep-pink); margin-bottom:0.2rem; }
+    .hot-text { font-size:0.82rem; color:var(--muted); font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .hot-score { text-align:center; }
+    .hot-score-num { font-size:1.75rem; font-weight:900; color:var(--orange); line-height:1; }
+    .hot-score-label { font-size:0.6rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); }
+    .hot-score-votes { font-size:0.65rem; color:var(--muted); }
+    .tie-badge { display:inline-block; background:#fff3e0; border:1.5px solid #ffb74d; color:#e65100; font-size:0.6rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:0.15rem 0.5rem; border-radius:20px; margin-left:0.5rem; vertical-align:middle; }
 
     /* ── Empty / loading ── */
     .empty { text-align:center; padding:5rem 2rem; color:var(--muted); }
@@ -150,7 +178,7 @@
     .loading-wrap { text-align:center; padding:4rem; }
     .spinner { display:inline-block; width:32px; height:32px; border:3px solid rgba(200,30,90,0.2); border-top-color:var(--pink); border-radius:50%; animation:spin 0.7s linear infinite; }
     .spinner-sm { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; }
-    @keyframes spin { to { transform:rotate(360deg); } }
+    @keyframes spin { to{transform:rotate(360deg)} }
 
     /* ── Form ── */
     .form-card { background:var(--white); border:1.5px solid rgba(200,30,90,0.14); border-radius:2px; box-shadow:4px 6px 24px var(--shadow); padding:2.5rem; max-width:600px; margin:0 auto; }
@@ -158,8 +186,8 @@
     .form-group { margin-bottom:1.25rem; }
     .form-label { display:block; font-size:0.72rem; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:var(--deep-pink); margin-bottom:0.4rem; }
     .form-label-note { font-weight:400; color:var(--muted); text-transform:none; letter-spacing:0; }
-    .form-input, .form-textarea { width:100%; border:1.5px solid rgba(200,30,90,0.2); border-radius:2px; padding:0.7rem 0.9rem; font-family:'Raleway',sans-serif; font-size:0.9rem; color:var(--ink); background:var(--cream); transition:border-color 0.2s, box-shadow 0.2s; outline:none; }
-    .form-input:focus, .form-textarea:focus { border-color:var(--pink); box-shadow:0 0 0 3px rgba(232,82,122,0.12); }
+    .form-input,.form-textarea { width:100%; border:1.5px solid rgba(200,30,90,0.2); border-radius:2px; padding:0.7rem 0.9rem; font-family:'Raleway',sans-serif; font-size:0.9rem; color:var(--ink); background:var(--cream); transition:border-color 0.2s,box-shadow 0.2s; outline:none; }
+    .form-input:focus,.form-textarea:focus { border-color:var(--pink); box-shadow:0 0 0 3px rgba(232,82,122,0.12); }
     .form-textarea { min-height:110px; resize:vertical; }
     .form-check { display:flex; align-items:center; gap:0.6rem; margin-top:0.6rem; cursor:pointer; }
     .form-check input[type=checkbox] { width:16px; height:16px; accent-color:var(--deep-pink); cursor:pointer; }
@@ -173,7 +201,7 @@
     .current-img { width:100%; max-height:140px; object-fit:contain; border-radius:2px; display:block; margin-bottom:0.6rem; border:1.5px solid rgba(200,30,90,0.15); opacity:0.75; }
 
     .btn { display:inline-flex; align-items:center; gap:0.5rem; padding:0.85rem 2rem; font-family:'Raleway',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; border:none; border-radius:2px; cursor:pointer; transition:all 0.2s; }
-    .btn-primary { background:linear-gradient(135deg, var(--deep-pink), var(--pink)); color:#fff; box-shadow:0 4px 16px rgba(194,24,91,0.35); }
+    .btn-primary { background:linear-gradient(135deg,var(--deep-pink),var(--pink)); color:#fff; box-shadow:0 4px 16px rgba(194,24,91,0.35); }
     .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(194,24,91,0.45); }
     .btn-primary:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
     .alert { padding:1rem 1.25rem; border-radius:2px; font-size:0.85rem; margin-top:1rem; }
@@ -182,11 +210,15 @@
 
     /* ── Admin ── */
     .admin-login { max-width:380px; margin:4rem auto; background:var(--white); border:1.5px solid rgba(200,30,90,0.14); padding:2.5rem; box-shadow:4px 6px 24px var(--shadow); border-radius:2px; }
-    .admin-section-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--deep-pink); margin: 2rem 0 1rem; padding-bottom:0.5rem; border-bottom:1.5px solid var(--blush); }
-    .admin-section-title.urgent { color: #c62828; border-bottom-color: #ffcdd2; }
-    .admin-table { width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:2rem; }
+    .admin-section-hdr { display:flex; align-items:center; justify-content:space-between; margin:2rem 0 1rem; padding-bottom:0.5rem; border-bottom:1.5px solid var(--blush); }
+    .admin-section-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--deep-pink); }
+    .admin-section-title.urgent { color:#c62828; }
+    .admin-refresh-btn { background:none; border:1.5px solid rgba(200,30,90,0.2); border-radius:2px; padding:0.3rem 0.75rem; font-size:0.68rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); cursor:pointer; transition:all 0.2s; }
+    .admin-refresh-btn:hover { border-color:var(--pink); color:var(--deep-pink); background:var(--blush); }
+    .admin-table { width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:0.5rem; }
     .admin-table th { background:var(--deep-pink); color:#fff; padding:0.65rem 0.85rem; text-align:left; font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:600; }
-    .admin-table th.urgent-hdr { background: #c62828; }
+    .admin-table th.urgent-hdr { background:#c62828; }
+    .admin-table th.cb-col { width:36px; }
     .admin-table td { padding:0.65rem 0.85rem; border-bottom:1px solid var(--blush); vertical-align:top; }
     .admin-table tr:hover td { background:var(--blush); }
     .admin-table img { width:55px; height:42px; object-fit:contain; border-radius:1px; cursor:zoom-in; background:#f0e0e8; }
@@ -203,29 +235,39 @@
     .aa-delete    { border-color:#c62828; color:#c62828; } .aa-delete:hover    { background:#c62828; color:#fff; }
     .aa-restore   { border-color:#1565c0; color:#1565c0; } .aa-restore:hover   { background:#1565c0; color:#fff; }
 
+    /* Multi-select hashtag bar */
+    .bulk-tag-bar { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.75rem; padding:0.75rem 1rem; background:var(--blush); border-radius:2px; border:1.5px solid rgba(200,30,90,0.15); }
+    .bulk-tag-bar label { font-size:0.72rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--deep-pink); white-space:nowrap; }
+    .bulk-tag-bar input { flex:1; min-width:140px; border:1.5px solid rgba(200,30,90,0.2); border-radius:2px; padding:0.4rem 0.75rem; font-family:'Raleway',sans-serif; font-size:0.85rem; color:var(--ink); background:var(--white); outline:none; }
+    .bulk-tag-bar input:focus { border-color:var(--pink); }
+    .bulk-tag-btn { background:var(--deep-pink); border:none; border-radius:2px; padding:0.4rem 1rem; color:#fff; font-family:'Raleway',sans-serif; font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; white-space:nowrap; transition:all 0.2s; }
+    .bulk-tag-btn:hover { background:var(--pink); }
+    .bulk-count { font-size:0.75rem; color:var(--muted); }
+
     /* ── Modal ── */
     .modal-overlay { display:none; position:fixed; inset:0; z-index:8000; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; padding:1.5rem; }
-    .modal-overlay.open { display:flex; animation: fadeIn 0.2s ease; }
-    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-    .modal { background:var(--white); border-radius:2px; max-width:580px; width:100%; max-height:90vh; overflow-y:auto; box-shadow: 0 16px 64px rgba(0,0,0,0.4); }
-    .modal-header { background: linear-gradient(135deg, #1a0a12, #3d0f25); padding: 1.25rem 1.5rem; display:flex; align-items:center; justify-content:space-between; border-bottom: 2px solid var(--gold); position:sticky; top:0; z-index:1; }
+    .modal-overlay.open { display:flex; animation:fadeIn 0.2s ease; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .modal { background:var(--white); border-radius:2px; max-width:580px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 16px 64px rgba(0,0,0,0.4); }
+    .modal-header { background:linear-gradient(135deg,#1a0a12,#3d0f25); padding:1.25rem 1.5rem; display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid var(--gold); position:sticky; top:0; z-index:1; }
     .modal-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:#fff; }
     .modal-close { background:none; border:none; color:rgba(255,255,255,0.7); font-size:1.5rem; cursor:pointer; }
     .modal-close:hover { color:#fff; }
-    .modal-body { padding: 1.5rem; }
+    .modal-body { padding:1.5rem; }
     .modal-note { background:var(--blush); border-left:3px solid var(--pink); padding:0.75rem 1rem; font-size:0.78rem; color:var(--muted); margin-bottom:1.25rem; line-height:1.6; }
 
     /* Toast */
-    .toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(4rem); background:var(--ink); color:#fff; padding:0.65rem 1.5rem; border-radius:20px; font-size:0.8rem; font-weight:600; z-index:9999; transition:transform 0.3s ease, opacity 0.3s ease; opacity:0; pointer-events:none; }
+    .toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(4rem); background:var(--ink); color:#fff; padding:0.65rem 1.5rem; border-radius:20px; font-size:0.8rem; font-weight:600; z-index:9999; transition:transform 0.3s ease,opacity 0.3s ease; opacity:0; pointer-events:none; }
     .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
 
     .footer { text-align:center; padding:2rem; font-size:0.72rem; color:var(--muted); border-top:1px solid rgba(200,30,90,0.1); margin-top:4rem; letter-spacing:0.08em; }
     .footer strong { color:var(--pink); }
 
-    @media (max-width:600px) {
-      .main { padding:2rem 1rem; } .form-card { padding:1.5rem; }
-      .admin-table { font-size:0.74rem; } .admin-table th, .admin-table td { padding:0.45rem 0.55rem; }
-      .nav button { padding:0.75rem 1rem; font-size:0.65rem; }
+    @media(max-width:600px) {
+      .main{padding:2rem 1rem} .form-card{padding:1.5rem}
+      .admin-table{font-size:0.74rem} .admin-table th,.admin-table td{padding:0.45rem 0.55rem}
+      .nav button{padding:0.75rem 0.85rem;font-size:0.62rem}
+      .hot-card{grid-template-columns:auto 1fr;} .hot-score{display:none;}
     }
   </style>
 </head>
@@ -240,6 +282,7 @@
 
   <nav class="nav">
     <button class="nav-btn active" data-tab="book">📖 The Burn Book</button>
+    <button class="nav-btn" data-tab="hot">🔥 Hottest Burns</button>
     <button class="nav-btn" data-tab="submit">✍️ Submit an Entry</button>
     <button class="nav-btn" data-tab="admin">🔐 Admin</button>
   </nav>
@@ -265,7 +308,7 @@
         <button class="detail-back" onclick="closeDetail()">← Back to Burn Book</button>
         <div class="detail-wrap">
           <div>
-            <div class="detail-img-panel" id="detail-img-panel">
+            <div class="detail-img-panel">
               <div class="detail-placeholder" id="detail-placeholder" style="display:none"></div>
               <img id="detail-img" class="detail-img" src="" alt="" style="display:none" />
               <div class="detail-img-num" id="detail-img-num"></div>
@@ -293,11 +336,29 @@
             <div class="detail-subject" id="detail-subject"></div>
             <p class="detail-text" id="detail-text"></p>
             <div class="detail-hashtags" id="detail-hashtags"></div>
-            <div class="detail-vote-row" id="detail-vote-row"></div>
+            <!-- Heat vote full -->
+            <div class="heat-full" id="detail-heat"></div>
             <div class="detail-meta-row" id="detail-meta-row"></div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- HOTTEST BURNS -->
+    <div id="tab-hot" class="tab-panel">
+      <h2 class="section-title">🔥 Hottest Burns</h2>
+      <p class="section-sub">Ranked by average heat score from community votes.</p>
+      <div class="hot-controls">
+        <label for="hot-count">Show top</label>
+        <select id="hot-count" onchange="loadHottestBurns()">
+          <option value="10" selected>10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="0">All</option>
+        </select>
+        <label>entries</label>
+      </div>
+      <div id="hot-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
     </div>
 
     <!-- SUBMIT -->
@@ -320,11 +381,7 @@
           <label class="form-check"><input type="checkbox" id="f-anonymous" /><span class="form-check-label">Show me as <strong>Anonymous</strong></span></label>
         </div>
         <div class="form-group">
-          <label class="form-label">Phone <span class="form-label-note">(optional)</span></label>
-          <input class="form-input" id="f-phone" type="tel" placeholder="e.g. 630-555-0199" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Hashtags <span class="form-label-note">(optional — space-separated, e.g. #wild #classic)</span></label>
+          <label class="form-label">Hashtags <span class="form-label-note">(optional — e.g. #wild #classic)</span></label>
           <input class="form-input" id="f-hashtags" placeholder="#wild #classic #legend" />
         </div>
         <div class="form-group">
@@ -355,16 +412,16 @@
       </div>
       <div id="admin-panel" style="display:none">
 
-        <!-- DELETION REQUESTS — top, urgent -->
-        <p class="admin-section-title urgent">⚠️ Removal Requests</p>
+        <!-- REMOVAL REQUESTS -->
+        <div class="admin-section-hdr">
+          <span class="admin-section-title urgent">⚠️ Removal Requests</span>
+          <button class="admin-refresh-btn" onclick="loadDeletionRequests()">↺ Refresh</button>
+        </div>
         <div style="overflow-x:auto">
-          <table class="admin-table" id="deletions-table">
+          <table class="admin-table">
             <thead><tr>
-              <th class="urgent-hdr">#</th>
-              <th class="urgent-hdr">Subject</th>
-              <th class="urgent-hdr">Reason</th>
-              <th class="urgent-hdr">Requestor Phone</th>
-              <th class="urgent-hdr">Requested</th>
+              <th class="urgent-hdr">#</th><th class="urgent-hdr">Subject</th>
+              <th class="urgent-hdr">Reason</th><th class="urgent-hdr">Requested</th>
               <th class="urgent-hdr">Actions</th>
             </tr></thead>
             <tbody id="deletions-tbody"></tbody>
@@ -372,7 +429,10 @@
         </div>
 
         <!-- PENDING EDITS -->
-        <p class="admin-section-title">Pending Edits</p>
+        <div class="admin-section-hdr">
+          <span class="admin-section-title">Pending Edits</span>
+          <button class="admin-refresh-btn" onclick="loadPendingEdits()">↺ Refresh</button>
+        </div>
         <div style="overflow-x:auto">
           <table class="admin-table">
             <thead><tr><th>#</th><th>Proposed Subject</th><th>Proposed Burn</th><th>Tags</th><th>New Photo</th><th>Submitted By</th><th>When</th><th>Actions</th></tr></thead>
@@ -381,10 +441,24 @@
         </div>
 
         <!-- ALL ENTRIES -->
-        <p class="admin-section-title">All Entries</p>
+        <div class="admin-section-hdr">
+          <span class="admin-section-title">All Entries</span>
+          <button class="admin-refresh-btn" onclick="loadAdminEntries()">↺ Refresh</button>
+        </div>
+        <!-- Bulk hashtag bar -->
+        <div class="bulk-tag-bar" id="bulk-tag-bar">
+          <label>Add hashtag to selected:</label>
+          <input id="bulk-tag-input" placeholder="#newtag" />
+          <button class="bulk-tag-btn" onclick="applyBulkTag()">Apply</button>
+          <span class="bulk-count" id="bulk-count">0 selected</span>
+        </div>
         <div style="overflow-x:auto">
           <table class="admin-table">
-            <thead><tr><th>#</th><th>Photo</th><th>Subject</th><th>Burn</th><th>Tags</th><th>Submitter</th><th>Displays As</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr>
+              <th class="cb-col"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)" /></th>
+              <th>#</th><th>Photo</th><th>Subject</th><th>Burn</th><th>Tags</th>
+              <th>Submitter</th><th>Displays As</th><th>Status</th><th>Actions</th>
+            </tr></thead>
             <tbody id="admin-tbody"></tbody>
           </table>
         </div>
@@ -452,9 +526,7 @@
         <button class="modal-close" id="delete-modal-close">✕</button>
       </div>
       <div class="modal-body">
-        <div class="modal-note">
-          We take removal requests seriously. Once submitted, this entry will be immediately hidden from public view while we review your request. Please tell us why you'd like it removed.
-        </div>
+        <div class="modal-note">We take removal requests seriously. Once submitted, this entry will be immediately hidden from public view while we review your request.</div>
         <input type="hidden" id="del-entry-id" />
         <div class="form-group">
           <label class="form-label">Your Name *</label>
@@ -462,11 +534,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Reason for Removal *</label>
-          <textarea class="form-textarea" id="del-reason" placeholder="Tell us why you'd like this entry removed..." style="min-height:90px"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Phone Number <span class="form-label-note">(optional — in case we need to follow up)</span></label>
-          <input class="form-input" id="del-phone" type="tel" placeholder="e.g. 630-555-0199" />
+          <textarea class="form-textarea" id="del-reason" placeholder="Tell us why..." style="min-height:90px"></textarea>
         </div>
         <button class="btn btn-primary" id="del-submit-btn">🗑 Submit Removal Request</button>
         <div id="del-status" style="display:none" class="alert"></div>
@@ -496,19 +564,18 @@
       <line x1="9" y1="11" x2="21" y2="22" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
     </svg>`;
 
-    // Runtime config from Supabase
-    let PLACEHOLDER_EMOJI     = '💅';
+    let PLACEHOLDER_EMOJI     = '🔥';
     let PLACEHOLDER_IMAGE_URL = '';
     let CODENAME              = 'BananaDuck';
     let CODENAME_DISPLAY      = 'B******D***';
 
     let activeFilter       = null;
     let allEntries         = [];
-    let allVoteCounts      = {};
+    let allVoteData        = {};  // entryId -> { avg, count, myVote }
     let currentDetailEntry = null;
-    let myVotes            = JSON.parse(localStorage.getItem('mw_votes') || '{}');
+    let myVotes            = JSON.parse(localStorage.getItem('mw_votes_heat') || '{}');
 
-    // ── Supabase helpers ──────────────────────────────────────
+    // ── Supabase ──────────────────────────────────────────────
     const SB = SUPABASE_URL;
     const H  = { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+SUPABASE_ANON };
 
@@ -532,16 +599,16 @@
       if (!res.ok) throw new Error(await res.text());
     }
     async function sbUpsert(table, body, onConflict) {
-      const url = `${SB}/rest/v1/${table}` + (onConflict ? `?on_conflict=${onConflict}` : '');
+      const url = `${SB}/rest/v1/${table}` + (onConflict?`?on_conflict=${onConflict}`:'');
       const res = await fetch(url, { method:'POST', headers:{...H,'Prefer':'resolution=merge-duplicates,return=representation'}, body:JSON.stringify(body) });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     }
     async function uploadImage(file) {
-      const ext  = file.name.split('.').pop().toLowerCase() || 'jpg';
+      const ext  = file.name.split('.').pop().toLowerCase()||'jpg';
       const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
       const res  = await fetch(`${SB}/storage/v1/object/${BUCKET}/${path}`, { method:'POST', headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':file.type}, body:file });
-      if (!res.ok) throw new Error('Image upload failed: ' + await res.text());
+      if (!res.ok) throw new Error('Image upload failed: '+await res.text());
       return `${SB}/storage/v1/object/public/${BUCKET}/${path}`;
     }
     async function getIpHash() {
@@ -549,19 +616,42 @@
         const cached = sessionStorage.getItem('mw_iphash');
         if (cached) return cached;
         const { ip } = await (await fetch('https://api.ipify.org?format=json')).json();
-        let hash = 0;
-        for (let i=0;i<ip.length;i++){hash=((hash<<5)-hash)+ip.charCodeAt(i);hash|=0;}
-        const h = 'v'+Math.abs(hash).toString(36);
-        sessionStorage.setItem('mw_iphash', h);
-        return h;
+        let hash=0; for(let i=0;i<ip.length;i++){hash=((hash<<5)-hash)+ip.charCodeAt(i);hash|=0;}
+        const h='v'+Math.abs(hash).toString(36);
+        sessionStorage.setItem('mw_iphash',h); return h;
       } catch { return 'anon_'+Math.random().toString(36).slice(2); }
     }
 
     // ── Utilities ─────────────────────────────────────────────
     function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function parseHashtags(str){ return (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[]; }
-    function arraysEqual(a,b){ return a.length===b.length && [...a].sort().join()===([...b]).sort().join(); }
+    function arraysEqual(a,b){ return a.length===b.length&&[...a].sort().join()===([...b]).sort().join(); }
     function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+    function heatEmoji(avg) {
+      if (!avg) return '❓';
+      if (avg >= 9) return '🌋';
+      if (avg >= 7) return '🔥';
+      if (avg >= 5) return '♨️';
+      if (avg >= 3) return '🌡️';
+      return '🧊';
+    }
+
+    // ── Build vote data from raw votes array ──────────────────
+    function buildVoteData(votes) {
+      const data = {};
+      // group by entry_id
+      votes.forEach(v => {
+        if (!data[v.entry_id]) data[v.entry_id] = { sum:0, count:0 };
+        data[v.entry_id].sum   += v.vote;
+        data[v.entry_id].count += 1;
+      });
+      const result = {};
+      Object.keys(data).forEach(id => {
+        const d = data[id];
+        result[id] = { avg: d.count ? +(d.sum/d.count).toFixed(1) : null, count: d.count, myVote: myVotes[id]||null };
+      });
+      return result;
+    }
 
     // ── Init ──────────────────────────────────────────────────
     async function init() {
@@ -591,196 +681,262 @@
         document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-        if (btn.dataset.tab==='book'){ closeDetail(); loadEntries(); }
+        if (btn.dataset.tab==='book')  { closeDetail(); loadEntries(); }
+        if (btn.dataset.tab==='hot')   { loadHottestBurns(); }
       });
     });
     function goHome(){ document.querySelector('.nav-btn[data-tab="book"]').click(); }
 
-    // ── Detail ────────────────────────────────────────────────
-    function openDetail(entry) {
-      currentDetailEntry = entry;
-      document.getElementById('book-grid-view').style.display = 'none';
-      document.getElementById('detail-page').style.display    = 'block';
-      window.location.hash = 'entry-' + entry.id;
+    // ── Heat vote ─────────────────────────────────────────────
+    async function castHeatVote(entryId, score) {
+      // If clicking current vote, clear it
+      const current = myVotes[entryId];
+      const newScore = (current === score) ? null : score;
+      try {
+        const ipHash = await getIpHash();
+        if (newScore === null) {
+          await sbDelete('votes', `entry_id=eq.${entryId}&ip_hash=eq.${ipHash}`);
+          delete myVotes[entryId];
+        } else {
+          await sbUpsert('votes', { entry_id:entryId, ip_hash:ipHash, vote:newScore }, 'entry_id,ip_hash');
+          myVotes[entryId] = newScore;
+        }
+        localStorage.setItem('mw_votes_heat', JSON.stringify(myVotes));
+        // Refresh vote for this entry
+        const votes = await sbGet('votes', `entry_id=eq.${entryId}&select=vote`);
+        const sum   = votes.reduce((a,v)=>a+v.vote,0);
+        const count = votes.length;
+        const avg   = count ? +(sum/count).toFixed(1) : null;
+        allVoteData[entryId] = { avg, count, myVote: myVotes[entryId]||null };
+        // Update compact card vote display
+        const compactEl = document.querySelector(`[data-heat-compact="${entryId}"]`);
+        if (compactEl) updateCompactHeat(compactEl, entryId);
+        // Update detail if open
+        if (currentDetailEntry?.id === entryId) renderDetailHeat(currentDetailEntry);
+      } catch(e) { showToast('Vote failed — try again.'); }
+    }
 
-      const imgEl=document.getElementById('detail-img');
-      const phEl =document.getElementById('detail-placeholder');
-      const dlBtn=document.getElementById('detail-download');
-      const numBadge=document.getElementById('detail-img-num');
-
-      if (entry.image_url) {
-        imgEl.src=entry.image_url; imgEl.style.display='block'; phEl.style.display='none';
-        dlBtn.href=entry.image_url; dlBtn.style.display='inline-flex';
-      } else {
-        imgEl.style.display='none';
-        phEl.innerHTML = PLACEHOLDER_IMAGE_URL ? `<img src="${esc(PLACEHOLDER_IMAGE_URL)}" style="max-width:100%;max-height:520px;object-fit:contain"/>` : (PLACEHOLDER_EMOJI||'💅');
-        phEl.style.display='flex'; dlBtn.style.display='none';
+    function updateCompactHeat(wrap, entryId) {
+      const vd  = allVoteData[entryId]||{};
+      const btn = wrap.querySelector('.heat-fire-btn');
+      const avg = wrap.querySelector('.heat-avg');
+      if (btn) {
+        btn.className = 'heat-fire-btn' + (vd.myVote ? ' voted' : '');
+        btn.textContent = vd.myVote ? `🔥 ${vd.myVote}/10` : '🔥 Rate';
       }
-      numBadge.textContent = entry.ui_order ? '#'+entry.ui_order : '';
+      if (avg) {
+        const hot = vd.avg && vd.avg >= 7;
+        avg.className = 'heat-avg' + (hot ? ' hot' : '');
+        avg.textContent = vd.avg ? `avg ${vd.avg} (${vd.count} vote${vd.count!==1?'s':''})` : '';
+      }
+    }
 
-      document.getElementById('detail-num-badge').textContent = entry.ui_order ? 'Entry #'+entry.ui_order : '';
-      document.getElementById('detail-subject').textContent   = entry.subject;
-      document.getElementById('detail-text').textContent      = entry.text || '';
+    function makeCompactHeat(entry) {
+      const vd   = allVoteData[entry.id]||{};
+      const wrap = document.createElement('div');
+      wrap.className = 'heat-compact';
+      wrap.dataset.heatCompact = entry.id;
 
-      const hEl=document.getElementById('detail-hashtags'); hEl.innerHTML='';
-      (entry.hashtags||[]).forEach(tag=>{
-        const t=document.createElement('span'); t.className='detail-hashtag'; t.textContent=tag;
-        t.addEventListener('click',()=>{ closeDetail(); setTimeout(()=>setFilter(tag),100); });
-        hEl.appendChild(t);
+      const btn = document.createElement('button');
+      btn.className = 'heat-fire-btn' + (vd.myVote ? ' voted' : '');
+      btn.textContent = vd.myVote ? `🔥 ${vd.myVote}/10` : '🔥 Rate';
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        openHeatPicker(entry.id, btn);
       });
 
-      renderDetailVotes(entry);
+      const avg = document.createElement('span');
+      avg.className = 'heat-avg' + ((vd.avg&&vd.avg>=7) ? ' hot' : '');
+      avg.textContent = vd.avg ? `avg ${vd.avg} (${vd.count} vote${vd.count!==1?'s':''})` : '';
 
-      const metaEl=document.getElementById('detail-meta-row'); metaEl.innerHTML='';
-      if (entry.is_mean_whirls){ const b=document.createElement('span'); b.className='badge-mw'; b.innerHTML=SCOOP_SVG+'MeanWhirls'; metaEl.appendChild(b); }
-      else { const a=document.createElement('span'); a.className='entry-author'; a.innerHTML=`by <strong>${esc(entry.display_author)}</strong>`; metaEl.appendChild(a); }
-      const eb=document.createElement('button'); eb.className='detail-edit-btn'; eb.textContent='✏️ Edit';
-      eb.addEventListener('click',()=>openEditModal(entry,false)); metaEl.appendChild(eb);
-
-      const shareUrl=window.location.origin+window.location.pathname+'#entry-'+entry.id;
-      const enc=encodeURIComponent(shareUrl);
-      const txt=encodeURIComponent('Check out this Mean Whirls Burn Book entry: '+entry.subject);
-      document.getElementById('share-url').value=shareUrl;
-      document.getElementById('share-fb').href=`https://www.facebook.com/sharer/sharer.php?u=${enc}`;
-      document.getElementById('share-tw').href=`https://twitter.com/intent/tweet?url=${enc}&text=${txt}`;
+      wrap.appendChild(btn); wrap.appendChild(avg);
+      return wrap;
     }
 
-    function closeDetail(){
-      document.getElementById('book-grid-view').style.display='block';
-      document.getElementById('detail-page').style.display='none';
-      currentDetailEntry=null;
-      history.replaceState(null,'',window.location.pathname);
+    // Mini popover heat picker for cards
+    let pickerOpen = null;
+    function openHeatPicker(entryId, anchor) {
+      // Close existing
+      if (pickerOpen) { pickerOpen.remove(); pickerOpen=null; }
+      const picker = document.createElement('div');
+      picker.style.cssText = 'position:absolute;z-index:500;background:#fff;border:1.5px solid rgba(200,30,90,0.2);border-radius:4px;padding:0.6rem;box-shadow:0 4px 20px rgba(0,0,0,0.15);display:flex;gap:0.3rem;flex-wrap:wrap;max-width:220px;';
+      const vd = allVoteData[entryId]||{};
+      for (let i=1;i<=10;i++) {
+        const pip = document.createElement('button');
+        pip.style.cssText = 'width:32px;height:32px;border-radius:50%;border:2px solid rgba(200,30,90,0.2);background:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.15s;color:#8c6678;';
+        pip.textContent = i;
+        if (vd.myVote===i) pip.style.cssText += 'background:#ff6d00;border-color:#ff6d00;color:#fff;';
+        pip.addEventListener('click', e => { e.stopPropagation(); picker.remove(); pickerOpen=null; castHeatVote(entryId,i); });
+        picker.appendChild(pip);
+      }
+      if (vd.myVote) {
+        const clr = document.createElement('button');
+        clr.style.cssText = 'width:100%;font-size:0.65rem;color:#8c6678;text-decoration:underline;background:none;border:none;cursor:pointer;margin-top:0.2rem;';
+        clr.textContent = 'Clear my vote';
+        clr.addEventListener('click', e => { e.stopPropagation(); picker.remove(); pickerOpen=null; castHeatVote(entryId,vd.myVote); });
+        picker.appendChild(clr);
+      }
+      // Position near anchor
+      const rect = anchor.getBoundingClientRect();
+      picker.style.position = 'fixed';
+      picker.style.top  = (rect.bottom + 4) + 'px';
+      picker.style.left = Math.min(rect.left, window.innerWidth-230) + 'px';
+      document.body.appendChild(picker);
+      pickerOpen = picker;
+      // Close on outside click
+      setTimeout(() => { document.addEventListener('click', closePicker, {once:true}); }, 0);
     }
-    function copyShareUrl(){ navigator.clipboard.writeText(document.getElementById('share-url').value).then(()=>showToast('Link copied! 💗')); }
+    function closePicker() { if (pickerOpen){ pickerOpen.remove(); pickerOpen=null; } }
 
-    function renderDetailVotes(entry){
-      const vc=allVoteCounts[entry.id]||{up:0,down:0};
-      const mv=myVotes[entry.id]||0;
-      const score=vc.up-vc.down;
-      const vEl=document.getElementById('detail-vote-row'); vEl.innerHTML='';
-      const upBtn=document.createElement('button');
-      upBtn.className='detail-vote-btn'+(mv===1?' voted-up':'');
-      upBtn.innerHTML=`👍 <span id="dv-up">${vc.up}</span>`;
-      upBtn.addEventListener('click',()=>castVote(entry.id,1,true));
-      const downBtn=document.createElement('button');
-      downBtn.className='detail-vote-btn'+(mv===-1?' voted-down':'');
-      downBtn.innerHTML=`👎 <span id="dv-down">${vc.down}</span>`;
-      downBtn.addEventListener('click',()=>castVote(entry.id,-1,true));
-      const scoreEl=document.createElement('span'); scoreEl.className='detail-vote-score'; scoreEl.id='dv-score';
-      scoreEl.textContent=(score>0?'+':'')+score;
-      vEl.appendChild(upBtn); vEl.appendChild(downBtn); vEl.appendChild(scoreEl);
+    function renderDetailHeat(entry) {
+      const vd  = allVoteData[entry.id]||{};
+      const el  = document.getElementById('detail-heat');
+      el.innerHTML = '';
+
+      const label = document.createElement('div'); label.className='heat-full-label';
+      label.textContent = '🔥 How hot is this burn?';
+      el.appendChild(label);
+
+      const scale = document.createElement('div'); scale.className='heat-scale';
+      for (let i=1;i<=10;i++) {
+        const pip = document.createElement('div'); pip.className='heat-pip';
+        if (vd.myVote===i) pip.classList.add('selected');
+        pip.textContent = i;
+        pip.addEventListener('click', () => castHeatVote(entry.id, i));
+        scale.appendChild(pip);
+      }
+      el.appendChild(scale);
+
+      if (vd.myVote) {
+        const clr = document.createElement('span'); clr.className='heat-clear';
+        clr.textContent = 'Clear my vote';
+        clr.addEventListener('click', () => castHeatVote(entry.id, vd.myVote));
+        el.appendChild(clr);
+      }
+
+      if (vd.avg) {
+        const result = document.createElement('div'); result.className='heat-result';
+        result.innerHTML = `<span>${heatEmoji(vd.avg)}</span> Average: <strong>${vd.avg}/10</strong> from ${vd.count} vote${vd.count!==1?'s':''}`;
+        el.appendChild(result);
+      }
+    }
+
+    // ── Hottest Burns page ────────────────────────────────────
+    async function loadHottestBurns() {
+      const container = document.getElementById('hot-container');
+      container.innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
+      try {
+        const [entries, votes] = await Promise.all([
+          sbGet('entries','status=eq.approved&hidden=eq.false&select=*'),
+          sbGet('votes','select=entry_id,vote')
+        ]);
+        // Compute avg per entry
+        const tally = {};
+        votes.forEach(v => {
+          if (!tally[v.entry_id]) tally[v.entry_id]={sum:0,count:0};
+          tally[v.entry_id].sum   += v.vote;
+          tally[v.entry_id].count += 1;
+        });
+        // Only show entries with at least 1 vote
+        const scored = entries
+          .filter(e => tally[e.id] && tally[e.id].count > 0)
+          .map(e => ({ ...e, avg: +(tally[e.id].sum/tally[e.id].count).toFixed(2), voteCount: tally[e.id].count }))
+          .sort((a,b) => b.avg-a.avg || b.voteCount-a.voteCount);
+
+        const limit = parseInt(document.getElementById('hot-count').value)||0;
+        const shown = limit ? scored.slice(0,limit) : scored;
+
+        if (!shown.length) {
+          container.innerHTML = `<div class="empty"><div class="empty-icon">🌡️</div><h3>No votes yet</h3><p style="font-size:.85rem">Be the first to rate a burn!</p></div>`;
+          return;
+        }
+
+        // Detect ties
+        const list = document.createElement('div'); list.className='hot-list';
+        let rank=1;
+        shown.forEach((e,i) => {
+          const tied = i>0 && e.avg===shown[i-1].avg;
+          if (!tied && i>0) rank++;
+          const isTied = tied || (i<shown.length-1 && e.avg===shown[i+1]?.avg);
+          const card = document.createElement('div'); card.className='hot-card'; card.style.animationDelay=(i*0.04)+'s';
+          card.addEventListener('click',()=>{ goHome(); setTimeout(()=>{ const entry=allEntries.find(en=>en.id===e.id); if(entry)openDetail(entry); },150); });
+
+          const rankEl=document.createElement('div'); rankEl.className='hot-rank'+(isTied?' tie-rank':'');
+          rankEl.innerHTML = rank + (isTied?`<span class="tie-badge">tie</span>`:'');
+
+          const imgEl=document.createElement('div'); imgEl.className='hot-img';
+          if(e.image_url){const img=document.createElement('img');img.src=e.image_url;img.alt=e.subject;imgEl.appendChild(img);}
+          else{imgEl.textContent=PLACEHOLDER_IMAGE_URL?'':PLACEHOLDER_EMOJI||'🔥';}
+
+          const body=document.createElement('div'); body.className='hot-body';
+          body.innerHTML=`<div class="hot-subject">#${e.ui_order||'?'} — ${esc(e.subject)}</div><div class="hot-text">${esc(e.text||'')}</div>`;
+
+          const scoreEl=document.createElement('div'); scoreEl.className='hot-score';
+          scoreEl.innerHTML=`<div class="hot-score-num">${e.avg.toFixed(1)}</div><div class="hot-score-label">/ 10</div><div class="hot-score-votes">${e.voteCount} vote${e.voteCount!==1?'s':''}</div>`;
+
+          card.appendChild(rankEl); card.appendChild(imgEl); card.appendChild(body); card.appendChild(scoreEl);
+          list.appendChild(card);
+        });
+        container.innerHTML=''; container.appendChild(list);
+      } catch(err) {
+        container.innerHTML=`<div class="empty"><div class="empty-icon">😬</div><h3>Could not load</h3><p>${esc(err.message)}</p></div>`;
+      }
     }
 
     // ── Filter ────────────────────────────────────────────────
-    function setFilter(tag){
+    function setFilter(tag) {
       activeFilter=tag;
       document.getElementById('filter-clear').style.display=tag?'inline':'none';
       document.querySelectorAll('.filter-tag').forEach(el=>el.classList.toggle('active',el.dataset.tag===tag));
       renderEntries(tag?allEntries.filter(e=>(e.hashtags||[]).includes(tag)):allEntries);
     }
     function clearFilter(){ setFilter(null); }
-    function buildFilterBar(entries){
-      const counts={};
-      entries.forEach(e=>(e.hashtags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;}));
+    function buildFilterBar(entries) {
+      const counts={}; entries.forEach(e=>(e.hashtags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;}));
       const tags=Object.keys(counts).sort();
-      const bar=document.getElementById('filter-bar');
-      const wrap=document.getElementById('filter-tags');
-      if (!tags.length){ bar.style.display='none'; return; }
+      const bar=document.getElementById('filter-bar'); const wrap=document.getElementById('filter-tags');
+      if(!tags.length){bar.style.display='none';return;}
       bar.style.display='flex'; wrap.innerHTML='';
-      tags.forEach(tag=>{
-        const el=document.createElement('span'); el.className='filter-tag'; el.dataset.tag=tag;
-        el.textContent=`${tag} (${counts[tag]})`;
-        el.addEventListener('click',()=>setFilter(activeFilter===tag?null:tag));
-        wrap.appendChild(el);
-      });
+      tags.forEach(tag=>{ const el=document.createElement('span'); el.className='filter-tag'; el.dataset.tag=tag; el.textContent=`${tag} (${counts[tag]})`; el.addEventListener('click',()=>setFilter(activeFilter===tag?null:tag)); wrap.appendChild(el); });
     }
 
     // ── Placeholder ───────────────────────────────────────────
-    function makePlaceholder(num){
-      if (PLACEHOLDER_IMAGE_URL){
+    function makePlaceholder(num) {
+      if (PLACEHOLDER_IMAGE_URL) {
         const wrap=document.createElement('div'); wrap.className='entry-img-wrap';
         if(num){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+num;wrap.appendChild(n);}
-        const img=document.createElement('img'); img.className='entry-img'; img.src=PLACEHOLDER_IMAGE_URL; img.style.objectFit='contain';
+        const img=document.createElement('img'); img.className='entry-img'; img.src=PLACEHOLDER_IMAGE_URL;
         wrap.appendChild(img); return wrap;
       }
       const div=document.createElement('div'); div.className='entry-img-placeholder';
       if(num){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+num;div.appendChild(n);}
-      div.appendChild(document.createTextNode(PLACEHOLDER_EMOJI||'💅'));
+      div.appendChild(document.createTextNode(PLACEHOLDER_EMOJI||'🔥'));
       return div;
     }
     function makeMWBadge(){ const s=document.createElement('span'); s.className='badge-mw'; s.innerHTML=SCOOP_SVG+'MeanWhirls'; return s; }
 
-    // ── Voting ────────────────────────────────────────────────
-    async function castVote(entryId, vote, isDetail){
-      const current=myVotes[entryId];
-      const newVote=(current===vote)?null:vote;
-      try {
-        const ipHash=await getIpHash();
-        if (newVote===null){ await sbDelete('votes',`entry_id=eq.${entryId}&ip_hash=eq.${ipHash}`); delete myVotes[entryId]; }
-        else { await sbUpsert('votes',{entry_id:entryId,ip_hash:ipHash,vote:newVote},'entry_id,ip_hash'); myVotes[entryId]=newVote; }
-        localStorage.setItem('mw_votes',JSON.stringify(myVotes));
-        const votes=await sbGet('votes',`entry_id=eq.${entryId}&select=vote`);
-        const up=votes.filter(v=>v.vote===1).length;
-        const down=votes.filter(v=>v.vote===-1).length;
-        allVoteCounts[entryId]={up,down};
-        const mv=myVotes[entryId]||0;
-        const upEl=document.querySelector(`[data-vote-up="${entryId}"]`);
-        const downEl=document.querySelector(`[data-vote-down="${entryId}"]`);
-        const scoreEl=document.querySelector(`[data-vote-score="${entryId}"]`);
-        if(upEl){upEl.className='vote-btn'+(mv===1?' voted-up':'');upEl.querySelector('span').textContent=up;}
-        if(downEl){downEl.className='vote-btn'+(mv===-1?' voted-down':'');downEl.querySelector('span').textContent=down;}
-        if(scoreEl){const s=up-down;scoreEl.textContent=(s>0?'+':'')+s;}
-        if(isDetail&&currentDetailEntry?.id===entryId) renderDetailVotes({...currentDetailEntry});
-      } catch(e){ showToast('Vote failed — try again.'); }
-    }
-
-    function makeVoteRow(entry){
-      const vc=allVoteCounts[entry.id]||{up:0,down:0};
-      const mv=myVotes[entry.id]||0;
-      const score=vc.up-vc.down;
-      const row=document.createElement('div'); row.className='vote-row';
-      const upBtn=document.createElement('button');
-      upBtn.className='vote-btn'+(mv===1?' voted-up':''); upBtn.dataset.voteUp=entry.id;
-      upBtn.innerHTML=`👍 <span>${vc.up}</span>`;
-      upBtn.addEventListener('click',e=>{e.stopPropagation();castVote(entry.id,1,false);});
-      const downBtn=document.createElement('button');
-      downBtn.className='vote-btn'+(mv===-1?' voted-down':''); downBtn.dataset.voteDown=entry.id;
-      downBtn.innerHTML=`👎 <span>${vc.down}</span>`;
-      downBtn.addEventListener('click',e=>{e.stopPropagation();castVote(entry.id,-1,false);});
-      const scoreEl=document.createElement('span'); scoreEl.className='vote-score'; scoreEl.dataset.voteScore=entry.id;
-      scoreEl.textContent=(score>0?'+':'')+score;
-      row.appendChild(upBtn); row.appendChild(downBtn); row.appendChild(scoreEl);
-      return row;
-    }
-
-    // ── Burn Book ─────────────────────────────────────────────
-    async function loadEntries(){
+    // ── Load entries ──────────────────────────────────────────
+    async function loadEntries() {
       document.getElementById('entries-container').innerHTML='<div class="loading-wrap"><div class="spinner"></div></div>';
       try {
-        const [entries,votes]=await Promise.all([
+        const [entries, votes] = await Promise.all([
           sbGet('entries','status=eq.approved&hidden=eq.false&order=ui_order.asc.nullslast,created_at.asc'),
           sbGet('votes','select=entry_id,vote')
         ]);
-        allVoteCounts={};
-        votes.forEach(v=>{
-          if(!allVoteCounts[v.entry_id])allVoteCounts[v.entry_id]={up:0,down:0};
-          if(v.vote===1)allVoteCounts[v.entry_id].up++;
-          if(v.vote===-1)allVoteCounts[v.entry_id].down++;
-        });
+        allVoteData = buildVoteData(votes);
+        // Merge in my votes
+        Object.keys(myVotes).forEach(id=>{ if(allVoteData[id])allVoteData[id].myVote=myVotes[id]; });
         allEntries=entries;
         buildFilterBar(entries);
         renderEntries(activeFilter?entries.filter(e=>(e.hashtags||[]).includes(activeFilter)):entries);
-      } catch(err){
+      } catch(err) {
         document.getElementById('entries-container').innerHTML=`<div class="empty"><div class="empty-icon">😬</div><h3>Could not load entries</h3><p>${esc(err.message)}</p></div>`;
       }
     }
 
-    function renderEntries(entries){
+    function renderEntries(entries) {
       const el=document.getElementById('entries-container');
-      if(!entries.length){
-        el.innerHTML=`<div class="empty"><div class="empty-icon">📓</div><h3>The burn book is empty</h3><p style="font-size:.85rem">${activeFilter?'No entries with '+activeFilter:'No approved entries yet. Submit one!'}</p></div>`;
-        return;
-      }
+      if(!entries.length){ el.innerHTML=`<div class="empty"><div class="empty-icon">📓</div><h3>The burn book is empty</h3><p style="font-size:.85rem">${activeFilter?'No entries with '+activeFilter:'No approved entries yet.'}</p></div>`; return; }
       const grid=document.createElement('div'); grid.className='entries-grid';
       entries.forEach((e,i)=>{
         const card=document.createElement('div'); card.className='entry-card'; card.style.animationDelay=(i*0.05)+'s';
@@ -797,17 +953,15 @@
         if(e.text){ const p=document.createElement('p'); p.className='entry-text'; p.textContent=e.text; body.appendChild(p); }
         if(e.hashtags&&e.hashtags.length){
           const tagRow=document.createElement('div'); tagRow.className='entry-hashtags';
-          e.hashtags.forEach(tag=>{
-            const t=document.createElement('span'); t.className='entry-hashtag'; t.textContent=tag;
-            t.addEventListener('click',ev=>{ev.stopPropagation();setFilter(tag);}); tagRow.appendChild(t);
-          });
+          e.hashtags.forEach(tag=>{ const t=document.createElement('span'); t.className='entry-hashtag'; t.textContent=tag; t.addEventListener('click',ev=>{ev.stopPropagation();setFilter(tag);}); tagRow.appendChild(t); });
           body.appendChild(tagRow);
         }
         card.appendChild(body);
 
         const footer=document.createElement('div'); footer.className='entry-footer';
         footer.addEventListener('click',ev=>ev.stopPropagation());
-        footer.appendChild(makeVoteRow(e));
+        footer.appendChild(makeCompactHeat(e));
+
         const meta=document.createElement('div'); meta.className='entry-meta';
         if(e.is_mean_whirls) meta.appendChild(makeMWBadge());
         else{ const a=document.createElement('span'); a.className='entry-author'; a.innerHTML=`by <strong>${esc(e.display_author)}</strong>`; meta.appendChild(a); }
@@ -818,25 +972,59 @@
       el.innerHTML=''; el.appendChild(grid);
     }
 
+    // ── Detail ────────────────────────────────────────────────
+    function openDetail(entry) {
+      currentDetailEntry=entry;
+      document.getElementById('book-grid-view').style.display='none';
+      document.getElementById('detail-page').style.display='block';
+      window.location.hash='entry-'+entry.id;
+
+      const imgEl=document.getElementById('detail-img'); const phEl=document.getElementById('detail-placeholder');
+      const dlBtn=document.getElementById('detail-download'); const numBadge=document.getElementById('detail-img-num');
+      if(entry.image_url){ imgEl.src=entry.image_url; imgEl.style.display='block'; phEl.style.display='none'; dlBtn.href=entry.image_url; dlBtn.style.display='inline-flex'; }
+      else{ imgEl.style.display='none'; phEl.innerHTML=PLACEHOLDER_IMAGE_URL?`<img src="${esc(PLACEHOLDER_IMAGE_URL)}" style="max-width:100%;max-height:520px;object-fit:contain"/>`:(PLACEHOLDER_EMOJI||'🔥'); phEl.style.display='flex'; dlBtn.style.display='none'; }
+      numBadge.textContent=entry.ui_order?'#'+entry.ui_order:'';
+
+      document.getElementById('detail-num-badge').textContent=entry.ui_order?'Entry #'+entry.ui_order:'';
+      document.getElementById('detail-subject').textContent=entry.subject;
+      document.getElementById('detail-text').textContent=entry.text||'';
+
+      const hEl=document.getElementById('detail-hashtags'); hEl.innerHTML='';
+      (entry.hashtags||[]).forEach(tag=>{ const t=document.createElement('span'); t.className='detail-hashtag'; t.textContent=tag; t.addEventListener('click',()=>{closeDetail();setTimeout(()=>setFilter(tag),100);}); hEl.appendChild(t); });
+
+      renderDetailHeat(entry);
+
+      const metaEl=document.getElementById('detail-meta-row'); metaEl.innerHTML='';
+      if(entry.is_mean_whirls){ const b=document.createElement('span'); b.className='badge-mw'; b.innerHTML=SCOOP_SVG+'MeanWhirls'; metaEl.appendChild(b); }
+      else{ const a=document.createElement('span'); a.className='entry-author'; a.innerHTML=`by <strong>${esc(entry.display_author)}</strong>`; metaEl.appendChild(a); }
+      const eb=document.createElement('button'); eb.className='detail-edit-btn'; eb.textContent='✏️ Edit'; eb.addEventListener('click',()=>openEditModal(entry,false)); metaEl.appendChild(eb);
+
+      const shareUrl=window.location.origin+window.location.pathname+'#entry-'+entry.id;
+      const enc=encodeURIComponent(shareUrl); const txt=encodeURIComponent('Check out this Mean Whirls Burn Book entry: '+entry.subject);
+      document.getElementById('share-url').value=shareUrl;
+      document.getElementById('share-fb').href=`https://www.facebook.com/sharer/sharer.php?u=${enc}`;
+      document.getElementById('share-tw').href=`https://twitter.com/intent/tweet?url=${enc}&text=${txt}`;
+    }
+
+    function closeDetail(){ document.getElementById('book-grid-view').style.display='block'; document.getElementById('detail-page').style.display='none'; currentDetailEntry=null; history.replaceState(null,'',window.location.pathname); }
+    function copyShareUrl(){ navigator.clipboard.writeText(document.getElementById('share-url').value).then(()=>showToast('Link copied! 💗')); }
+
     // ── Submit ────────────────────────────────────────────────
     let selectedFile=null;
-    document.getElementById('f-image').addEventListener('change',function(){if(this.files[0])handleFile(this.files[0],'upload-text','upload-preview',f=>selectedFile=f);});
+    document.getElementById('f-image').addEventListener('change',function(){if(this.files[0]){selectedFile=this.files[0];showFilePreview(this.files[0],'upload-text','upload-preview');}});
     document.getElementById('upload-zone').addEventListener('dragover',e=>e.preventDefault());
-    document.getElementById('upload-zone').addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0],'upload-text','upload-preview',f=>selectedFile=f);});
-    function handleFile(file,textId,previewId,setter){
-      setter(file); document.getElementById(textId).textContent=file.name;
-      const r=new FileReader(); r.onload=ev=>{const p=document.getElementById(previewId);p.src=ev.target.result;p.style.display='block';}; r.readAsDataURL(file);
-    }
-    function showStatus(type,msg){const el=document.getElementById('submit-status');el.className='alert alert-'+type;el.textContent=msg;el.style.display='block';}
+    document.getElementById('upload-zone').addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0]){selectedFile=e.dataTransfer.files[0];showFilePreview(selectedFile,'upload-text','upload-preview');}});
+    function showFilePreview(file,textId,previewId){ document.getElementById(textId).textContent=file.name; const r=new FileReader(); r.onload=ev=>{const p=document.getElementById(previewId);p.src=ev.target.result;p.style.display='block';}; r.readAsDataURL(file); }
+
+    function showStatus(type,msg){ const el=document.getElementById('submit-status'); el.className='alert alert-'+type; el.textContent=msg; el.style.display='block'; }
 
     document.getElementById('submit-btn').addEventListener('click',async()=>{
       const subject=document.getElementById('f-subject').value.trim();
       const text=document.getElementById('f-text').value.trim();
       const submitter=document.getElementById('f-submitter').value.trim();
       const anonymous=document.getElementById('f-anonymous').checked;
-      const phone=document.getElementById('f-phone').value.trim();
       const hashtagRaw=document.getElementById('f-hashtags').value.trim();
-      if(!subject){showStatus('error','Who are we burning? Subject is required.');return;}
+      if(!subject){showStatus('error','Who are we burning?');return;}
       if(!submitter){showStatus('error','Your name is required.');return;}
       const btn=document.getElementById('submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
       document.getElementById('submit-status').style.display='none';
@@ -845,35 +1033,20 @@
       const hashtags=parseHashtags(hashtagRaw);
       try {
         let imageUrl='';
-        if(selectedFile)imageUrl=await uploadImage(selectedFile);
+        if(selectedFile) imageUrl=await uploadImage(selectedFile);
         const existing=await sbGet('entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');
         const nextOrder=((existing[0]?.ui_order)||0)+1;
-        await sbPost('entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,phone,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false});
+        await sbPost('entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false});
         showStatus('success',isCode?'🏒 Mean Whirls entry posted!':'✅ Submitted! Appears after moderation. 💗');
         resetSubmitForm();
       }catch(err){showStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='💗 Submit to the Burn Book';
     });
-
-    function resetSubmitForm(){
-      ['f-subject','f-text','f-submitter','f-phone','f-hashtags'].forEach(id=>document.getElementById(id).value='');
-      document.getElementById('f-anonymous').checked=false;selectedFile=null;
-      document.getElementById('upload-text').textContent='Drag & drop or click to upload';
-      const p=document.getElementById('upload-preview');p.style.display='none';p.src='';
-      document.getElementById('f-image').value='';
-    }
+    function resetSubmitForm(){ ['f-subject','f-text','f-submitter','f-hashtags'].forEach(id=>document.getElementById(id).value=''); document.getElementById('f-anonymous').checked=false; selectedFile=null; document.getElementById('upload-text').textContent='Drag & drop or click to upload'; const p=document.getElementById('upload-preview');p.style.display='none';p.src=''; document.getElementById('f-image').value=''; }
 
     // ── Delete request modal ──────────────────────────────────
     const deleteModal=document.getElementById('delete-modal');
-    function openDeleteRequestModal(entry){
-      if(!entry)return;
-      document.getElementById('del-entry-id').value=entry.id;
-      document.getElementById('del-name').value='';
-      document.getElementById('del-reason').value='';
-      document.getElementById('del-phone').value='';
-      document.getElementById('del-status').style.display='none';
-      deleteModal.classList.add('open'); document.body.style.overflow='hidden';
-    }
+    function openDeleteRequestModal(entry){ if(!entry)return; document.getElementById('del-entry-id').value=entry.id; ['del-name','del-reason'].forEach(id=>document.getElementById(id).value=''); document.getElementById('del-status').style.display='none'; deleteModal.classList.add('open'); document.body.style.overflow='hidden'; }
     function closeDeleteModal(){ deleteModal.classList.remove('open'); document.body.style.overflow=''; }
     document.getElementById('delete-modal-close').addEventListener('click',closeDeleteModal);
     deleteModal.addEventListener('click',e=>{if(e.target===deleteModal)closeDeleteModal();});
@@ -882,73 +1055,54 @@
       const entryId=document.getElementById('del-entry-id').value;
       const name=document.getElementById('del-name').value.trim();
       const reason=document.getElementById('del-reason').value.trim();
-      const phone=document.getElementById('del-phone').value.trim();
       if(!name){showDelStatus('error','Your name is required.');return;}
-      if(!reason){showDelStatus('error','Please provide a reason for removal.');return;}
+      if(!reason){showDelStatus('error','Please provide a reason.');return;}
       const btn=document.getElementById('del-submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
-      document.getElementById('del-status').style.display='none';
-
       const isCode=name.toLowerCase()===CODENAME.toLowerCase();
       try {
-        // Immediately hide the entry
         await sbPatch('entries',`id=eq.${entryId}`,{hidden:true});
-        if(isCode){
-          // Codename = permanent delete immediately
-          await sbDelete('entries',`id=eq.${entryId}`);
-          showDelStatus('success','✅ Entry removed immediately.');
-          setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500);
-        } else {
-          // Log the request
-          await sbPost('deletion_requests',{entry_id:entryId,reason,phone});
-          showDelStatus('success','✅ Request submitted. The entry is now hidden while we review it. Thank you.');
-          setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},2500);
-        }
+        if(isCode){ await sbDelete('entries',`id=eq.${entryId}`); showDelStatus('success','✅ Entry removed immediately.'); setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500); }
+        else { await sbPost('deletion_requests',{entry_id:entryId,reason}); showDelStatus('success','✅ Request submitted. Entry hidden while we review. Thank you.'); setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},2500); }
       }catch(err){showDelStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='🗑 Submit Removal Request';
     });
-    function showDelStatus(type,msg){const el=document.getElementById('del-status');el.className='alert alert-'+type;el.textContent=msg;el.style.display='block';}
+    function showDelStatus(type,msg){ const el=document.getElementById('del-status'); el.className='alert alert-'+type; el.textContent=msg; el.style.display='block'; }
 
     // ── Edit modal ────────────────────────────────────────────
     const editModal=document.getElementById('edit-modal');
-    let editImageFile=null;
-    let editAdminMode=false;
+    let editImageFile=null; let editAdminMode=false;
 
     function openEditModal(entry,isAdmin){
       editAdminMode=!!isAdmin;
-      document.getElementById('edit-entry-id').value        =entry.id;
-      document.getElementById('edit-subject').value         =entry.subject;
-      document.getElementById('edit-text').value            =entry.text||'';
-      document.getElementById('edit-hashtags').value        =(entry.hashtags||[]).join(' ');
-      document.getElementById('edit-submitter').value       ='';
-      document.getElementById('edit-anonymous').checked     =entry.display_author==='Anonymous';
-      document.getElementById('edit-existing-image').value  =entry.image_url||'';
-      document.getElementById('edit-orig-subject').value    =entry.subject;
-      document.getElementById('edit-orig-text').value       =entry.text||'';
-      document.getElementById('edit-orig-hashtags').value   =(entry.hashtags||[]).sort().join(' ');
-      document.getElementById('edit-status').style.display  ='none';
+      document.getElementById('edit-entry-id').value       =entry.id;
+      document.getElementById('edit-subject').value        =entry.subject;
+      document.getElementById('edit-text').value           =entry.text||'';
+      document.getElementById('edit-hashtags').value       =(entry.hashtags||[]).join(' ');
+      document.getElementById('edit-submitter').value      ='';
+      document.getElementById('edit-anonymous').checked    =entry.display_author==='Anonymous';
+      document.getElementById('edit-existing-image').value =entry.image_url||'';
+      document.getElementById('edit-orig-subject').value   =entry.subject;
+      document.getElementById('edit-orig-text').value      =entry.text||'';
+      document.getElementById('edit-orig-hashtags').value  =(entry.hashtags||[]).sort().join(' ');
+      document.getElementById('edit-status').style.display ='none';
       editImageFile=null;
       document.getElementById('edit-upload-text').textContent='Drag & drop or click to replace';
       document.getElementById('edit-upload-preview').style.display='none';
       document.getElementById('edit-image').value='';
-      const noteEl=document.getElementById('edit-modal-note');
-      const subGrp=document.getElementById('edit-submitter-group');
-      const btn=document.getElementById('edit-submit-btn');
-      if(isAdmin){noteEl.textContent='✏️ Admin edit — applied immediately.';subGrp.style.display='none';btn.textContent='✏️ Apply Now';}
-      else{noteEl.textContent='✏️ Only edit your own entry. Changes go through moderation. Hashtag-only changes are applied immediately.';subGrp.style.display='block';btn.innerHTML='💗 Submit Edit for Review';}
+      const noteEl=document.getElementById('edit-modal-note'); const subGrp=document.getElementById('edit-submitter-group'); const btn=document.getElementById('edit-submit-btn');
+      if(isAdmin){noteEl.textContent='✏️ Admin edit — applied immediately without moderation.';subGrp.style.display='none';btn.textContent='✏️ Apply Now';}
+      else{noteEl.textContent='✏️ Only edit your own entry. Changes go through moderation. Hashtag-only changes apply immediately.';subGrp.style.display='block';btn.innerHTML='💗 Submit Edit for Review';}
       const curImg=document.getElementById('edit-current-img');
       if(entry.image_url){curImg.src=entry.image_url;curImg.style.display='block';}else{curImg.style.display='none';}
-      editModal.classList.add('open');document.body.style.overflow='hidden';
+      editModal.classList.add('open'); document.body.style.overflow='hidden';
     }
-    function closeEditModal(){editModal.classList.remove('open');document.body.style.overflow='';}
+    function closeEditModal(){ editModal.classList.remove('open'); document.body.style.overflow=''; }
     document.getElementById('edit-modal-close').addEventListener('click',closeEditModal);
     editModal.addEventListener('click',e=>{if(e.target===editModal)closeEditModal();});
     document.getElementById('edit-image').addEventListener('change',function(){if(this.files[0])handleEditImage(this.files[0]);});
     document.getElementById('edit-upload-zone').addEventListener('dragover',e=>e.preventDefault());
     document.getElementById('edit-upload-zone').addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])handleEditImage(e.dataTransfer.files[0]);});
-    function handleEditImage(file){
-      editImageFile=file;document.getElementById('edit-upload-text').textContent=file.name;
-      const r=new FileReader();r.onload=ev=>{const p=document.getElementById('edit-upload-preview');p.src=ev.target.result;p.style.display='block';document.getElementById('edit-current-img').style.display='none';};r.readAsDataURL(file);
-    }
+    function handleEditImage(file){ editImageFile=file; document.getElementById('edit-upload-text').textContent=file.name; const r=new FileReader(); r.onload=ev=>{const p=document.getElementById('edit-upload-preview');p.src=ev.target.result;p.style.display='block';document.getElementById('edit-current-img').style.display='none';}; r.readAsDataURL(file); }
 
     document.getElementById('edit-submit-btn').addEventListener('click',async()=>{
       const entryId    =document.getElementById('edit-entry-id').value;
@@ -961,39 +1115,29 @@
       const origSubject=document.getElementById('edit-orig-subject').value;
       const origText   =document.getElementById('edit-orig-text').value;
       const origTagsStr=document.getElementById('edit-orig-hashtags').value;
-
       if(!subject){showEditStatus('error','Burn victim name required.');return;}
       if(!editAdminMode&&!submitter){showEditStatus('error','Your name is required.');return;}
-
       const btn=document.getElementById('edit-submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
       const hashtags=parseHashtags(hashtagRaw);
       const origTags=origTagsStr?origTagsStr.split(' ').filter(Boolean):[];
       const displayAuthor=anonymous?'Anonymous':(submitter||'MeanWhirls');
-
-      // Detect if ONLY hashtags changed (no subject, text, image change)
-      const onlyTagsChanged = !editImageFile &&
-        subject===origSubject &&
-        text===origText &&
-        !arraysEqual(hashtags,origTags);
-      const nothingChanged = !editImageFile &&
-        subject===origSubject &&
-        text===origText &&
-        arraysEqual(hashtags,origTags);
-
-      if(nothingChanged){showEditStatus('error','No changes detected.');btn.disabled=false;btn.innerHTML='💗 Submit Edit for Review';return;}
-
+      const onlyTagsChanged=!editImageFile&&subject===origSubject&&text===origText&&!arraysEqual(hashtags,origTags);
+      const nothingChanged=!editImageFile&&subject===origSubject&&text===origText&&arraysEqual(hashtags,origTags);
+      if(nothingChanged){showEditStatus('error','No changes detected.');btn.disabled=false;btn.innerHTML=editAdminMode?'✏️ Apply Now':'💗 Submit Edit for Review';return;}
       try {
         let imageUrl=existingImg;
-        if(editImageFile)imageUrl=await uploadImage(editImageFile);
-
+        if(editImageFile) imageUrl=await uploadImage(editImageFile);
         if(editAdminMode){
           await sbPatch('entries',`id=eq.${entryId}`,{subject,text,image_url:imageUrl,display_author:displayAuthor,hashtags});
           showEditStatus('success','✅ Edit applied!');
-          setTimeout(()=>{closeEditModal();loadEntries();if(currentDetailEntry?.id===entryId)openDetail({...currentDetailEntry,subject,text,image_url:imageUrl,display_author:displayAuthor,hashtags});},1500);
+          setTimeout(async()=>{
+            closeEditModal();
+            await loadEntries();
+            if(currentDetailEntry?.id===entryId){ const updated=allEntries.find(e=>e.id===entryId); if(updated)openDetail(updated); }
+          },1000);
         } else {
           const isCode=submitter.toLowerCase()===CODENAME.toLowerCase();
           if(isCode||onlyTagsChanged){
-            // Auto-apply: codename OR hashtag-only change
             const patch={hashtags};
             if(!onlyTagsChanged){patch.subject=subject;patch.text=text;patch.image_url=imageUrl;}
             if(isCode){patch.display_author='MeanWhirls';patch.is_mean_whirls=true;}
@@ -1009,7 +1153,7 @@
       }catch(err){showEditStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.textContent=editAdminMode?'✏️ Apply Now':'💗 Submit Edit for Review';
     });
-    function showEditStatus(type,msg){const el=document.getElementById('edit-status');el.className='alert alert-'+type;el.textContent=msg;el.style.display='block';}
+    function showEditStatus(type,msg){ const el=document.getElementById('edit-status'); el.className='alert alert-'+type; el.textContent=msg; el.style.display='block'; }
 
     // ── Admin ─────────────────────────────────────────────────
     document.addEventListener('keydown',e=>{
@@ -1022,26 +1166,43 @@
     document.getElementById('admin-pass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('admin-login-btn').click();});
     document.getElementById('admin-login-btn').addEventListener('click',async()=>{
       const entered=document.getElementById('admin-pass').value;
-      try {
-        const cfg=await sbGet('config','key=eq.adminpass');
-        const stored=cfg[0]?.value||ADMIN_PASSWORD;
-        if(entered===stored){unlockAdmin();}else{alert('Wrong password. So not fetch.');}
-      }catch{if(entered===ADMIN_PASSWORD){unlockAdmin();}else{alert('Wrong password. So not fetch.');}}
+      try { const cfg=await sbGet('config','key=eq.adminpass'); const stored=cfg[0]?.value||ADMIN_PASSWORD; if(entered===stored){unlockAdmin();}else{alert('Wrong password. So not fetch.');} }
+      catch { if(entered===ADMIN_PASSWORD){unlockAdmin();}else{alert('Wrong password. So not fetch.');} }
     });
-    function unlockAdmin(){
-      document.getElementById('admin-login-box').style.display='none';
-      document.getElementById('admin-panel').style.display='block';
-      loadDeletionRequests();loadPendingEdits();loadAdminEntries();
+    function unlockAdmin(){ document.getElementById('admin-login-box').style.display='none'; document.getElementById('admin-panel').style.display='block'; loadDeletionRequests();loadPendingEdits();loadAdminEntries(); }
+
+    // ── Multi-select ──────────────────────────────────────────
+    function getSelectedIds(){ return [...document.querySelectorAll('.admin-row-cb:checked')].map(cb=>cb.dataset.id); }
+    function updateBulkCount(){ document.getElementById('bulk-count').textContent=getSelectedIds().length+' selected'; }
+    function toggleSelectAll(cb){ document.querySelectorAll('.admin-row-cb').forEach(c=>{c.checked=cb.checked;}); updateBulkCount(); }
+
+    async function applyBulkTag(){
+      const ids=getSelectedIds();
+      const raw=document.getElementById('bulk-tag-input').value.trim();
+      const tags=parseHashtags(raw);
+      if(!ids.length){showToast('No entries selected.');return;}
+      if(!tags.length){showToast('Enter at least one hashtag e.g. #newtag');return;}
+      try {
+        // Fetch current hashtags for each selected entry, merge, update
+        const entries=await sbGet('entries',`id=in.(${ids.join(',')})&select=id,hashtags`);
+        await Promise.all(entries.map(e=>{
+          const merged=[...new Set([...(e.hashtags||[]),...tags])];
+          return sbPatch('entries',`id=eq.${e.id}`,{hashtags:merged});
+        }));
+        showToast(`Added ${tags.join(' ')} to ${ids.length} entr${ids.length!==1?'ies':'y'}.`);
+        document.getElementById('bulk-tag-input').value='';
+        document.getElementById('select-all').checked=false;
+        loadAdminEntries();
+      }catch(err){alert('Failed: '+err.message);}
     }
 
     // ── Deletion requests ─────────────────────────────────────
     async function loadDeletionRequests(){
       const tbody=document.getElementById('deletions-tbody');
-      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem">Loading...</td></tr>';
+      tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem">Loading...</td></tr>';
       try {
         const reqs=await sbGet('deletion_requests','order=created_at.desc');
-        if(!reqs.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem">No removal requests.</td></tr>';return;}
-        // Get entry details
+        if(!reqs.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem">No removal requests.</td></tr>';return;}
         const ids=[...new Set(reqs.map(r=>r.entry_id))];
         const entries=await sbGet('entries',`id=in.(${ids.join(',')})&select=id,subject,ui_order,hidden`);
         const entryMap={};entries.forEach(e=>entryMap[e.id]=e);
@@ -1052,35 +1213,18 @@
           tr.innerHTML=`
             <td style="font-weight:700;color:var(--gold)">#${entry.ui_order||'?'}</td>
             <td style="font-weight:600">${esc(entry.subject||'(deleted)')}</td>
-            <td style="max-width:200px;font-size:.8rem">${esc(req.reason)}</td>
-            <td style="font-size:.78rem;color:var(--muted)">${esc(req.phone||'—')}</td>
+            <td style="max-width:220px;font-size:.8rem">${esc(req.reason)}</td>
             <td style="font-size:.74rem;color:var(--muted)">${esc(new Date(req.created_at).toLocaleDateString())}</td>
-            <td style="min-width:160px">
+            <td>
               <button class="admin-action aa-delete" onclick="adminDeleteEntry('${req.entry_id}','${req.id}')">✕ Delete Entry</button>
               <button class="admin-action aa-restore" onclick="adminRestoreEntry('${req.entry_id}','${req.id}')">↩ Restore</button>
             </td>`;
           tbody.appendChild(tr);
         });
-      }catch(err){tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--deep-pink);padding:1.5rem">Failed: ${esc(err.message)}</td></tr>`;}
+      }catch(err){tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--deep-pink);padding:1.5rem">Failed: ${esc(err.message)}</td></tr>`;}
     }
-
-    async function adminDeleteEntry(entryId,reqId){
-      if(!confirm('Permanently delete this entry? This cannot be undone.'))return;
-      try {
-        await sbDelete('entries',`id=eq.${entryId}`);
-        await sbDelete('deletion_requests',`id=eq.${reqId}`);
-        showToast('Entry deleted.');
-        loadDeletionRequests();loadAdminEntries();
-      }catch(err){alert('Failed: '+err.message);}
-    }
-    async function adminRestoreEntry(entryId,reqId){
-      try {
-        await sbPatch('entries',`id=eq.${entryId}`,{hidden:false});
-        await sbDelete('deletion_requests',`id=eq.${reqId}`);
-        showToast('Entry restored and request dismissed.');
-        loadDeletionRequests();loadAdminEntries();
-      }catch(err){alert('Failed: '+err.message);}
-    }
+    async function adminDeleteEntry(entryId,reqId){ if(!confirm('Permanently delete this entry?'))return; try{await sbDelete('entries',`id=eq.${entryId}`);await sbDelete('deletion_requests',`id=eq.${reqId}`);showToast('Entry deleted.');loadDeletionRequests();loadAdminEntries();}catch(err){alert('Failed: '+err.message);} }
+    async function adminRestoreEntry(entryId,reqId){ try{await sbPatch('entries',`id=eq.${entryId}`,{hidden:false});await sbDelete('deletion_requests',`id=eq.${reqId}`);showToast('Entry restored.');loadDeletionRequests();loadAdminEntries();}catch(err){alert('Failed: '+err.message);} }
 
     // ── Pending edits ─────────────────────────────────────────
     async function loadPendingEdits(){
@@ -1095,12 +1239,12 @@
         tbody.innerHTML='';
         edits.forEach(ed=>{
           const tr=document.createElement('tr');
-          const imgCell=ed.image_url?`<img src="${esc(ed.image_url)}" style="width:55px;height:42px;object-fit:contain;background:#f0e0e8;border-radius:1px;cursor:zoom-in" />`:'—';
+          const imgCell=ed.image_url?`<img src="${esc(ed.image_url)}" style="width:55px;height:42px;object-fit:contain;background:#f0e0e8;border-radius:1px" />`:'—';
           const tags=(ed.hashtags||[]).join(' ')||'—';
           tr.innerHTML=`
             <td style="font-weight:700;color:var(--gold)">#${orderMap[ed.entry_id]||'?'}</td>
             <td style="font-weight:600">${esc(ed.subject)}</td>
-            <td style="max-width:160px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td>
+            <td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td>
             <td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td>
             <td>${imgCell}</td>
             <td style="font-size:.8rem">${esc(ed.submitter)}</td>
@@ -1113,55 +1257,40 @@
         });
       }catch(err){tbody.innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--deep-pink);padding:1.5rem">Failed: ${esc(err.message)}</td></tr>`;}
     }
-    async function acceptEdit(jsonStr){
-      const ed=JSON.parse(jsonStr);
-      try {
-        const patch={subject:ed.subject,text:ed.text,image_url:ed.image_url,display_author:ed.display_author};
-        if(ed.hashtags)patch.hashtags=ed.hashtags;
-        await sbPatch('entries',`id=eq.${ed.entry_id}`,patch);
-        await sbDelete('pending_edits',`id=eq.${ed.id}`);
-        loadPendingEdits();loadAdminEntries();
-      }catch(err){alert('Failed: '+err.message);}
-    }
-    async function rejectEdit(id){
-      try{await sbDelete('pending_edits',`id=eq.${id}`);loadPendingEdits();}
-      catch(err){alert('Failed: '+err.message);}
-    }
+    async function acceptEdit(jsonStr){ const ed=JSON.parse(jsonStr); try{const patch={subject:ed.subject,text:ed.text,image_url:ed.image_url,display_author:ed.display_author};if(ed.hashtags)patch.hashtags=ed.hashtags;await sbPatch('entries',`id=eq.${ed.entry_id}`,patch);await sbDelete('pending_edits',`id=eq.${ed.id}`);loadPendingEdits();loadAdminEntries();}catch(err){alert('Failed: '+err.message);} }
+    async function rejectEdit(id){ try{await sbDelete('pending_edits',`id=eq.${id}`);loadPendingEdits();}catch(err){alert('Failed: '+err.message);} }
 
     // ── All entries ───────────────────────────────────────────
     async function loadAdminEntries(){
       const tbody=document.getElementById('admin-tbody');
       tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:1.5rem">Loading...</td></tr>';
+      document.getElementById('select-all').checked=false;
+      document.getElementById('bulk-count').textContent='0 selected';
       try {
         const entries=await sbGet('entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
         if(!entries.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:1.5rem">No entries yet.</td></tr>';return;}
         tbody.innerHTML='';
         entries.forEach(e=>{
           const tr=document.createElement('tr');
-          // Show masked codename in Displays As column if submitter matches codename
           const isCodeSubmitter=e.submitter&&e.submitter.toLowerCase()===CODENAME.toLowerCase();
-          const displayAsCell=e.is_mean_whirls
-            ?`<span class="badge-mw">${SCOOP_SVG}MeanWhirls</span>`
-            :`<span style="font-size:.82rem">${esc(e.display_author)}</span>`;
-          const submitterCell=isCodeSubmitter
-            ?`<span style="font-size:.82rem;font-style:italic;color:var(--muted)">${esc(CODENAME_DISPLAY)}</span>`
-            :`<span style="font-size:.8rem">${esc(e.submitter)}</span>`;
+          const displayAsCell=e.is_mean_whirls?`<span class="badge-mw">${SCOOP_SVG}MeanWhirls</span>`:`<span style="font-size:.82rem">${esc(e.display_author)}</span>`;
+          const submitterCell=isCodeSubmitter?`<span style="font-size:.82rem;font-style:italic;color:var(--muted)">${esc(CODENAME_DISPLAY)}</span>`:`<span style="font-size:.8rem">${esc(e.submitter)}</span>`;
           const imgCell=e.image_url?`<img src="${esc(e.image_url)}" style="object-fit:contain;background:#f0e0e8"/>`:'—';
           const tags=(e.hashtags||[]).join(' ')||'—';
           const statusLabel=e.hidden?'hidden':e.status;
           const approveBtn  =(!e.hidden&&e.status!=='approved')?`<button class="admin-action aa-approve" onclick="adminModerate('${e.id}','approve')">✓ Approve</button>`:'';
           const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="admin-action aa-unapprove" onclick="adminModerate('${e.id}','unapprove')">⏸ Unapprove</button>`:'';
           tr.innerHTML=`
+            <td><input type="checkbox" class="admin-row-cb" data-id="${e.id}" onchange="updateBulkCount()" /></td>
             <td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td>
             <td>${imgCell}</td>
             <td style="font-weight:600">${esc(e.subject)}</td>
-            <td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td>
+            <td style="max-width:130px;font-size:.78rem;font-style:italic">${esc(e.text)}</td>
             <td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td>
             <td>${submitterCell}</td>
             <td>${displayAsCell}</td>
-            <td style="font-size:.76rem;color:var(--muted)">${esc(e.phone||'—')}</td>
             <td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${esc(statusLabel)}</span></td>
-            <td style="min-width:210px">
+            <td style="min-width:200px">
               ${approveBtn}${unapproveBtn}
               <button class="admin-action aa-edit" onclick='adminEditEntry(${JSON.stringify(JSON.stringify(e))})'>✏️ Edit</button>
               <button class="admin-action aa-reject" onclick="adminModerate('${e.id}','reject')">✕ Remove</button>
@@ -1171,12 +1300,12 @@
       }catch(err){tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;color:var(--deep-pink);padding:1.5rem">Failed: ${esc(err.message)}</td></tr>`;}
     }
 
-    function adminEditEntry(jsonStr){openEditModal(JSON.parse(jsonStr),true);}
+    function adminEditEntry(jsonStr){ openEditModal(JSON.parse(jsonStr),true); }
     async function adminModerate(id,decision){
       try {
-        if(decision==='approve')    await sbPatch('entries',`id=eq.${id}`,{status:'approved',hidden:false});
-        else if(decision==='unapprove') await sbPatch('entries',`id=eq.${id}`,{status:'pending'});
-        else await sbDelete('entries',`id=eq.${id}`);
+        if(decision==='approve')         await sbPatch('entries',`id=eq.${id}`,{status:'approved',hidden:false});
+        else if(decision==='unapprove')  await sbPatch('entries',`id=eq.${id}`,{status:'pending'});
+        else                             await sbDelete('entries',`id=eq.${id}`);
         loadAdminEntries();
       }catch(err){alert('Failed: '+err.message);}
     }
