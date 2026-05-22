@@ -140,6 +140,10 @@
     .badge-mw img{width:12px;height:12px;object-fit:contain;filter:brightness(0) invert(1);}
 
     @media(max-width:600px){.main{padding:1.5rem 1rem;}th,td{padding:0.45rem 0.55rem;}table{font-size:0.74rem;}.admin-tab{padding:0.7rem 1rem;font-size:0.65rem;}}
+    .ip-name-tag{display:inline-block;background:var(--blush);border:1px solid rgba(200,30,90,0.2);border-radius:12px;padding:0.1rem 0.5rem;font-size:0.72rem;margin:0.1rem;color:var(--ink);}
+    .badge-admin{background:#e3f2fd;color:#1565c0;border-radius:12px;padding:0.15rem 0.55rem;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+    .badge-blocked{background:#ffcdd2;color:#c62828;border-radius:12px;padding:0.15rem 0.55rem;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+    .badge-ok{background:#e8f5e9;color:#2e7d32;border-radius:12px;padding:0.15rem 0.55rem;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
   </style>
 </head>
 <body>
@@ -174,6 +178,7 @@
       <button class="admin-tab" data-atab="comments">💬 Comments <span class="badge-count" id="cnt-comments">0</span></button>
       <button class="admin-tab" data-atab="entries">📋 All Entries</button>
       <button class="admin-tab" data-atab="reorder">↕️ Reorder</button>
+      <button class="admin-tab" data-atab="ips">👤 IP Profiles</button>
     </div>
 
     <!-- REMOVALS -->
@@ -222,6 +227,38 @@
       </div>
     </div>
 
+    <!-- IP PROFILES -->
+    <div id="atab-ips" class="tab-content">
+      <div class="section-hdr"><span class="section-title">👤 IP Profiles</span><button class="refresh-btn" onclick="loadIpProfiles()">↺ Refresh</button></div>
+      <div style="margin-bottom:1rem;font-size:0.8rem;color:var(--muted)">Each row is a unique visitor IP. Blocked users cannot submit entries, edits, comments, or victim statements.</div>
+      <div id="ip-filter-bar" style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
+        <input id="ip-search" class="form-input" style="max-width:260px;padding:0.4rem 0.75rem;font-size:0.82rem" placeholder="Search by name..." oninput="filterIpProfiles()" />
+        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.78rem;color:var(--muted);cursor:pointer"><input type="checkbox" id="ip-show-blocked" onchange="filterIpProfiles()" /> Show blocked only</label>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>IP Hash</th><th>Names Used</th><th>Admin</th><th>Status</th><th>Last Seen</th><th>Actions</th></tr></thead>
+          <tbody id="tb-ips"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:1.5rem">
+        <div class="section-hdr" style="margin-top:0"><span class="section-title" style="font-size:1rem">Activity Log</span><button class="refresh-btn" onclick="loadIpActivity()">↺ Refresh</button></div>
+        <div style="margin-bottom:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+          <input id="act-ip-filter" class="form-input" style="max-width:220px;padding:0.4rem 0.75rem;font-size:0.82rem" placeholder="Filter by IP hash..." oninput="loadIpActivity()" />
+          <select id="act-action-filter" class="form-input" style="max-width:180px;padding:0.4rem 0.75rem;font-size:0.82rem" onchange="loadIpActivity()">
+            <option value="">All actions</option>
+            <option value="submit">submit</option>
+            <option value="edit">edit</option>
+            <option value="comment">comment</option>
+            <option value="victim_statement">victim_statement</option>
+            <option value="vote">vote</option>
+            <option value="admin_login">admin_login</option>
+          </select>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>When</th><th>IP Hash</th><th>Names</th><th>Action</th><th>Entry #</th><th>Detail</th></tr></thead><tbody id="tb-activity"></tbody></table></div>
+      </div>
+    </div>
+
     <!-- REORDER -->
     <div id="atab-reorder" class="tab-content">
       <div class="section-hdr"><span class="section-title">↕️ Reorder Entries</span><button class="refresh-btn" onclick="loadReorder()">↺ Refresh</button></div>
@@ -252,6 +289,11 @@
     const sbPost   = async (t,b)     => { const r=await fetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
     const sbPatch  = async (t,p,b)   => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
     const sbDelete = async (t,p)     => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'DELETE',headers:H}); if(!r.ok)throw new Error(await r.text()); };
+    const sbUpsert = async (t,b,oc)  => { const u=`${SB}/rest/v1/${t}`+(oc?`?on_conflict=${oc}`:''); const r=await fetch(u,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const getIpHash = async () => {
+      try { const c=sessionStorage.getItem('mw_iphash'); if(c)return c; const {ip}=await (await fetch('https://api.ipify.org?format=json')).json(); let h=0; for(let i=0;i<ip.length;i++){h=((h<<5)-h)+ip.charCodeAt(i);h|=0;} const s='v'+Math.abs(h).toString(36); sessionStorage.setItem('mw_iphash',s); return s; }
+      catch { return 'anon_'+Math.random().toString(36).slice(2); }
+    };
     const uploadImage = async (file) => {
       const ext=file.name.split('.').pop().toLowerCase()||'jpg', path=`${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
       const r=await fetch(`${SB}/storage/v1/object/${BUCKET}/${path}`,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':file.type},body:file});
@@ -285,6 +327,22 @@
       } catch(e) {}
     }
 
+    // Auto-login if this IP was previously an admin
+    (async () => {
+      try {
+        const savedIp = localStorage.getItem('mw_admin_ip');
+        if (savedIp) {
+          const ip = await getIpHash();
+          if (ip === savedIp) {
+            // Verify still admin in DB
+            const rows = await sbGet('ip_profiles', `ip_hash=eq.${ip}&is_admin=eq.true`);
+            if (rows.length) { unlockAdmin(); return; }
+            else localStorage.removeItem('mw_admin_ip');
+          }
+        }
+      } catch(e) {}
+    })();
+
     document.getElementById('admin-pass').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-btn').click(); });
     document.getElementById('login-btn').addEventListener('click', async () => {
       const entered = document.getElementById('admin-pass').value;
@@ -296,13 +354,21 @@
       } catch { if(entered===ADMIN_PASSWORD_FALLBACK) unlockAdmin(); else showLoginErr('Wrong password. So not fetch.'); }
     });
     function showLoginErr(msg){ const el=document.getElementById('login-err'); el.textContent=msg; el.style.display='block'; }
-    function unlockAdmin(){
+    async function unlockAdmin(){
       adminAuthed=true;
+      // Remember this IP as admin
+      try {
+        const ip = await getIpHash();
+        localStorage.setItem('mw_admin_ip', ip);
+        // Upsert ip_profile as admin
+        await sbUpsert('ip_profiles', {ip_hash:ip, is_admin:true, last_seen:new Date().toISOString()}, 'ip_hash');
+        await sbPost('ip_activity', {ip_hash:ip, action:'admin_login', entry_id:null, detail:'Admin panel login'});
+      } catch(e){}
       document.getElementById('login-wrap').style.display='none';
       document.getElementById('admin-main').style.display='block';
       loadAll();
     }
-    function loadAll(){ loadRemovals(); loadEdits(); loadVictims(); loadComments(); loadEntries(); }
+    function loadAll(){ loadRemovals(); loadEdits(); loadVictims(); loadComments(); loadEntries(); loadIpProfiles(); loadIpActivity(); }
 
     // ── Tabs ──────────────────────────────────────────────────
     document.querySelectorAll('.admin-tab').forEach(tab => {
@@ -572,6 +638,115 @@
         reorderData=reorderData.map((e,i)=>({...e,ui_order:i+1}));renderReorderList();
       }catch(err){msgEl.className='alert alert-error';msgEl.textContent='Failed: '+err.message;msgEl.style.display='block';}
       btn.disabled=false;btn.textContent='💾 Save Order';
+    }
+
+    // ── IP Profiles ───────────────────────────────────────────
+    let _allIpProfiles = [];
+
+    async function loadIpProfiles() {
+      const tb = document.getElementById('tb-ips');
+      tb.innerHTML = loadingRow(6);
+      try {
+        _allIpProfiles = await sbGet('ip_profiles', 'order=last_seen.desc');
+        filterIpProfiles();
+      } catch(err) { tb.innerHTML = emptyRow(6, 'Failed: '+err.message); }
+    }
+
+    function filterIpProfiles() {
+      const search = (document.getElementById('ip-search')?.value||'').toLowerCase();
+      const blockedOnly = document.getElementById('ip-show-blocked')?.checked;
+      const filtered = _allIpProfiles.filter(p => {
+        if (blockedOnly && !p.is_blocked) return false;
+        if (search && !(p.names||[]).some(n=>n.toLowerCase().includes(search)) && !p.ip_hash.includes(search)) return false;
+        return true;
+      });
+      renderIpProfiles(filtered);
+    }
+
+    function renderIpProfiles(profiles) {
+      const tb = document.getElementById('tb-ips');
+      if (!profiles.length) { tb.innerHTML = emptyRow(6, 'No profiles found.'); return; }
+      tb.innerHTML = '';
+      profiles.forEach(p => {
+        const tr = document.createElement('tr');
+        const namesHtml = (p.names||[]).map(n=>`<span class="ip-name-tag">${esc(n)}</span>`).join('')||'<span style="color:var(--muted);font-size:.78rem">none</span>';
+        const adminBadge = p.is_admin ? '<span class="badge-admin">Admin</span>' : '';
+        const statusBadge = p.is_blocked ? '<span class="badge-blocked">Blocked</span>' : '<span class="badge-ok">OK</span>';
+        const blockBtn = p.is_blocked
+          ? `<button class="btn-a ars" onclick="toggleBlock('${p.ip_hash}',false)">↩ Unblock</button>`
+          : `<button class="btn-a add" onclick="toggleBlock('${p.ip_hash}',true)">⛔ Block</button>`;
+        const adminBtn = p.is_admin
+          ? `<button class="btn-a au" onclick="toggleAdmin('${p.ip_hash}',false)">Revoke Admin</button>`
+          : `<button class="btn-a aa" onclick="toggleAdmin('${p.ip_hash}',true)">Grant Admin</button>`;
+        const actBtn = `<button class="btn-a ae" onclick="document.getElementById('act-ip-filter').value='${p.ip_hash}';loadIpActivity();document.querySelector('[data-atab=\'ips\']').click();">📋 Log</button>`;
+        tr.innerHTML = `
+          <td style="font-size:.75rem;color:var(--muted);font-family:monospace">${esc(p.ip_hash)}</td>
+          <td>${namesHtml}</td>
+          <td>${adminBadge}</td>
+          <td>${statusBadge}</td>
+          <td style="font-size:.74rem;color:var(--muted)">${p.last_seen?new Date(p.last_seen).toLocaleString():'-'}</td>
+          <td style="min-width:200px">${blockBtn} ${adminBtn} ${actBtn}</td>`;
+        tb.appendChild(tr);
+      });
+    }
+
+    async function toggleBlock(ipHash, block) {
+      try {
+        await sbPatch('ip_profiles', `ip_hash=eq.${ipHash}`, {is_blocked: block});
+        if (block) localStorage.removeItem('mw_admin_ip'); // safety: clear if blocking self somehow
+        showToast(block ? '⛔ User blocked.' : '✅ User unblocked.');
+        loadIpProfiles();
+      } catch(err) { alert('Failed: '+err.message); }
+    }
+
+    async function toggleAdmin(ipHash, grant) {
+      try {
+        await sbPatch('ip_profiles', `ip_hash=eq.${ipHash}`, {is_admin: grant});
+        showToast(grant ? '✅ Admin granted.' : 'Admin revoked.');
+        loadIpProfiles();
+      } catch(err) { alert('Failed: '+err.message); }
+    }
+
+    async function loadIpActivity() {
+      const tb = document.getElementById('tb-activity');
+      tb.innerHTML = loadingRow(6);
+      try {
+        let params = 'order=created_at.desc&limit=200';
+        const ipFilter = document.getElementById('act-ip-filter')?.value.trim();
+        const actionFilter = document.getElementById('act-action-filter')?.value;
+        if (ipFilter) params += `&ip_hash=eq.${ipFilter}`;
+        if (actionFilter) params += `&action=eq.${actionFilter}`;
+        const rows = await sbGet('ip_activity', params);
+
+        // Get names for each ip
+        const ips = [...new Set(rows.map(r=>r.ip_hash))];
+        let nameMap = {};
+        if (ips.length) {
+          const profiles = await sbGet('ip_profiles', `ip_hash=in.(${ips.join(',')})&select=ip_hash,names`);
+          profiles.forEach(p => nameMap[p.ip_hash] = (p.names||[]).join(', '));
+        }
+        // Get entry ui_order for display
+        const entryIds = [...new Set(rows.filter(r=>r.entry_id).map(r=>r.entry_id))];
+        let orderMap = {};
+        if (entryIds.length) {
+          const entries = await sbGet('entries', `id=in.(${entryIds.join(',')})&select=id,ui_order`);
+          entries.forEach(e => orderMap[e.id] = e.ui_order);
+        }
+
+        if (!rows.length) { tb.innerHTML = emptyRow(6, 'No activity found.'); return; }
+        tb.innerHTML = '';
+        rows.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${new Date(r.created_at).toLocaleString()}</td>
+            <td style="font-size:.74rem;font-family:monospace;color:var(--muted)">${esc(r.ip_hash)}</td>
+            <td style="font-size:.78rem">${esc(nameMap[r.ip_hash]||'—')}</td>
+            <td><span class="badge badge-${r.action==='admin_login'?'approved':r.action==='vote'?'pending':'approved'}">${esc(r.action)}</span></td>
+            <td style="font-size:.78rem;color:var(--gold);font-weight:700">${r.entry_id?('#'+(orderMap[r.entry_id]||'?')):'—'}</td>
+            <td style="font-size:.78rem;color:var(--muted)">${esc(r.detail)}</td>`;
+          tb.appendChild(tr);
+        });
+      } catch(err) { tb.innerHTML = emptyRow(6, 'Failed: '+err.message); }
     }
 
     // ── Go ────────────────────────────────────────────────────
