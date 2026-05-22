@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mean Whirls — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Raleway:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --pink:#e8527a; --deep-pink:#c2185b; --blush:#fde8ef; --cream:#fff8f0;
+      --gold:#d4a843; --ink:#2a1a24; --muted:#8c6678; --white:#ffffff;
+      --shadow:rgba(200,30,90,0.18); --orange:#ff6d00;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--cream);font-family:'Raleway',sans-serif;color:var(--ink);min-height:100vh;}
+
+    .header{background:linear-gradient(135deg,#1a0a12,#3d0f25);padding:1.5rem 2rem;border-bottom:3px solid var(--gold);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
+    .header-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#fff;}
+    .header-title span{color:var(--pink);}
+    .header-sub{font-size:0.72rem;color:rgba(255,255,255,0.5);letter-spacing:0.1em;text-transform:uppercase;}
+    .header-back{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.72rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);text-decoration:none;border:1.5px solid rgba(255,255,255,0.2);padding:0.4rem 0.9rem;border-radius:2px;transition:all 0.2s;}
+    .header-back:hover{border-color:var(--pink);color:var(--pink);}
+
+    .login-wrap{max-width:420px;margin:4rem auto;background:var(--white);border:1.5px solid rgba(200,30,90,0.14);padding:2.5rem;box-shadow:4px 6px 24px var(--shadow);border-radius:2px;}
+    .login-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:var(--deep-pink);margin-bottom:0.5rem;}
+    .login-sub{font-size:0.8rem;color:var(--muted);margin-bottom:1.75rem;}
+
+    .main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
+
+    /* Tabs */
+    .admin-tabs{display:flex;gap:0;background:var(--white);border:1.5px solid rgba(200,30,90,0.12);border-radius:2px;margin-bottom:2rem;overflow:hidden;flex-wrap:wrap;}
+    .admin-tab{background:none;border:none;border-right:1px solid rgba(200,30,90,0.1);padding:0.85rem 1.5rem;font-family:'Raleway',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;position:relative;}
+    .admin-tab:last-child{border-right:none;}
+    .admin-tab:hover{background:var(--blush);color:var(--deep-pink);}
+    .admin-tab.active{background:var(--deep-pink);color:#fff;}
+    .admin-tab .badge-count{display:inline-block;background:var(--pink);color:#fff;font-size:0.6rem;font-weight:700;padding:0.1rem 0.4rem;border-radius:10px;margin-left:0.4rem;}
+    .admin-tab.active .badge-count{background:rgba(255,255,255,0.3);}
+    .tab-content{display:none;} .tab-content.active{display:block;}
+
+    /* Section header */
+    .section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;}
+    .section-title{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--deep-pink);}
+    .section-title.urgent{color:#c62828;}
+    .refresh-btn{background:none;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.3rem 0.75rem;font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;}
+    .refresh-btn:hover{border-color:var(--pink);color:var(--deep-pink);background:var(--blush);}
+
+    /* Table */
+    .tbl-wrap{overflow-x:auto;margin-bottom:1.5rem;}
+    table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+    th{background:var(--deep-pink);color:#fff;padding:0.65rem 0.85rem;text-align:left;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;white-space:nowrap;}
+    th.urgent{background:#c62828;}
+    th.cb{width:36px;}
+    td{padding:0.65rem 0.85rem;border-bottom:1px solid var(--blush);vertical-align:top;}
+    tr:hover td{background:var(--blush);}
+    td img{width:60px;height:45px;object-fit:contain;border-radius:1px;background:#f0e0e8;cursor:zoom-in;}
+    .badge{display:inline-block;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
+    .badge-pending  {background:#fff9c4;color:#f57f17;}
+    .badge-approved {background:#e8f5e9;color:#2e7d32;}
+    .badge-hidden   {background:#ffcdd2;color:#c62828;}
+    .btn-a{background:none;border:1.5px solid;border-radius:2px;padding:0.28rem 0.6rem;font-size:0.67rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;margin-right:0.3rem;margin-bottom:0.3rem;white-space:nowrap;font-family:'Raleway',sans-serif;}
+    .aa{border-color:#4caf50;color:#2e7d32;} .aa:hover{background:#4caf50;color:#fff;}
+    .au{border-color:#ff9800;color:#e65100;} .au:hover{background:#ff9800;color:#fff;}
+    .ae{border-color:var(--gold);color:#7a5c00;} .ae:hover{background:var(--gold);color:#fff;}
+    .ar{border-color:var(--pink);color:var(--deep-pink);} .ar:hover{background:var(--pink);color:#fff;}
+    .aac{border-color:#4caf50;color:#2e7d32;} .aac:hover{background:#4caf50;color:#fff;}
+    .add{border-color:#c62828;color:#c62828;} .add:hover{background:#c62828;color:#fff;}
+    .ars{border-color:#1565c0;color:#1565c0;} .ars:hover{background:#1565c0;color:#fff;}
+
+    /* Form elements */
+    .form-group{margin-bottom:1.1rem;}
+    .form-label{display:block;font-size:0.72rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--deep-pink);margin-bottom:0.4rem;}
+    .form-input,.form-textarea{width:100%;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.65rem 0.85rem;font-family:'Raleway',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--cream);outline:none;transition:border-color 0.2s;}
+    .form-input:focus,.form-textarea:focus{border-color:var(--pink);}
+    .form-textarea{resize:vertical;min-height:90px;}
+    .btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.8rem 1.75rem;font-family:'Raleway',sans-serif;font-size:0.78rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border:none;border-radius:2px;cursor:pointer;transition:all 0.2s;}
+    .btn-primary{background:linear-gradient(135deg,var(--deep-pink),var(--pink));color:#fff;box-shadow:0 4px 16px rgba(194,24,91,0.35);}
+    .btn-primary:hover{transform:translateY(-2px);}
+    .btn-primary:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+    .alert{padding:0.85rem 1.1rem;border-radius:2px;font-size:0.82rem;margin-top:0.75rem;}
+    .alert-success{background:#e8f5e9;border-left:3px solid #4caf50;color:#1b5e20;}
+    .alert-error  {background:#fce4ec;border-left:3px solid var(--pink);color:var(--deep-pink);}
+
+    /* Bulk tag bar */
+    .bulk-bar{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;padding:0.75rem 1rem;background:var(--blush);border-radius:2px;border:1.5px solid rgba(200,30,90,0.15);}
+    .bulk-bar label{font-size:0.72rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--deep-pink);white-space:nowrap;}
+    .bulk-bar input{flex:1;min-width:120px;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.38rem 0.75rem;font-family:'Raleway',sans-serif;font-size:0.85rem;color:var(--ink);background:var(--white);outline:none;}
+    .bulk-bar input:focus{border-color:var(--pink);}
+    .bulk-bar button{background:var(--deep-pink);border:none;border-radius:2px;padding:0.38rem 0.9rem;color:#fff;font-family:'Raleway',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;white-space:nowrap;}
+    .bulk-bar button:hover{background:var(--pink);}
+    .bulk-count{font-size:0.75rem;color:var(--muted);}
+
+    /* Reorder */
+    .reorder-info{font-size:0.8rem;color:var(--muted);margin-bottom:1rem;padding:0.75rem 1rem;background:var(--blush);border-radius:2px;border-left:3px solid var(--gold);}
+    .reorder-list{display:flex;flex-direction:column;gap:0.5rem;max-width:700px;}
+    .reorder-item{display:grid;grid-template-columns:32px 32px 60px auto 1fr;align-items:center;gap:0.75rem;background:var(--white);border:1.5px solid rgba(200,30,90,0.12);border-radius:2px;padding:0.6rem 0.85rem;cursor:grab;}
+    .reorder-item:active{cursor:grabbing;box-shadow:0 4px 20px var(--shadow);}
+    .reorder-item.drag-over{border-color:var(--pink);background:var(--blush);}
+    .reorder-handle{color:var(--muted);font-size:1.1rem;cursor:grab;user-select:none;}
+    .reorder-num{font-weight:700;color:var(--gold);font-size:0.85rem;text-align:center;}
+    .reorder-thumb{width:60px;height:45px;object-fit:contain;border-radius:1px;background:#f0e0e8;}
+    .reorder-thumb-ph{width:60px;height:45px;background:linear-gradient(135deg,var(--blush),#fce4ec);display:flex;align-items:center;justify-content:center;font-size:1.4rem;border-radius:1px;}
+    .reorder-label{font-size:0.85rem;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .reorder-save-btn{margin-top:1rem;background:var(--deep-pink);border:none;border-radius:2px;padding:0.65rem 1.5rem;color:#fff;font-family:'Raleway',sans-serif;font-size:0.75rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
+    .reorder-save-btn:hover{background:var(--pink);}
+    .reorder-save-btn:disabled{opacity:0.6;cursor:not-allowed;}
+
+    /* Edit panel */
+    .edit-panel{background:var(--white);border:1.5px solid rgba(200,30,90,0.14);border-radius:2px;padding:1.5rem;margin-bottom:1.5rem;max-width:640px;animation:fadeIn 0.2s ease;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .edit-panel-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--deep-pink);margin-bottom:1rem;}
+    .upload-zone{border:2px dashed rgba(200,30,90,0.3);border-radius:2px;padding:1.25rem;text-align:center;cursor:pointer;background:var(--blush);transition:all 0.2s;position:relative;overflow:hidden;}
+    .upload-zone:hover{border-color:var(--pink);background:#fce4ec;}
+    .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+    .upload-zone-text{font-size:0.8rem;color:var(--muted);}
+    .upload-preview{width:100%;max-height:150px;object-fit:contain;border-radius:2px;display:none;margin-top:0.5rem;border:1.5px solid rgba(200,30,90,0.15);}
+    .current-img{width:100%;max-height:120px;object-fit:contain;border-radius:2px;display:block;margin-bottom:0.5rem;border:1.5px solid rgba(200,30,90,0.15);opacity:0.75;}
+
+    /* Victim / comment items */
+    .vc-item{background:var(--white);border:1.5px solid rgba(200,30,90,0.1);border-radius:2px;padding:0.85rem 1rem;margin-bottom:0.6rem;}
+    .vc-meta{font-size:0.68rem;color:var(--muted);margin-bottom:0.3rem;display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;}
+    .vc-text{font-size:0.85rem;line-height:1.55;color:var(--ink);}
+    .vc-badge{display:inline-block;padding:0.12rem 0.5rem;border-radius:10px;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+    .vc-badge-pending{background:#fff9c4;color:#f57f17;}
+    .vc-badge-approved{background:#e8f5e9;color:#2e7d32;}
+
+    /* Loading / empty */
+    .loading-wrap{text-align:center;padding:3rem;}
+    .spinner{display:inline-block;width:28px;height:28px;border:3px solid rgba(200,30,90,0.2);border-top-color:var(--pink);border-radius:50%;animation:spin 0.7s linear infinite;}
+    .spinner-sm{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .empty-row td{text-align:center;color:var(--muted);padding:2rem;}
+
+    /* Toast */
+    .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(4rem);background:var(--ink);color:#fff;padding:0.65rem 1.5rem;border-radius:20px;font-size:0.8rem;font-weight:600;z-index:9999;transition:transform 0.3s ease,opacity 0.3s ease;opacity:0;pointer-events:none;}
+    .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+    .badge-mw{display:inline-flex;align-items:center;gap:0.3rem;background:linear-gradient(135deg,var(--deep-pink),var(--pink));color:#fff;font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.18rem 0.5rem;border-radius:20px;}
+    .badge-mw img{width:12px;height:12px;object-fit:contain;filter:brightness(0) invert(1);}
+
+    @media(max-width:600px){.main{padding:1.5rem 1rem;}th,td{padding:0.45rem 0.55rem;}table{font-size:0.74rem;}.admin-tab{padding:0.7rem 1rem;font-size:0.65rem;}}
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div>
+      <div class="header-title">Mean <span>Whirls</span> — Admin</div>
+      <div class="header-sub">2026 Whirlyball Nationals · Burn Book Management</div>
+    </div>
+    <a href="index.html" class="header-back">← Back to Burn Book</a>
+  </header>
+
+  <!-- Login -->
+  <div id="login-wrap" class="login-wrap">
+    <div class="login-title">Admin Access</div>
+    <div class="login-sub">Enter the admin password to continue.</div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" id="admin-pass" type="password" placeholder="••••••••••" />
+    </div>
+    <button class="btn btn-primary" id="login-btn">🔐 Enter</button>
+    <div id="login-err" style="display:none" class="alert alert-error"></div>
+  </div>
+
+  <!-- Admin panel -->
+  <div id="admin-main" class="main" style="display:none">
+
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-atab="removals">⚠️ Removals <span class="badge-count" id="cnt-removals">0</span></button>
+      <button class="admin-tab" data-atab="edits">✏️ Pending Edits <span class="badge-count" id="cnt-edits">0</span></button>
+      <button class="admin-tab" data-atab="victims">🎤 Victim Statements <span class="badge-count" id="cnt-victims">0</span></button>
+      <button class="admin-tab" data-atab="comments">💬 Comments <span class="badge-count" id="cnt-comments">0</span></button>
+      <button class="admin-tab" data-atab="entries">📋 All Entries</button>
+      <button class="admin-tab" data-atab="reorder">↕️ Reorder</button>
+    </div>
+
+    <!-- REMOVALS -->
+    <div id="atab-removals" class="tab-content active">
+      <div class="section-hdr"><span class="section-title urgent">⚠️ Removal Requests</span><button class="refresh-btn" onclick="loadRemovals()">↺ Refresh</button></div>
+      <div class="tbl-wrap"><table><thead><tr><th class="urgent">#</th><th class="urgent">Subject</th><th class="urgent">Reason</th><th class="urgent">Requested</th><th class="urgent">Actions</th></tr></thead><tbody id="tb-removals"></tbody></table></div>
+    </div>
+
+    <!-- PENDING EDITS -->
+    <div id="atab-edits" class="tab-content">
+      <div class="section-hdr"><span class="section-title">✏️ Pending Edits</span><button class="refresh-btn" onclick="loadEdits()">↺ Refresh</button></div>
+      <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Proposed Subject</th><th>Proposed Burn</th><th>Tags</th><th>Photo</th><th>Submitter</th><th>When</th><th>Actions</th></tr></thead><tbody id="tb-edits"></tbody></table></div>
+    </div>
+
+    <!-- VICTIM STATEMENTS -->
+    <div id="atab-victims" class="tab-content">
+      <div class="section-hdr"><span class="section-title">🎤 Victim Statements</span><button class="refresh-btn" onclick="loadVictims()">↺ Refresh</button></div>
+      <div id="victims-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- COMMENTS -->
+    <div id="atab-comments" class="tab-content">
+      <div class="section-hdr"><span class="section-title">💬 Comments</span><button class="refresh-btn" onclick="loadComments()">↺ Refresh</button></div>
+      <div id="comments-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- ALL ENTRIES -->
+    <div id="atab-entries" class="tab-content">
+      <div class="section-hdr"><span class="section-title">📋 All Entries</span><button class="refresh-btn" onclick="loadEntries()">↺ Refresh</button></div>
+      <div id="entry-edit-panel"></div>
+      <div class="bulk-bar">
+        <label>Add hashtag to selected:</label>
+        <input id="bulk-tag-input" placeholder="#newtag" />
+        <button onclick="applyBulkTag()">Apply</button>
+        <span class="bulk-count" id="bulk-count">0 selected</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th class="cb"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)" /></th>
+            <th>#</th><th>Photo</th><th>Subject</th><th>Burn</th><th>Tags</th>
+            <th>Submitter</th><th>Displays As</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="tb-entries"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- REORDER -->
+    <div id="atab-reorder" class="tab-content">
+      <div class="section-hdr"><span class="section-title">↕️ Reorder Entries</span><button class="refresh-btn" onclick="loadReorder()">↺ Refresh</button></div>
+      <div class="reorder-info">Drag and drop entries to reorder them. Click <strong>Save Order</strong> when done. Only approved, visible entries are shown.</div>
+      <div id="reorder-list" class="reorder-list"></div>
+      <button class="reorder-save-btn" id="reorder-save-btn" onclick="saveReorder()">💾 Save Order</button>
+      <div id="reorder-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ── Config ────────────────────────────────────────────────
+    const SUPABASE_URL  = 'https://dhguaomtjclcldkkhlmt.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZ3Vhb210amNsY2xka2tobG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MjI5MzQsImV4cCI6MjA5NDI5ODkzNH0.hfaNxo9m1Tkpn8pIVoyTXcIRhf9jbpkTlw0kTpn6gyY';
+    const BUCKET = 'burnbook-images';
+    const ADMIN_PASSWORD_FALLBACK = 'meanwhirls2026';
+
+    let CODENAME = 'BananaDuck', CODENAME_DISPLAY = 'B******D***', BADGE_ICON_URL = '';
+    let adminAuthed = false;
+
+    // ── Supabase ──────────────────────────────────────────────
+    const SB = SUPABASE_URL;
+    const H  = {'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON};
+    const sbGet    = async (t,p='')  => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{headers:H}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbPost   = async (t,b)     => { const r=await fetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbPatch  = async (t,p,b)   => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbDelete = async (t,p)     => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'DELETE',headers:H}); if(!r.ok)throw new Error(await r.text()); };
+    const uploadImage = async (file) => {
+      const ext=file.name.split('.').pop().toLowerCase()||'jpg', path=`${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const r=await fetch(`${SB}/storage/v1/object/${BUCKET}/${path}`,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':file.type},body:file});
+      if(!r.ok)throw new Error('Image upload failed: '+await r.text());
+      return `${SB}/storage/v1/object/public/${BUCKET}/${path}`;
+    };
+
+    // ── Utils ─────────────────────────────────────────────────
+    const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
+    const arraysEqual = (a,b) => a.length===b.length&&[...a].sort().join()===([...b]).sort().join();
+    const showToast = msg => { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
+    const emptyRow = (cols,msg) => `<tr class="empty-row"><td colspan="${cols}">${msg}</td></tr>`;
+    const loadingRow = (cols) => `<tr class="empty-row"><td colspan="${cols}"><div class="spinner" style="width:22px;height:22px;border-width:2px"></div></td></tr>`;
+    function setBadge(id,n){ const el=document.getElementById(id); if(el)el.textContent=n>0?n:''; }
+
+    function makeBadgeMWHtml() {
+      if(BADGE_ICON_URL) return `<span class="badge-mw"><img src="${esc(BADGE_ICON_URL)}" alt="" />MeanWhirls</span>`;
+      return `<span class="badge-mw">🥍 MeanWhirls</span>`;
+    }
+
+    // ── Login ─────────────────────────────────────────────────
+    async function init() {
+      try {
+        const cfg = await sbGet('config');
+        cfg.forEach(r => {
+          if(r.key==='codename')         CODENAME         = r.value;
+          if(r.key==='codename_display') CODENAME_DISPLAY = r.value;
+          if(r.key==='badgeicon')        BADGE_ICON_URL   = r.value;
+        });
+      } catch(e) {}
+    }
+
+    document.getElementById('admin-pass').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-btn').click(); });
+    document.getElementById('login-btn').addEventListener('click', async () => {
+      const entered = document.getElementById('admin-pass').value;
+      try {
+        const cfg = await sbGet('config','key=eq.adminpass');
+        const stored = cfg[0]?.value || ADMIN_PASSWORD_FALLBACK;
+        if(entered === stored) unlockAdmin();
+        else showLoginErr('Wrong password. So not fetch.');
+      } catch { if(entered===ADMIN_PASSWORD_FALLBACK) unlockAdmin(); else showLoginErr('Wrong password. So not fetch.'); }
+    });
+    function showLoginErr(msg){ const el=document.getElementById('login-err'); el.textContent=msg; el.style.display='block'; }
+    function unlockAdmin(){
+      adminAuthed=true;
+      document.getElementById('login-wrap').style.display='none';
+      document.getElementById('admin-main').style.display='block';
+      loadAll();
+    }
+    function loadAll(){ loadRemovals(); loadEdits(); loadVictims(); loadComments(); loadEntries(); }
+
+    // ── Tabs ──────────────────────────────────────────────────
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('atab-'+tab.dataset.atab).classList.add('active');
+        if(tab.dataset.atab==='reorder') loadReorder();
+      });
+    });
+
+    // ── REMOVALS ─────────────────────────────────────────────
+    async function loadRemovals(){
+      const tb=document.getElementById('tb-removals');
+      tb.innerHTML=loadingRow(5);
+      try {
+        const reqs=await sbGet('deletion_requests','order=created_at.desc');
+        setBadge('cnt-removals',reqs.length);
+        if(!reqs.length){tb.innerHTML=emptyRow(5,'No removal requests.');return;}
+        const ids=[...new Set(reqs.map(r=>r.entry_id))];
+        const entries=await sbGet('entries',`id=in.(${ids.join(',')})&select=id,subject,ui_order`);
+        const em={};entries.forEach(e=>em[e.id]=e);
+        tb.innerHTML='';
+        reqs.forEach(req=>{
+          const entry=em[req.entry_id]||{};
+          const tr=document.createElement('tr');
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${entry.ui_order||'?'}</td><td style="font-weight:600">${esc(entry.subject||'(deleted)')}</td><td style="max-width:220px;font-size:.8rem">${esc(req.reason)}</td><td style="font-size:.74rem;color:var(--muted)">${new Date(req.created_at).toLocaleDateString()}</td><td><button class="btn-a add" onclick="adminDeleteEntry('${req.entry_id}','${req.id}')">✕ Delete</button><button class="btn-a ars" onclick="adminRestoreEntry('${req.entry_id}','${req.id}')">↩ Restore</button></td>`;
+          tb.appendChild(tr);
+        });
+      } catch(err){tb.innerHTML=emptyRow(5,'Failed: '+err.message);}
+    }
+    async function adminDeleteEntry(entryId,reqId){ if(!confirm('Permanently delete this entry?'))return; try{await sbDelete('entries',`id=eq.${entryId}`);await sbDelete('deletion_requests',`id=eq.${reqId}`);showToast('Entry deleted.');loadRemovals();loadEntries();}catch(err){alert('Failed: '+err.message);} }
+    async function adminRestoreEntry(entryId,reqId){ try{await sbPatch('entries',`id=eq.${entryId}`,{hidden:false});await sbDelete('deletion_requests',`id=eq.${reqId}`);showToast('Entry restored.');loadRemovals();loadEntries();}catch(err){alert('Failed: '+err.message);} }
+
+    // ── PENDING EDITS ─────────────────────────────────────────
+    async function loadEdits(){
+      const tb=document.getElementById('tb-edits');
+      tb.innerHTML=loadingRow(8);
+      try {
+        const edits=await sbGet('pending_edits','order=created_at.desc');
+        setBadge('cnt-edits',edits.length);
+        if(!edits.length){tb.innerHTML=emptyRow(8,'No pending edits.');return;}
+        const ids=[...new Set(edits.map(e=>e.entry_id))];
+        const originals=await sbGet('entries',`id=in.(${ids.join(',')})&select=id,ui_order`);
+        const om={};originals.forEach(o=>om[o.id]=o.ui_order);
+        tb.innerHTML='';
+        edits.forEach(ed=>{
+          const tr=document.createElement('tr');
+          const imgCell=ed.image_url?`<img src="${esc(ed.image_url)}" />`:'—';
+          const tags=(ed.hashtags||[]).join(' ')||'—';
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${om[ed.entry_id]||'?'}</td><td style="font-weight:600">${esc(ed.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${imgCell}</td><td style="font-size:.8rem">${esc(ed.submitter)}</td><td style="font-size:.74rem;color:var(--muted)">${new Date(ed.created_at).toLocaleDateString()}</td><td><button class="btn-a aac" onclick='acceptEdit(${JSON.stringify(JSON.stringify(ed))})'>✓ Accept</button><button class="btn-a ar" onclick="rejectEdit('${ed.id}')">✕ Reject</button></td>`;
+          tb.appendChild(tr);
+        });
+      } catch(err){tb.innerHTML=emptyRow(8,'Failed: '+err.message);}
+    }
+    async function acceptEdit(jsonStr){ const ed=JSON.parse(jsonStr); try{const patch={subject:ed.subject,text:ed.text,image_url:ed.image_url,display_author:ed.display_author};if(ed.hashtags)patch.hashtags=ed.hashtags;await sbPatch('entries',`id=eq.${ed.entry_id}`,patch);await sbDelete('pending_edits',`id=eq.${ed.id}`);showToast('Edit accepted.');loadEdits();loadEntries();}catch(err){alert('Failed: '+err.message);} }
+    async function rejectEdit(id){ try{await sbDelete('pending_edits',`id=eq.${id}`);showToast('Edit rejected.');loadEdits();}catch(err){alert('Failed: '+err.message);} }
+
+    // ── VICTIM STATEMENTS ─────────────────────────────────────
+    async function loadVictims(){
+      const container=document.getElementById('victims-container');
+      container.innerHTML='<div class="loading-wrap"><div class="spinner"></div></div>';
+      try {
+        const stmts=await sbGet('victim_statements','status=neq.deleted&order=created_at.desc');
+        setBadge('cnt-victims',stmts.filter(s=>s.status==='pending').length);
+        if(!stmts.length){container.innerHTML='<p style="color:var(--muted);font-size:.85rem">No victim statements yet.</p>';return;}
+        const ids=[...new Set(stmts.map(s=>s.entry_id))];
+        const entries=await sbGet('entries',`id=in.(${ids.join(',')})&select=id,subject,ui_order`);
+        const em={};entries.forEach(e=>em[e.id]=e);
+        container.innerHTML='';
+        stmts.forEach(s=>{
+          const entry=em[s.entry_id]||{};
+          const item=document.createElement('div');item.className='vc-item';
+          const statusBadge=s.status==='approved'?`<span class="vc-badge vc-badge-approved">approved</span>`:`<span class="vc-badge vc-badge-pending">pending</span>`;
+          item.innerHTML=`<div class="vc-meta">${statusBadge} <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${new Date(s.created_at).toLocaleDateString()}</span></div><div class="vc-text">${esc(s.text)}</div>`;
+          const actions=document.createElement('div');actions.style.cssText='margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;';
+          if(s.status!=='approved'){const ab=document.createElement('button');ab.className='btn-a aac';ab.textContent='✓ Approve';ab.onclick=async()=>{try{await sbPatch('victim_statements',`id=eq.${s.id}`,{status:'approved'});showToast('Statement approved.');loadVictims();}catch(e){alert(e.message);}};actions.appendChild(ab);}
+          const db=document.createElement('button');db.className='btn-a ar';db.textContent='✕ Remove';db.onclick=async()=>{if(!confirm('Remove this victim statement?'))return;try{await sbPatch('victim_statements',`id=eq.${s.id}`,{status:'deleted'});showToast('Statement removed.');loadVictims();}catch(e){alert(e.message);}};actions.appendChild(db);
+          const eb=document.createElement('button');eb.className='btn-a ae';eb.textContent='✏️ Edit';eb.onclick=()=>openVictimEdit(item,s);actions.appendChild(eb);
+          item.appendChild(actions);container.appendChild(item);
+        });
+      } catch(err){container.innerHTML='<p style="color:var(--deep-pink)">Failed: '+err.message+'</p>';}
+    }
+    function openVictimEdit(item,stmt){
+      const existing=item.querySelector('.vc-edit-form');if(existing){existing.remove();return;}
+      const form=document.createElement('div');form.className='vc-edit-form';form.style.marginTop='0.6rem';
+      const ta=document.createElement('textarea');ta.className='form-textarea';ta.value=stmt.text;ta.style.minHeight='70px';
+      const btn=document.createElement('button');btn.className='btn-a aac';btn.textContent='Save';btn.style.marginTop='0.4rem';
+      btn.addEventListener('click',async()=>{const text=ta.value.trim();if(!text)return;btn.disabled=true;try{await sbPatch('victim_statements',`id=eq.${stmt.id}`,{text,status:'pending'});showToast('Saved — re-submitted for approval.');loadVictims();}catch(e){alert(e.message);}btn.disabled=false;});
+      form.appendChild(ta);form.appendChild(btn);item.appendChild(form);ta.focus();
+    }
+
+    // ── COMMENTS ──────────────────────────────────────────────
+    async function loadComments(){
+      const container=document.getElementById('comments-container');
+      container.innerHTML='<div class="loading-wrap"><div class="spinner"></div></div>';
+      try {
+        const comments=await sbGet('comments','order=created_at.desc');
+        setBadge('cnt-comments',comments.length);
+        if(!comments.length){container.innerHTML='<p style="color:var(--muted);font-size:.85rem">No comments yet.</p>';return;}
+        const ids=[...new Set(comments.map(c=>c.entry_id))];
+        const entries=await sbGet('entries',`id=in.(${ids.join(',')})&select=id,subject,ui_order`);
+        const em={};entries.forEach(e=>em[e.id]=e);
+        container.innerHTML='';
+        comments.forEach(c=>{
+          const entry=em[c.entry_id]||{};
+          const item=document.createElement('div');item.className='vc-item';
+          item.innerHTML=`<div class="vc-meta"><strong>${esc(c.author)}</strong> on <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${new Date(c.created_at).toLocaleDateString()}</span></div><div class="vc-text">${esc(c.text)}</div>`;
+          const actions=document.createElement('div');actions.style.cssText='margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;';
+          const db=document.createElement('button');db.className='btn-a ar';db.textContent='✕ Remove';db.onclick=async()=>{if(!confirm('Remove this comment?'))return;try{await sbDelete('comments',`id=eq.${c.id}`);showToast('Comment removed.');loadComments();}catch(e){alert(e.message);}};actions.appendChild(db);
+          const eb=document.createElement('button');eb.className='btn-a ae';eb.textContent='✏️ Edit';eb.onclick=()=>openCommentEdit(item,c);actions.appendChild(eb);
+          item.appendChild(actions);container.appendChild(item);
+        });
+      } catch(err){container.innerHTML='<p style="color:var(--deep-pink)">Failed: '+err.message+'</p>';}
+    }
+    function openCommentEdit(item,c){
+      const existing=item.querySelector('.c-edit-form');if(existing){existing.remove();return;}
+      const form=document.createElement('div');form.className='c-edit-form';form.style.marginTop='0.6rem';
+      const ta=document.createElement('textarea');ta.className='form-textarea';ta.value=c.text;ta.style.minHeight='60px';
+      const btn=document.createElement('button');btn.className='btn-a aac';btn.textContent='Save';btn.style.marginTop='0.4rem';
+      btn.addEventListener('click',async()=>{const text=ta.value.trim();if(!text)return;btn.disabled=true;try{await sbPatch('comments',`id=eq.${c.id}`,{text});showToast('Comment updated.');loadComments();}catch(e){alert(e.message);}btn.disabled=false;});
+      form.appendChild(ta);form.appendChild(btn);item.appendChild(form);ta.focus();
+    }
+
+    // ── ALL ENTRIES ───────────────────────────────────────────
+    async function loadEntries(){
+      const tb=document.getElementById('tb-entries');
+      tb.innerHTML=loadingRow(10);
+      document.getElementById('select-all').checked=false;
+      document.getElementById('bulk-count').textContent='0 selected';
+      document.getElementById('entry-edit-panel').innerHTML='';
+      try {
+        const entries=await sbGet('entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
+        if(!entries.length){tb.innerHTML=emptyRow(10,'No entries yet.');return;}
+        tb.innerHTML='';
+        entries.forEach(e=>{
+          const isCodeSub=e.submitter&&e.submitter.toLowerCase()===CODENAME.toLowerCase();
+          const subCell=isCodeSub?`<span style="font-size:.82rem;font-style:italic;color:var(--muted)">${esc(CODENAME_DISPLAY)}</span>`:`<span style="font-size:.8rem">${esc(e.submitter)}</span>`;
+          const displayCell=e.is_mean_whirls?makeBadgeMWHtml():`<span style="font-size:.82rem">${esc(e.display_author)}</span>`;
+          const imgCell=e.image_url?`<img src="${esc(e.image_url)}" />`:'—';
+          const tags=(e.hashtags||[]).join(' ')||'—';
+          const statusLabel=e.hidden?'hidden':e.status;
+          const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modEntry('${e.id}','approve')">✓</button>`:'';
+          const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="btn-a au" onclick="modEntry('${e.id}','unapprove')">⏸</button>`:'';
+          const tr=document.createElement('tr');
+          tr.innerHTML=`<td><input type="checkbox" class="row-cb" data-id="${e.id}" onchange="updateBulkCount()" /></td><td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openEntryEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modEntry('${e.id}','reject')">✕</button></td>`;
+          tb.appendChild(tr);
+        });
+      } catch(err){tb.innerHTML=emptyRow(10,'Failed: '+err.message);}
+    }
+
+    async function modEntry(id,decision){
+      try{
+        if(decision==='approve')        await sbPatch('entries',`id=eq.${id}`,{status:'approved',hidden:false});
+        else if(decision==='unapprove') await sbPatch('entries',`id=eq.${id}`,{status:'pending'});
+        else                            await sbDelete('entries',`id=eq.${id}`);
+        loadEntries();
+      }catch(err){alert('Failed: '+err.message);}
+    }
+
+    // Inline edit panel
+    let editImageFile=null;
+    function openEntryEdit(jsonStr){
+      const e=JSON.parse(jsonStr);
+      const panel=document.getElementById('entry-edit-panel');
+      // Toggle off if same entry
+      if(panel.dataset.open===e.id){panel.innerHTML='';delete panel.dataset.open;return;}
+      panel.dataset.open=e.id;
+      editImageFile=null;
+      panel.innerHTML=`
+        <div class="edit-panel">
+          <div class="edit-panel-title">✏️ Editing: #${e.ui_order||'?'} — ${esc(e.subject)}</div>
+          <div class="form-group"><label class="form-label">Burn Victim Name *</label><input class="form-input" id="ep-subject" value="${esc(e.subject)}" /></div>
+          <div class="form-group"><label class="form-label">The Burn <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional)</span></label><textarea class="form-textarea" id="ep-text" style="min-height:80px">${esc(e.text||'')}</textarea></div>
+          <div class="form-group"><label class="form-label">Hashtags</label><input class="form-input" id="ep-hashtags" value="${esc((e.hashtags||[]).join(' '))}" placeholder="#wild #classic" /></div>
+          <div class="form-group"><label class="form-label">Displays As</label><input class="form-input" id="ep-display-author" value="${esc(e.display_author)}" /></div>
+          <div class="form-group"><label class="form-label">Photo <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(upload to replace)</span></label>
+            ${e.image_url?`<img class="current-img" src="${esc(e.image_url)}" id="ep-cur-img" />`:''}
+            <div class="upload-zone" id="ep-upload"><input type="file" id="ep-image" accept="image/*" /><div class="upload-zone-text">📷 Drag &amp; drop or click to replace</div><img id="ep-preview" class="upload-preview" alt="" /></div>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="saveEntryEdit('${e.id}','${esc(e.image_url||'')}')">💾 Save Changes</button>
+            <button class="btn-a ar" onclick="document.getElementById('entry-edit-panel').innerHTML=''">Cancel</button>
+          </div>
+          <div id="ep-msg" style="display:none" class="alert"></div>
+        </div>`;
+      document.getElementById('ep-image').addEventListener('change',function(){if(this.files[0])handleEditImg(this.files[0]);});
+      document.getElementById('ep-upload').addEventListener('dragover',e=>e.preventDefault());
+      document.getElementById('ep-upload').addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])handleEditImg(e.dataTransfer.files[0]);});
+      panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+    function handleEditImg(file){editImageFile=file;const r=new FileReader();r.onload=ev=>{const p=document.getElementById('ep-preview');p.src=ev.target.result;p.style.display='block';const c=document.getElementById('ep-cur-img');if(c)c.style.display='none';};r.readAsDataURL(file);}
+    async function saveEntryEdit(id, existingImg){
+      const subject=document.getElementById('ep-subject').value.trim();
+      const text=document.getElementById('ep-text').value.trim();
+      const hashtags=parseHashtags(document.getElementById('ep-hashtags').value);
+      const displayAuthor=document.getElementById('ep-display-author').value.trim();
+      if(!subject){showEpMsg('error','Name required.');return;}
+      const btn=document.querySelector('#entry-edit-panel .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
+      try{
+        let imageUrl=existingImg;
+        if(editImageFile)imageUrl=await uploadImage(editImageFile);
+        await sbPatch('entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});
+        showEpMsg('success','✅ Saved!');
+        setTimeout(()=>{document.getElementById('entry-edit-panel').innerHTML='';loadEntries();},1200);
+      }catch(err){showEpMsg('error','Failed: '+err.message);}
+      btn.disabled=false;btn.innerHTML='💾 Save Changes';
+    }
+    function showEpMsg(type,msg){const el=document.getElementById('ep-msg');el.className='alert alert-'+type;el.textContent=msg;el.style.display='block';}
+
+    // Multi-select
+    function updateBulkCount(){document.getElementById('bulk-count').textContent=getSelectedIds().length+' selected';}
+    function getSelectedIds(){return[...document.querySelectorAll('.row-cb:checked')].map(cb=>cb.dataset.id);}
+    function toggleSelectAll(cb){document.querySelectorAll('.row-cb').forEach(c=>{c.checked=cb.checked;});updateBulkCount();}
+    async function applyBulkTag(){
+      const ids=getSelectedIds(),tags=parseHashtags(document.getElementById('bulk-tag-input').value.trim());
+      if(!ids.length){showToast('No entries selected.');return;}if(!tags.length){showToast('Enter at least one hashtag.');return;}
+      try{const entries=await sbGet('entries',`id=in.(${ids.join(',')})&select=id,hashtags`);await Promise.all(entries.map(e=>sbPatch('entries',`id=eq.${e.id}`,{hashtags:[...new Set([...(e.hashtags||[]),...tags])]})));showToast(`Added ${tags.join(' ')} to ${ids.length} entr${ids.length!==1?'ies':'y'}.`);document.getElementById('bulk-tag-input').value='';document.getElementById('select-all').checked=false;loadEntries();}
+      catch(err){alert('Failed: '+err.message);}
+    }
+
+    // ── REORDER ───────────────────────────────────────────────
+    let reorderData=[];
+    let dragSrcIdx=null;
+
+    async function loadReorder(){
+      const list=document.getElementById('reorder-list');
+      list.innerHTML='<div class="loading-wrap"><div class="spinner"></div></div>';
+      document.getElementById('reorder-msg').style.display='none';
+      try{
+        const entries=await sbGet('entries','status=eq.approved&hidden=eq.false&order=ui_order.asc.nullslast,created_at.asc&select=id,subject,ui_order,image_url');
+        reorderData=[...entries];
+        renderReorderList();
+      }catch(err){list.innerHTML='<p style="color:var(--deep-pink)">Failed: '+err.message+'</p>';}
+    }
+
+    function renderReorderList(){
+      const list=document.getElementById('reorder-list');
+      list.innerHTML='';
+      reorderData.forEach((e,i)=>{
+        const item=document.createElement('div');item.className='reorder-item';item.draggable=true;item.dataset.idx=i;
+        const handle=document.createElement('div');handle.className='reorder-handle';handle.textContent='⠿';
+        const num=document.createElement('div');num.className='reorder-num';num.textContent=i+1;
+        let thumb;
+        if(e.image_url){thumb=document.createElement('img');thumb.className='reorder-thumb';thumb.src=e.image_url;}
+        else{thumb=document.createElement('div');thumb.className='reorder-thumb-ph';thumb.textContent='🔥';}
+        const label=document.createElement('div');label.className='reorder-label';label.textContent=e.subject;
+
+        item.appendChild(handle);item.appendChild(num);item.appendChild(thumb);item.appendChild(label);
+
+        item.addEventListener('dragstart',ev=>{dragSrcIdx=i;ev.dataTransfer.effectAllowed='move';item.style.opacity='0.5';});
+        item.addEventListener('dragend',()=>{item.style.opacity='1';document.querySelectorAll('.reorder-item').forEach(it=>it.classList.remove('drag-over'));});
+        item.addEventListener('dragover',ev=>{ev.preventDefault();ev.dataTransfer.dropEffect='move';document.querySelectorAll('.reorder-item').forEach(it=>it.classList.remove('drag-over'));item.classList.add('drag-over');});
+        item.addEventListener('drop',ev=>{ev.preventDefault();if(dragSrcIdx===null||dragSrcIdx===i)return;const moved=reorderData.splice(dragSrcIdx,1)[0];reorderData.splice(i,0,moved);dragSrcIdx=null;renderReorderList();});
+        list.appendChild(item);
+      });
+    }
+
+    async function saveReorder(){
+      const btn=document.getElementById('reorder-save-btn');btn.disabled=true;btn.textContent='Saving...';
+      const msgEl=document.getElementById('reorder-msg');msgEl.style.display='none';
+      try{
+        await Promise.all(reorderData.map((e,i)=>sbPatch('entries',`id=eq.${e.id}`,{ui_order:i+1})));
+        msgEl.className='alert alert-success';msgEl.textContent='✅ Order saved!';msgEl.style.display='block';
+        // Refresh to reflect new numbers
+        reorderData=reorderData.map((e,i)=>({...e,ui_order:i+1}));renderReorderList();
+      }catch(err){msgEl.className='alert alert-error';msgEl.textContent='Failed: '+err.message;msgEl.style.display='block';}
+      btn.disabled=false;btn.textContent='💾 Save Order';
+    }
+
+    // ── Go ────────────────────────────────────────────────────
+    init();
+  </script>
+</body>
+</html>
