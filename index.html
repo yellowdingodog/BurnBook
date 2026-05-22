@@ -85,6 +85,10 @@
     .badge-mw-text{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:0.7rem;}
     .edit-btn{background:none;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.2rem 0.5rem;font-family:'Raleway',sans-serif;font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;}
     .edit-btn:hover{border-color:var(--pink);color:var(--deep-pink);background:var(--blush);}
+    /* Card victim/comment strip */
+    .card-victim-strip{font-size:0.72rem;color:var(--muted);font-style:italic;padding:0.5rem 1.25rem 0;border-top:1px solid rgba(200,30,90,0.07);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .card-comment-count{font-size:0.68rem;color:var(--muted);padding:0.35rem 1.25rem 0.65rem;display:flex;align-items:center;gap:0.3rem;}
+    .card-comment-count span{color:var(--deep-pink);font-weight:700;}
 
     /* Detail page */
     #detail-page{display:none;}
@@ -324,9 +328,7 @@
                 </div>
               </div>
             </div>
-            <div style="margin-top:0.75rem">
-              <button class="detail-action-btn danger" onclick="openDeleteRequestModal(currentDetailEntry)">🗑 Request Removal</button>
-            </div>
+
           </div>
           <!-- Right: info -->
           <div class="detail-info">
@@ -334,8 +336,8 @@
             <div class="detail-subject" id="detail-subject"></div>
             <p class="detail-text" id="detail-text"></p>
             <div class="detail-hashtags" id="detail-hashtags"></div>
-            <div class="heat-full" id="detail-heat"></div>
             <div class="detail-meta-row" id="detail-meta-row"></div>
+            <div class="heat-full" id="detail-heat"></div>
             <!-- Victim statement -->
             <div id="detail-victim"></div>
             <!-- Comments -->
@@ -584,6 +586,12 @@
           section.appendChild(meta);
         } else if (pending.length) {
           const p=document.createElement('p');p.className='victim-pending';p.textContent='⏳ Your statement is awaiting moderation.';section.appendChild(p);
+          const cancelBtn=document.createElement('button');cancelBtn.className='victim-own-btn';cancelBtn.style.marginTop='0.5rem';cancelBtn.textContent='✕ Cancel submission';
+          cancelBtn.addEventListener('click',async()=>{
+            if(!confirm('Cancel your pending statement?'))return;
+            try{await sbDelete('victim_statements',`entry_id=eq.${entryId}&ip_hash=eq.${ipHash}&status=eq.pending`);loadVictimStatement(entryId,ipHash);}
+            catch(e){showToast('Failed to cancel.');}
+          });section.appendChild(cancelBtn);
         } else {
           const btn=document.createElement('button');btn.className='victim-add-btn';btn.textContent='🎤 Add Your Victim Statement';
           btn.addEventListener('click',()=>openVictimAddForm(section,entryId,ipHash));section.appendChild(btn);
@@ -700,11 +708,12 @@
       document.getElementById('detail-text').textContent=entry.text||'';
       const hEl=document.getElementById('detail-hashtags');hEl.innerHTML='';
       (entry.hashtags||[]).forEach(tag=>{const t=document.createElement('span');t.className='detail-hashtag';t.textContent=tag;t.addEventListener('click',()=>{closeDetail();setTimeout(()=>setFilter(tag),100);});hEl.appendChild(t);});
-      renderDetailHeat(entry);
       const metaEl=document.getElementById('detail-meta-row');metaEl.innerHTML='';
       if(entry.is_mean_whirls)metaEl.appendChild(makeBadgeMW());
       else{const a=document.createElement('span');a.className='entry-author';a.innerHTML=`by <strong>${esc(entry.display_author)}</strong>`;metaEl.appendChild(a);}
       const eb=document.createElement('button');eb.className='detail-edit-btn';eb.textContent='✏️ Edit';eb.addEventListener('click',()=>openEditModal(entry,false));metaEl.appendChild(eb);
+      const rb=document.createElement('button');rb.className='detail-edit-btn';rb.style.cssText='border-color:#ef9a9a;color:#c62828;';rb.textContent='🗑 Request Removal';rb.addEventListener('click',()=>openDeleteRequestModal(currentDetailEntry));metaEl.appendChild(rb);
+      renderDetailHeat(entry);
       const shareUrl=window.location.origin+window.location.pathname+'#entry-'+entry.id;
       const enc=encodeURIComponent(shareUrl),txt=encodeURIComponent('Check out this Mean Whirls Burn Book entry: '+entry.subject);
       document.getElementById('share-url').value=shareUrl;
@@ -722,14 +731,22 @@
     async function loadEntries(){
       document.getElementById('entries-container').innerHTML='<div class="loading-wrap"><div class="spinner"></div></div>';
       try{
-        const [entries,votes]=await Promise.all([sbGet('entries','status=eq.approved&hidden=eq.false&order=ui_order.asc.nullslast,created_at.asc'),sbGet('votes','select=entry_id,vote')]);
+        const [entries,votes,victimStmts,commentCounts]=await Promise.all([
+          sbGet('entries','status=eq.approved&hidden=eq.false&order=ui_order.asc.nullslast,created_at.asc'),
+          sbGet('votes','select=entry_id,vote'),
+          sbGet('victim_statements','status=eq.approved&select=entry_id,text'),
+          sbGet('comments','select=entry_id')
+        ]);
         allVoteData=buildVoteData(votes);Object.keys(myVotes).forEach(id=>{if(allVoteData[id])allVoteData[id].myVote=myVotes[id];});
+        // Build victim snippet map and comment count map
+        const victimMap={};victimStmts.forEach(s=>{victimMap[s.entry_id]=s.text;});
+        const commentCountMap={};commentCounts.forEach(c=>{commentCountMap[c.entry_id]=(commentCountMap[c.entry_id]||0)+1;});
         allEntries=entries;buildFilterBar(entries);
-        renderEntries(activeFilter?entries.filter(e=>(e.hashtags||[]).includes(activeFilter)):entries);
+        renderEntries(activeFilter?entries.filter(e=>(e.hashtags||[]).includes(activeFilter)):entries,victimMap,commentCountMap);
       }catch(err){document.getElementById('entries-container').innerHTML=`<div class="empty"><div class="empty-icon">😬</div><h3>Could not load entries</h3><p>${esc(err.message)}</p></div>`;}
     }
 
-    function renderEntries(entries){
+    function renderEntries(entries, victimMap, commentCountMap){
       const el=document.getElementById('entries-container');
       if(!entries.length){el.innerHTML=`<div class="empty"><div class="empty-icon">📓</div><h3>The burn book is empty</h3><p style="font-size:.85rem">${activeFilter?'No entries with '+activeFilter:'No approved entries yet.'}</p></div>`;return;}
       const grid=document.createElement('div');grid.className='entries-grid';
@@ -748,8 +765,13 @@
         const meta=document.createElement('div');meta.className='entry-meta';
         if(e.is_mean_whirls)meta.appendChild(makeBadgeMW());
         else{const a=document.createElement('span');a.className='entry-author';a.innerHTML=`by <strong>${esc(e.display_author)}</strong>`;meta.appendChild(a);}
-        const eb=document.createElement('button');eb.className='edit-btn';eb.textContent='✏️';eb.title='Edit';eb.addEventListener('click',ev=>{ev.stopPropagation();openEditModal(e,false);});meta.appendChild(eb);
-        footer.appendChild(meta);card.appendChild(footer);grid.appendChild(card);
+        footer.appendChild(meta);card.appendChild(footer);
+        // Victim statement snippet
+        if(victimMap&&victimMap[e.id]){const vs=document.createElement('div');vs.className='card-victim-strip';vs.textContent='🎤 '+victimMap[e.id];card.appendChild(vs);}
+        // Comment count
+        const cc=(commentCountMap&&commentCountMap[e.id])||0;
+        if(cc>0){const ccEl=document.createElement('div');ccEl.className='card-comment-count';ccEl.innerHTML=`💬 <span>${cc}</span> comment${cc!==1?'s':''}`;card.appendChild(ccEl);}
+        grid.appendChild(card);
       });
       el.innerHTML='';el.appendChild(grid);
     }
