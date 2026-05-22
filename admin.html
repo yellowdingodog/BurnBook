@@ -179,6 +179,7 @@
       <button class="admin-tab" data-atab="entries">📋 All Entries</button>
       <button class="admin-tab" data-atab="reorder">↕️ Reorder</button>
       <button class="admin-tab" data-atab="ips">👤 IP Profiles</button>
+      <button class="admin-tab" data-atab="nap">😴 Naptionals</button>
     </div>
 
     <!-- REMOVALS -->
@@ -266,6 +267,35 @@
       <div id="reorder-list" class="reorder-list"></div>
       <button class="reorder-save-btn" id="reorder-save-btn" onclick="saveReorder()">💾 Save Order</button>
       <div id="reorder-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
+    </div>
+
+    <!-- NAPTIONALS -->
+    <div id="atab-nap" class="tab-content">
+
+      <div class="section-hdr"><span class="section-title urgent">⚠️ Nap Removal Requests</span><button class="refresh-btn" onclick="loadNapRemovals()">↺ Refresh</button></div>
+      <div class="tbl-wrap"><table><thead><tr><th class="urgent">#</th><th class="urgent">Sleeper</th><th class="urgent">Reason</th><th class="urgent">Requested</th><th class="urgent">Actions</th></tr></thead><tbody id="tb-nap-removals"></tbody></table></div>
+
+      <div class="section-hdr"><span class="section-title">✏️ Nap Pending Edits</span><button class="refresh-btn" onclick="loadNapEdits()">↺ Refresh</button></div>
+      <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Proposed Name</th><th>Proposed Scene</th><th>Tags</th><th>Photo</th><th>Submitter</th><th>When</th><th>Actions</th></tr></thead><tbody id="tb-nap-edits"></tbody></table></div>
+
+      <div class="section-hdr"><span class="section-title">🎤 Sleeper's Defenses</span><button class="refresh-btn" onclick="loadNapDefenses()">↺ Refresh</button></div>
+      <div id="nap-defenses-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
+
+      <div class="section-hdr"><span class="section-title">💬 Nap Comments</span><button class="refresh-btn" onclick="loadNapComments()">↺ Refresh</button></div>
+      <div id="nap-comments-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
+
+      <div class="section-hdr"><span class="section-title">📋 All Nap Entries</span><button class="refresh-btn" onclick="loadNapEntries()">↺ Refresh</button></div>
+      <div id="nap-entry-edit-panel"></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>#</th><th>Photo</th><th>Sleeper</th><th>Scene</th><th>Tags</th><th>Submitter</th><th>Displays As</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="tb-nap-entries"></tbody></table>
+      </div>
+
+      <div class="section-hdr"><span class="section-title">↕️ Reorder Nap Entries</span><button class="refresh-btn" onclick="loadNapReorder()">↺ Refresh</button></div>
+      <div class="reorder-info">Drag and drop to reorder. Only approved, visible nap entries are shown.</div>
+      <div id="nap-reorder-list" class="reorder-list"></div>
+      <button class="reorder-save-btn" id="nap-reorder-save-btn" onclick="saveNapReorder()">💾 Save Order</button>
+      <div id="nap-reorder-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
     </div>
 
   </div>
@@ -378,6 +408,7 @@
         tab.classList.add('active');
         document.getElementById('atab-'+tab.dataset.atab).classList.add('active');
         if(tab.dataset.atab==='reorder') loadReorder();
+        if(tab.dataset.atab==='nap') { loadNapRemovals();loadNapEdits();loadNapDefenses();loadNapComments();loadNapEntries(); }
       });
     });
 
@@ -759,6 +790,189 @@
           tb.appendChild(tr);
         });
       } catch(err) { tb.innerHTML = emptyRow(6, 'Failed: '+err.message); }
+    }
+
+    // ── NAPTIONALS admin functions ────────────────────────────
+    async function loadNapRemovals(){
+      const tb=document.getElementById('tb-nap-removals');tb.innerHTML=loadingRow(5);
+      try{
+        const reqs=await sbGet('nap_deletion_requests','order=created_at.desc');
+        if(!reqs.length){tb.innerHTML=emptyRow(5,'No removal requests.');return;}
+        const ids=[...new Set(reqs.map(r=>r.entry_id))];
+        const entries=await sbGet('nap_entries',`id=in.(${ids.join(',')})&select=id,subject,ui_order`);
+        const em={};entries.forEach(e=>em[e.id]=e);
+        tb.innerHTML='';
+        reqs.forEach(req=>{
+          const entry=em[req.entry_id]||{};
+          const tr=document.createElement('tr');
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${entry.ui_order||'?'}</td><td style="font-weight:600">${esc(entry.subject||'(deleted)')}</td><td style="max-width:220px;font-size:.8rem">${esc(req.reason)}</td><td style="font-size:.74rem;color:var(--muted)">${new Date(req.created_at).toLocaleDateString()}</td><td><button class="btn-a add" onclick="napDeleteEntry('${req.entry_id}','${req.id}')">✕ Delete</button><button class="btn-a ars" onclick="napRestoreEntry('${req.entry_id}','${req.id}')">↩ Restore</button></td>`;
+          tb.appendChild(tr);
+        });
+      }catch(err){tb.innerHTML=emptyRow(5,'Failed: '+err.message);}
+    }
+    async function napDeleteEntry(entryId,reqId){if(!confirm('Permanently delete this nap entry?'))return;try{await sbDelete('nap_entries',`id=eq.${entryId}`);await sbDelete('nap_deletion_requests',`id=eq.${reqId}`);showToast('Entry deleted.');loadNapRemovals();loadNapEntries();}catch(err){alert('Failed: '+err.message);}}
+    async function napRestoreEntry(entryId,reqId){try{await sbPatch('nap_entries',`id=eq.${entryId}`,{hidden:false});await sbDelete('nap_deletion_requests',`id=eq.${reqId}`);showToast('Entry restored.');loadNapRemovals();loadNapEntries();}catch(err){alert('Failed: '+err.message);}}
+
+    async function loadNapEdits(){
+      const tb=document.getElementById('tb-nap-edits');tb.innerHTML=loadingRow(8);
+      try{
+        const edits=await sbGet('nap_pending_edits','order=created_at.desc');
+        if(!edits.length){tb.innerHTML=emptyRow(8,'No pending edits.');return;}
+        const ids=[...new Set(edits.map(e=>e.entry_id))];
+        const originals=await sbGet('nap_entries',`id=in.(${ids.join(',')})&select=id,ui_order`);
+        const om={};originals.forEach(o=>om[o.id]=o.ui_order);
+        tb.innerHTML='';
+        edits.forEach(ed=>{
+          const tr=document.createElement('tr');
+          const imgCell=ed.image_url?`<img src="${esc(ed.image_url)}" />`:'—';
+          const tags=(ed.hashtags||[]).join(' ')||'—';
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${om[ed.entry_id]||'?'}</td><td style="font-weight:600">${esc(ed.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${imgCell}</td><td style="font-size:.8rem">${esc(ed.submitter)}</td><td style="font-size:.74rem;color:var(--muted)">${new Date(ed.created_at).toLocaleDateString()}</td><td><button class="btn-a aac" onclick='acceptNapEdit(${JSON.stringify(JSON.stringify(ed))})'>✓ Accept</button><button class="btn-a ar" onclick="rejectNapEdit('${ed.id}')">✕ Reject</button></td>`;
+          tb.appendChild(tr);
+        });
+      }catch(err){tb.innerHTML=emptyRow(8,'Failed: '+err.message);}
+    }
+    async function acceptNapEdit(jsonStr){const ed=JSON.parse(jsonStr);try{const patch={subject:ed.subject,text:ed.text,image_url:ed.image_url,display_author:ed.display_author};if(ed.hashtags)patch.hashtags=ed.hashtags;await sbPatch('nap_entries',`id=eq.${ed.entry_id}`,patch);await sbDelete('nap_pending_edits',`id=eq.${ed.id}`);showToast('Edit accepted.');loadNapEdits();loadNapEntries();}catch(err){alert('Failed: '+err.message);}}
+    async function rejectNapEdit(id){try{await sbDelete('nap_pending_edits',`id=eq.${id}`);showToast('Edit rejected.');loadNapEdits();}catch(err){alert('Failed: '+err.message);}}
+
+    async function loadNapDefenses(){
+      const container=document.getElementById('nap-defenses-container');container.innerHTML='<div class="loading-wrap"><div class="spinner"></div></div>';
+      try{
+        const stmts=await sbGet('nap_defenses','status=neq.deleted&order=created_at.desc');
+        if(!stmts.length){container.innerHTML='<p style="color:var(--muted);font-size:.85rem">No defenses yet.</p>';return;}
+        const ids=[...new Set(stmts.map(s=>s.entry_id))];
+        const entries=await sbGet('nap_entries',`id=in.(${ids.join(',')})&select=id,subject,ui_order`);
+        const em={};entries.forEach(e=>em[e.id]=e);
+        container.innerHTML='';
+        stmts.forEach(s=>{
+          const entry=em[s.entry_id]||{};
+          const item=document.createElement('div');item.className='vc-item';
+          const statusBadge=s.status==='approved'?`<span class="vc-badge vc-badge-approved">approved</span>`:`<span class="vc-badge vc-badge-pending">pending</span>`;
+          item.innerHTML=`<div class="vc-meta">${statusBadge} <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${new Date(s.created_at).toLocaleDateString()}</span></div><div class="vc-text">${esc(s.text)}</div>`;
+          const actions=document.createElement('div');actions.style.cssText='margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;';
+          if(s.status!=='approved'){const ab=document.createElement('button');ab.className='btn-a aac';ab.textContent='✓ Approve';ab.onclick=async()=>{try{await sbPatch('nap_defenses',`id=eq.${s.id}`,{status:'approved'});showToast('Defense approved.');loadNapDefenses();}catch(e){alert(e.message);}};actions.appendChild(ab);}
+          const db=document.createElement('button');db.className='btn-a ar';db.textContent='✕ Remove';db.onclick=async()=>{if(!confirm('Remove this defense?'))return;try{await sbPatch('nap_defenses',`id=eq.${s.id}`,{status:'deleted'});showToast('Removed.');loadNapDefenses();}catch(e){alert(e.message);}};actions.appendChild(db);
+          item.appendChild(actions);container.appendChild(item);
+        });
+      }catch(err){container.innerHTML='<p style="color:var(--deep-pink)">Failed: '+err.message+'</p>';}
+    }
+
+    async function loadNapComments(){
+      const container=document.getElementById('nap-comments-container');container.innerHTML='<div class="loading-wrap"><div class="spinner"></div></div>';
+      try{
+        const comments=await sbGet('nap_comments','order=created_at.desc');
+        if(!comments.length){container.innerHTML='<p style="color:var(--muted);font-size:.85rem">No comments yet.</p>';return;}
+        const ids=[...new Set(comments.map(c=>c.entry_id))];
+        const entries=await sbGet('nap_entries',`id=in.(${ids.join(',')})&select=id,subject,ui_order`);
+        const em={};entries.forEach(e=>em[e.id]=e);
+        container.innerHTML='';
+        comments.forEach(c=>{
+          const entry=em[c.entry_id]||{};
+          const item=document.createElement('div');item.className='vc-item';
+          item.innerHTML=`<div class="vc-meta"><strong>${esc(c.author)}</strong> on <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${new Date(c.created_at).toLocaleDateString()}</span></div><div class="vc-text">${esc(c.text)}</div>`;
+          const db=document.createElement('button');db.className='btn-a ar';db.style.marginTop='0.5rem';db.textContent='✕ Remove';db.onclick=async()=>{if(!confirm('Remove this comment?'))return;try{await sbDelete('nap_comments',`id=eq.${c.id}`);showToast('Comment removed.');loadNapComments();}catch(e){alert(e.message);}};
+          item.appendChild(db);container.appendChild(item);
+        });
+      }catch(err){container.innerHTML='<p style="color:var(--deep-pink)">Failed: '+err.message+'</p>';}
+    }
+
+    async function loadNapEntries(){
+      const tb=document.getElementById('tb-nap-entries');tb.innerHTML=loadingRow(9);
+      document.getElementById('nap-entry-edit-panel').innerHTML='';
+      try{
+        const entries=await sbGet('nap_entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
+        if(!entries.length){tb.innerHTML=emptyRow(9,'No nap entries yet.');return;}
+        tb.innerHTML='';
+        entries.forEach(e=>{
+          const isCodeSub=e.submitter&&e.submitter.toLowerCase()===CODENAME.toLowerCase();
+          const subCell=isCodeSub?`<span style="font-size:.82rem;font-style:italic;color:var(--muted)">${esc(CODENAME_DISPLAY)}</span>`:`<span style="font-size:.8rem">${esc(e.submitter)}</span>`;
+          const displayCell=e.is_mean_whirls?makeBadgeMWHtml():`<span style="font-size:.82rem">${esc(e.display_author)}</span>`;
+          const imgCell=e.image_url?`<img src="${esc(e.image_url)}" />`:'—';
+          const tags=(e.hashtags||[]).join(' ')||'—';
+          const statusLabel=e.hidden?'hidden':e.status;
+          const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modNapEntry('${e.id}','approve')">✓</button>`:'';
+          const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="btn-a au" onclick="modNapEntry('${e.id}','unapprove')">⏸</button>`:'';
+          const tr=document.createElement('tr');
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openNapEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modNapEntry('${e.id}','reject')">✕</button></td>`;
+          tb.appendChild(tr);
+        });
+      }catch(err){tb.innerHTML=emptyRow(9,'Failed: '+err.message);}
+    }
+
+    async function modNapEntry(id,decision){
+      try{
+        if(decision==='approve')        await sbPatch('nap_entries',`id=eq.${id}`,{status:'approved',hidden:false});
+        else if(decision==='unapprove') await sbPatch('nap_entries',`id=eq.${id}`,{status:'pending'});
+        else                            await sbDelete('nap_entries',`id=eq.${id}`);
+        loadNapEntries();
+      }catch(err){alert('Failed: '+err.message);}
+    }
+
+    let napEditImageFile=null;
+    function openNapEdit(jsonStr){
+      const e=JSON.parse(jsonStr);
+      const panel=document.getElementById('nap-entry-edit-panel');
+      if(panel.dataset.open===e.id){panel.innerHTML='';delete panel.dataset.open;return;}
+      panel.dataset.open=e.id; napEditImageFile=null;
+      panel.innerHTML=`
+        <div class="edit-panel">
+          <div class="edit-panel-title">✏️ Editing Nap: #${e.ui_order||'?'} — ${esc(e.subject)}</div>
+          <div class="form-group"><label class="form-label">Sleeper's Name *</label><input class="form-input" id="nep-subject" value="${esc(e.subject)}" /></div>
+          <div class="form-group"><label class="form-label">The Scene</label><textarea class="form-textarea" id="nep-text" style="min-height:80px">${esc(e.text||'')}</textarea></div>
+          <div class="form-group"><label class="form-label">Hashtags</label><input class="form-input" id="nep-hashtags" value="${esc((e.hashtags||[]).join(' '))}" /></div>
+          <div class="form-group"><label class="form-label">Displays As</label><input class="form-input" id="nep-display-author" value="${esc(e.display_author)}" /></div>
+          <div class="form-group"><label class="form-label">Photo</label>
+            ${e.image_url?`<img class="current-img" src="${esc(e.image_url)}" id="nep-cur-img" />`:''}
+            <div class="upload-zone" id="nep-upload"><input type="file" id="nep-image" accept="image/*" /><div class="upload-zone-text">📷 Click to replace</div><img id="nep-preview" class="upload-preview" alt="" /></div>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="saveNapEdit('${e.id}','${esc(e.image_url||'')}')">💾 Save Changes</button>
+            <button class="btn-a ar" onclick="document.getElementById('nap-entry-edit-panel').innerHTML=''">Cancel</button>
+          </div>
+          <div id="nep-msg" style="display:none" class="alert"></div>
+        </div>`;
+      document.getElementById('nep-image').addEventListener('change',function(){if(this.files[0]){napEditImageFile=this.files[0];const r=new FileReader();r.onload=ev=>{const p=document.getElementById('nep-preview');p.src=ev.target.result;p.style.display='block';const c=document.getElementById('nep-cur-img');if(c)c.style.display='none';};r.readAsDataURL(napEditImageFile);}});
+      panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+
+    async function saveNapEdit(id,existingImg){
+      const subject=document.getElementById('nep-subject').value.trim();const text=document.getElementById('nep-text').value.trim();const hashtags=parseHashtags(document.getElementById('nep-hashtags').value);const displayAuthor=document.getElementById('nep-display-author').value.trim();
+      if(!subject){showNepMsg('error','Name required.');return;}
+      const btn=document.querySelector('#nap-entry-edit-panel .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
+      try{let imageUrl=existingImg;if(napEditImageFile)imageUrl=await uploadImage(napEditImageFile);await sbPatch('nap_entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});showNepMsg('success','✅ Saved!');setTimeout(()=>{document.getElementById('nap-entry-edit-panel').innerHTML='';loadNapEntries();},1200);}
+      catch(err){showNepMsg('error','Failed: '+err.message);}
+      btn.disabled=false;btn.innerHTML='💾 Save Changes';
+    }
+    function showNepMsg(type,msg){const el=document.getElementById('nep-msg');el.className='alert alert-'+type;el.textContent=msg;el.style.display='block';}
+
+    // Nap reorder
+    let napReorderData=[];
+    let napDragSrcIdx=null;
+    async function loadNapReorder(){
+      const list=document.getElementById('nap-reorder-list');list.innerHTML='<div class="loading-wrap"><div class="spinner"></div></div>';document.getElementById('nap-reorder-msg').style.display='none';
+      try{const entries=await sbGet('nap_entries','status=eq.approved&hidden=eq.false&order=ui_order.asc.nullslast,created_at.asc&select=id,subject,ui_order,image_url');napReorderData=[...entries];renderNapReorderList();}
+      catch(err){list.innerHTML='<p style="color:var(--deep-pink)">Failed: '+err.message+'</p>';}
+    }
+    function renderNapReorderList(){
+      const list=document.getElementById('nap-reorder-list');list.innerHTML='';
+      napReorderData.forEach((e,i)=>{
+        const item=document.createElement('div');item.className='reorder-item';item.draggable=true;item.dataset.idx=i;
+        const handle=document.createElement('div');handle.className='reorder-handle';handle.textContent='⠿';
+        const num=document.createElement('div');num.className='reorder-num';num.textContent=i+1;
+        let thumb;if(e.image_url){thumb=document.createElement('img');thumb.className='reorder-thumb';thumb.src=e.image_url;}else{thumb=document.createElement('div');thumb.className='reorder-thumb-ph';thumb.textContent='😴';}
+        const label=document.createElement('div');label.className='reorder-label';label.textContent=e.subject;
+        item.appendChild(handle);item.appendChild(num);item.appendChild(thumb);item.appendChild(label);
+        item.addEventListener('dragstart',ev=>{napDragSrcIdx=i;ev.dataTransfer.effectAllowed='move';item.style.opacity='0.5';});
+        item.addEventListener('dragend',()=>{item.style.opacity='1';document.querySelectorAll('.reorder-item').forEach(it=>it.classList.remove('drag-over'));});
+        item.addEventListener('dragover',ev=>{ev.preventDefault();document.querySelectorAll('.reorder-item').forEach(it=>it.classList.remove('drag-over'));item.classList.add('drag-over');});
+        item.addEventListener('drop',ev=>{ev.preventDefault();if(napDragSrcIdx===null||napDragSrcIdx===i)return;const moved=napReorderData.splice(napDragSrcIdx,1)[0];napReorderData.splice(i,0,moved);napDragSrcIdx=null;renderNapReorderList();});
+        list.appendChild(item);
+      });
+    }
+    async function saveNapReorder(){
+      const btn=document.getElementById('nap-reorder-save-btn');btn.disabled=true;btn.textContent='Saving...';const msgEl=document.getElementById('nap-reorder-msg');msgEl.style.display='none';
+      try{await Promise.all(napReorderData.map((e,i)=>sbPatch('nap_entries',`id=eq.${e.id}`,{ui_order:i+1})));msgEl.className='alert alert-success';msgEl.textContent='✅ Order saved!';msgEl.style.display='block';napReorderData=napReorderData.map((e,i)=>({...e,ui_order:i+1}));renderNapReorderList();}
+      catch(err){msgEl.className='alert alert-error';msgEl.textContent='Failed: '+err.message;msgEl.style.display='block';}
+      btn.disabled=false;btn.textContent='💾 Save Order';
     }
 
     // ── Go ────────────────────────────────────────────────────
