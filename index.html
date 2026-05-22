@@ -476,6 +476,78 @@
       catch { return 'anon_'+Math.random().toString(36).slice(2); }
     };
 
+    // ── IP profile helpers ────────────────────────────────────
+    let _ipProfile = null;
+    let _adminVoteWeight = 10;
+
+    async function getIpProfile() {
+      if (_ipProfile) return _ipProfile;
+      const ip = await getIpHash();
+      try {
+        const rows = await sbGet('ip_profiles', `ip_hash=eq.${ip}`);
+        if (rows.length) {
+          _ipProfile = rows[0];
+        } else {
+          // Create profile on first visit
+          const created = await sbPost('ip_profiles', { ip_hash: ip, names: [], is_admin: false, is_blocked: false });
+          _ipProfile = created[0];
+        }
+      } catch(e) { _ipProfile = { ip_hash: ip, names: [], is_admin: false, is_blocked: false }; }
+      return _ipProfile;
+    }
+
+    async function refreshIpProfile() { _ipProfile = null; return getIpProfile(); }
+
+    async function logActivity(action, entryId, detail) {
+      try {
+        const ip = await getIpHash();
+        await sbPost('ip_activity', { ip_hash: ip, action, entry_id: entryId||null, detail: detail||'' });
+        // Update last_seen
+        await sbPatch('ip_profiles', `ip_hash=eq.${ip}`, { last_seen: new Date().toISOString() });
+      } catch(e) {}
+    }
+
+    async function recordName(name) {
+      if (!name || name === 'Anonymous' || name === 'MeanWhirls') return;
+      try {
+        const ip = await getIpHash();
+        const prof = await getIpProfile();
+        const names = prof.names || [];
+        if (!names.map(n=>n.toLowerCase()).includes(name.toLowerCase())) {
+          const updated = [...names, name];
+          await sbPatch('ip_profiles', `ip_hash=eq.${ip}`, { names: updated });
+          _ipProfile = { ..._ipProfile, names: updated };
+        }
+      } catch(e) {}
+    }
+
+    async function isBlocked() {
+      const prof = await getIpProfile();
+      return prof.is_blocked === true;
+    }
+
+    // Build a submitter name input with dropdown if multiple names known
+    async function makeNameInput(inputId, checkboxId) {
+      const prof = await getIpProfile();
+      const names = prof.names || [];
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      // Remove any existing datalist
+      const oldDl = document.getElementById(inputId + '-dl');
+      if (oldDl) oldDl.remove();
+      if (names.length === 1) {
+        input.value = names[0];
+      } else if (names.length > 1) {
+        input.value = names[0];
+        // Add datalist for autocomplete dropdown
+        const dl = document.createElement('datalist');
+        dl.id = inputId + '-dl';
+        names.forEach(n => { const opt = document.createElement('option'); opt.value = n; dl.appendChild(opt); });
+        input.setAttribute('list', inputId + '-dl');
+        input.insertAdjacentElement('afterend', dl);
+      }
+    }
+
     // ── Utils ─────────────────────────────────────────────────
     const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
@@ -494,9 +566,15 @@
     // ── Vote data ─────────────────────────────────────────────
     function buildVoteData(votes) {
       const d={};
-      votes.forEach(v=>{ if(!d[v.entry_id])d[v.entry_id]={sum:0,count:0}; d[v.entry_id].sum+=v.vote; d[v.entry_id].count++; });
+      votes.forEach(v=>{
+        if(!d[v.entry_id])d[v.entry_id]={weightedSum:0,totalWeight:0,count:0};
+        const w=v.weight||1;
+        d[v.entry_id].weightedSum+=v.vote*w;
+        d[v.entry_id].totalWeight+=w;
+        d[v.entry_id].count++;
+      });
       const r={};
-      Object.keys(d).forEach(id=>{ const x=d[id]; r[id]={avg:x.count?+(x.sum/x.count).toFixed(1):null,count:x.count,myVote:myVotes[id]||null}; });
+      Object.keys(d).forEach(id=>{ const x=d[id]; r[id]={avg:x.totalWeight?+(x.weightedSum/x.totalWeight).toFixed(1):null,count:x.count,myVote:myVotes[id]||null}; });
       return r;
     }
 
@@ -505,15 +583,18 @@
       try {
         const cfg=await sbGet('config');
         cfg.forEach(r=>{
-          if(r.key==='codename')         CODENAME              =r.value;
-          if(r.key==='placeholderemoji') PLACEHOLDER_EMOJI     =r.value;
-          if(r.key==='placeholderimage') PLACEHOLDER_IMAGE_URL =r.value;
-          if(r.key==='badgeicon')        BADGE_ICON_URL        =r.value;
+          if(r.key==='codename')            CODENAME              =r.value;
+          if(r.key==='placeholderemoji')    PLACEHOLDER_EMOJI     =r.value;
+          if(r.key==='placeholderimage')    PLACEHOLDER_IMAGE_URL =r.value;
+          if(r.key==='badgeicon')           BADGE_ICON_URL        =r.value;
+          if(r.key==='admin_vote_weight')   _adminVoteWeight      =parseFloat(r.value)||10;
         });
       } catch(e){}
       const hash=window.location.hash;
       if(hash.startsWith('#entry-')){ await loadEntries(); const e=allEntries.find(e=>e.id===hash.slice(7)); if(e)openDetail(e); }
       else loadEntries();
+      // Pre-populate name fields based on IP profile
+      makeNameInput('f-submitter', 'f-anonymous');
     }
 
     // ── Tabs ──────────────────────────────────────────────────
@@ -543,8 +624,11 @@
       const current=myVotes[entryId]; const newScore=(current===score)?null:score;
       try {
         const ip=await getIpHash();
+        const prof=await getIpProfile();
+        const weight=prof.is_admin?_adminVoteWeight:1;
         if(newScore===null){await sbDelete('votes',`entry_id=eq.${entryId}&ip_hash=eq.${ip}`);delete myVotes[entryId];}
-        else{await sbUpsert('votes',{entry_id:entryId,ip_hash:ip,vote:newScore},'entry_id,ip_hash');myVotes[entryId]=newScore;}
+        else{await sbUpsert('votes',{entry_id:entryId,ip_hash:ip,vote:newScore,weight},'entry_id,ip_hash');myVotes[entryId]=newScore;}
+        await logActivity('vote', entryId, `Score: ${newScore||'cleared'}`);
         localStorage.setItem('mw_votes_heat',JSON.stringify(myVotes));
         const votes=await sbGet('votes',`entry_id=eq.${entryId}&select=vote`);
         const sum=votes.reduce((a,v)=>a+v.vote,0),count=votes.length;
@@ -615,7 +699,9 @@
         const confirmed=confirm(`Are you ${victimName}?`);
         if(!confirmed){alert('Get out of here then. 👋');return;}
         btn.disabled=true;btn.textContent='Submitting...';
-        try{await sbPost('victim_statements',{entry_id:entryId,text,ip_hash:ipHash,status:'pending'});msg.className='victim-msg ok';msg.textContent='✅ Submitted for moderation!';msg.style.display='block';setTimeout(()=>loadVictimStatement(entryId,ipHash),2000);}
+        try{await sbPost('victim_statements',{entry_id:entryId,text,ip_hash:ipHash,status:'pending'});
+        await logActivity('victim_statement', entryId, 'Victim statement submitted');
+        msg.className='victim-msg ok';msg.textContent='✅ Submitted for moderation!';msg.style.display='block';setTimeout(()=>loadVictimStatement(entryId,ipHash),2000);}
         catch(e){msg.className='victim-msg err';msg.textContent='Failed: '+e.message;msg.style.display='block';}
         btn.disabled=false;btn.textContent='Submit Statement';
       });
@@ -673,7 +759,10 @@
           if(!name){msgEl.className='comment-msg err';msgEl.textContent='Name is required.';msgEl.style.display='block';return;}
           if(!text){msgEl.className='comment-msg err';msgEl.textContent='Comment cannot be empty.';msgEl.style.display='block';return;}
           submitBtn.disabled=true;submitBtn.textContent='Posting...';
-          try{await sbPost('comments',{entry_id:entryId,author:name,text,ip_hash:ipHash});nameInput.value='';textInput.value='';loadComments(entryId,ipHash);}
+          try{await sbPost('comments',{entry_id:entryId,author:name,text,ip_hash:ipHash});
+            await recordName(name);
+            await logActivity('comment', entryId, `Author: ${name}`);
+            nameInput.value='';textInput.value='';loadComments(entryId,ipHash);}
           catch(e){msgEl.className='comment-msg err';msgEl.textContent='Failed: '+e.message;msgEl.style.display='block';}
           submitBtn.disabled=false;submitBtn.textContent='💬 Post Comment';
         });
@@ -737,7 +826,7 @@
       try{
         const [entries,votes,victimStmts,commentCounts]=await Promise.all([
           sbGet('entries','status=eq.approved&hidden=eq.false&order=ui_order.asc.nullslast,created_at.asc'),
-          sbGet('votes','select=entry_id,vote'),
+          sbGet('votes','select=entry_id,vote,weight'),
           sbGet('victim_statements','status=eq.approved&select=entry_id,text'),
           sbGet('comments','select=entry_id')
         ]);
@@ -791,9 +880,13 @@
     document.getElementById('submit-btn').addEventListener('click',async()=>{
       const subject=document.getElementById('f-subject').value.trim(),text=document.getElementById('f-text').value.trim(),submitter=document.getElementById('f-submitter').value.trim(),anonymous=document.getElementById('f-anonymous').checked,hashtagRaw=document.getElementById('f-hashtags').value.trim();
       if(!subject){showStatus('error','Who are we burning?');return;}if(!submitter){showStatus('error','Your name is required.');return;}
+      if(await isBlocked()){showStatus('error','Your access has been restricted.');return;}
       const btn=document.getElementById('submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';document.getElementById('submit-status').style.display='none';
       const isCode=submitter.toLowerCase()===CODENAME.toLowerCase(),displayAuthor=isCode?'MeanWhirls':(anonymous?'Anonymous':submitter),hashtags=parseHashtags(hashtagRaw);
-      try{let imageUrl='';if(selectedFile)imageUrl=await uploadImage(selectedFile);const existing=await sbGet('entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');const nextOrder=((existing[0]?.ui_order)||0)+1;await sbPost('entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false});showStatus('success',isCode?'🏒 Mean Whirls entry posted!':'✅ Submitted! Appears after moderation. 💗');resetSubmitForm();}
+      try{let imageUrl='';if(selectedFile)imageUrl=await uploadImage(selectedFile);const existing=await sbGet('entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');const nextOrder=((existing[0]?.ui_order)||0)+1;await sbPost('entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false});showStatus('success',isCode?'🏒 Mean Whirls entry posted!':'✅ Submitted! Appears after moderation. 💗');
+        await recordName(submitter);
+        await logActivity('submit', null, `Subject: ${subject}`);
+        resetSubmitForm();}
       catch(err){showStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='💗 Submit to the Burn Book';
     });
@@ -825,6 +918,8 @@
       document.getElementById('edit-submitter-group').style.display='block';document.getElementById('edit-submit-btn').innerHTML='💗 Submit Edit for Review';
       const curImg=document.getElementById('edit-current-img');if(entry.image_url){curImg.src=entry.image_url;curImg.style.display='block';}else{curImg.style.display='none';}
       editModal.classList.add('open');document.body.style.overflow='hidden';
+      // Pre-populate submitter name
+      makeNameInput('edit-submitter', 'edit-anonymous');
     }
     function closeEditModal(){editModal.classList.remove('open');document.body.style.overflow='';}
     document.getElementById('edit-modal-close').addEventListener('click',closeEditModal);
@@ -838,6 +933,7 @@
     document.getElementById('edit-submit-btn').addEventListener('click',async()=>{
       const entryId=document.getElementById('edit-entry-id').value,subject=document.getElementById('edit-subject').value.trim(),text=document.getElementById('edit-text').value.trim(),submitter=document.getElementById('edit-submitter').value.trim(),anonymous=document.getElementById('edit-anonymous').checked,hashtagRaw=document.getElementById('edit-hashtags').value.trim(),existingImg=document.getElementById('edit-existing-image').value,origSubject=document.getElementById('edit-orig-subject').value,origText=document.getElementById('edit-orig-text').value,origTagsStr=document.getElementById('edit-orig-hashtags').value;
       if(!subject){showEditStatus('error','Burn victim name required.');return;}if(!submitter){showEditStatus('error','Your name is required.');return;}
+      if(await isBlocked()){showEditStatus('error','Your access has been restricted.');return;}
       const btn=document.getElementById('edit-submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
       const hashtags=parseHashtags(hashtagRaw),origTags=origTagsStr?origTagsStr.split(' ').filter(Boolean):[],displayAuthor=anonymous?'Anonymous':submitter;
       const onlyTagsChanged=!editImageFile&&subject===origSubject&&text===origText&&!arraysEqual(hashtags,origTags);
@@ -847,7 +943,10 @@
         let imageUrl=existingImg;if(editImageFile)imageUrl=await uploadImage(editImageFile);
         const isCode=submitter.toLowerCase()===CODENAME.toLowerCase();
         if(isCode||onlyTagsChanged){const patch={hashtags};if(!onlyTagsChanged){patch.subject=subject;patch.text=text;patch.image_url=imageUrl;}if(isCode){patch.display_author='MeanWhirls';patch.is_mean_whirls=true;}await sbPatch('entries',`id=eq.${entryId}`,patch);showEditStatus('success',onlyTagsChanged?'✅ Hashtags updated!':'🏒 Mean Whirls edit applied!');setTimeout(()=>{closeEditModal();loadEntries();},1500);}
-        else{await sbPost('pending_edits',{entry_id:entryId,subject,text,image_url:imageUrl,submitter,display_author:displayAuthor,hashtags});showEditStatus('success','✅ Edit submitted for review!');setTimeout(closeEditModal,3000);}
+        else{await sbPost('pending_edits',{entry_id:entryId,subject,text,image_url:imageUrl,submitter,display_author:displayAuthor,hashtags});
+            await recordName(submitter);
+            await logActivity('edit', entryId, `Edit submitted for: ${subject}`);
+            showEditStatus('success','✅ Edit submitted for review!');setTimeout(closeEditModal,3000);}
       }catch(err){showEditStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='💗 Submit Edit for Review';
     });
@@ -856,9 +955,9 @@
     async function loadHottestBurns(){
       const container=document.getElementById('hot-container');container.innerHTML='<div class="loading-wrap"><div class="spinner"></div></div>';
       try{
-        const [entries,votes]=await Promise.all([sbGet('entries','status=eq.approved&hidden=eq.false&select=*'),sbGet('votes','select=entry_id,vote')]);
-        const tally={};votes.forEach(v=>{if(!tally[v.entry_id])tally[v.entry_id]={sum:0,count:0};tally[v.entry_id].sum+=v.vote;tally[v.entry_id].count++;});
-        const scored=entries.filter(e=>tally[e.id]&&tally[e.id].count>0).map(e=>({...e,avg:+(tally[e.id].sum/tally[e.id].count).toFixed(2),voteCount:tally[e.id].count})).sort((a,b)=>b.avg-a.avg||b.voteCount-a.voteCount);
+        const [entries,votes]=await Promise.all([sbGet('entries','status=eq.approved&hidden=eq.false&select=*'),sbGet('votes','select=entry_id,vote,weight')]);
+        const tally={};votes.forEach(v=>{if(!tally[v.entry_id])tally[v.entry_id]={weightedSum:0,totalWeight:0,count:0};const w=v.weight||1;tally[v.entry_id].weightedSum+=v.vote*w;tally[v.entry_id].totalWeight+=w;tally[v.entry_id].count++;});
+        const scored=entries.filter(e=>tally[e.id]&&tally[e.id].count>0).map(e=>({...e,avg:+(tally[e.id].weightedSum/tally[e.id].totalWeight).toFixed(2),voteCount:tally[e.id].count})).sort((a,b)=>b.avg-a.avg||b.voteCount-a.voteCount);
         const limit=parseInt(document.getElementById('hot-count').value)||0;const shown=limit?scored.slice(0,limit):scored;
         if(!shown.length){container.innerHTML=`<div class="empty"><div class="empty-icon">🌡️</div><h3>No votes yet</h3><p style="font-size:.85rem">Be the first to rate a burn!</p></div>`;return;}
         const list=document.createElement('div');list.className='hot-list';let rank=1;
