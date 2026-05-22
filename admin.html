@@ -678,7 +678,7 @@
         const adminBtn = p.is_admin
           ? `<button class="btn-a au" onclick="toggleAdmin('${p.ip_hash}',false)">Revoke Admin</button>`
           : `<button class="btn-a aa" onclick="toggleAdmin('${p.ip_hash}',true)">Grant Admin</button>`;
-        const actBtn = `<button class="btn-a ae" onclick="document.getElementById('act-ip-filter').value='${p.ip_hash}';loadIpActivity();document.querySelector('[data-atab=\'ips\']').click();">📋 Log</button>`;
+        const actBtn = `<button class="btn-a ae" onclick="viewIpLog('${p.ip_hash}')">📋 Log</button>`;
         tr.innerHTML = `
           <td style="font-size:.75rem;color:var(--muted);font-family:monospace">${esc(p.ip_hash)}</td>
           <td>${namesHtml}</td>
@@ -705,6 +705,18 @@
         showToast(grant ? '✅ Admin granted.' : 'Admin revoked.');
         loadIpProfiles();
       } catch(err) { alert('Failed: '+err.message); }
+    }
+
+    function viewIpLog(ipHash) {
+      // Set the filter input and reload activity, then scroll to it
+      const input = document.getElementById('act-ip-filter');
+      if (input) { input.value = ipHash; }
+      loadIpActivity();
+      // Scroll activity log into view
+      setTimeout(() => {
+        const tb = document.getElementById('tb-activity');
+        if (tb) tb.closest('.tbl-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
     }
 
     async function loadIpActivity() {
