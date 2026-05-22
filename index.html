@@ -293,7 +293,7 @@
       <div id="book-grid-view">
         <div style="margin-bottom:1rem">
           <h2 class="section-title">The Burn Book</h2>
-          <p class="section-sub">Moderated &amp; approved entries only &mdash; we are mean but we are picky.</p>
+          <p class="section-sub">Moderated &amp; approved entries only &mdash; we are mean but have standards.</p>
         </div>
         <div id="filter-bar" class="filter-bar" style="display:none">
           <span style="font-size:0.72rem;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase">Filter:</span>
@@ -350,7 +350,7 @@
     <!-- HOTTEST BURNS -->
     <div id="tab-hot" class="tab-panel">
       <h2 class="section-title">🔥 Hottest Burns</h2>
-      <p class="section-sub">Ranked by average heat score from community votes.</p>
+      <p class="section-sub">Voting works the way we want it to, Chicago-style. Here are the winners:</p>
       <div class="hot-controls">
         <label for="hot-count">Show top</label>
         <select id="hot-count" onchange="loadHottestBurns()">
@@ -610,6 +610,10 @@
       const msg=document.createElement('div');msg.className='victim-msg';msg.style.display='none';
       btn.addEventListener('click',async()=>{
         const text=ta.value.trim();if(!text)return;
+        // Confirm they are actually the victim
+        const victimName=currentDetailEntry?.subject||'the burn victim';
+        const confirmed=confirm(`Are you ${victimName}?`);
+        if(!confirmed){alert('Get out of here then. 👋');return;}
         btn.disabled=true;btn.textContent='Submitting...';
         try{await sbPost('victim_statements',{entry_id:entryId,text,ip_hash:ipHash,status:'pending'});msg.className='victim-msg ok';msg.textContent='✅ Submitted for moderation!';msg.style.display='block';setTimeout(()=>loadVictimStatement(entryId,ipHash),2000);}
         catch(e){msg.className='victim-msg err';msg.textContent='Failed: '+e.message;msg.style.display='block';}
