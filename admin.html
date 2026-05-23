@@ -231,7 +231,7 @@
           <thead><tr>
             <th class="cb"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)" /></th>
             <th>#</th><th>Photo</th><th>Subject</th><th>Burn</th><th>Tags</th>
-            <th>Submitter</th><th>Displays As</th><th>Status</th><th>Actions</th>
+            <th>Submitter</th><th>Displays As</th><th>Owner IP</th><th>Submitted</th><th>Status</th><th>Actions</th>
           </tr></thead>
           <tbody id="tb-entries"></tbody>
         </table>
@@ -323,7 +323,7 @@
         <div class="section-hdr"><span class="section-title">📋 All Nap Entries</span><button class="refresh-btn" onclick="loadNapEntries()">↺ Refresh</button></div>
         <div id="nap-entry-edit-panel"></div>
         <div class="tbl-wrap">
-          <table><thead><tr><th>#</th><th>Photo</th><th>Sleeper</th><th>Scene</th><th>Tags</th><th>Submitter</th><th>Displays As</th><th>Owner IP</th><th>Status</th><th>Actions</th></tr></thead>
+          <table><thead><tr><th>#</th><th>Photo</th><th>Sleeper</th><th>Scene</th><th>Tags</th><th>Submitter</th><th>Displays As</th><th>Owner IP</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="tb-nap-entries"></tbody></table>
         </div>
       </div>
@@ -383,6 +383,7 @@
 
     // ── Utils ─────────────────────────────────────────────────
     const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const toTS = d => d ? new Date(d).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
     const arraysEqual = (a,b) => a.length===b.length&&[...a].sort().join()===([...b]).sort().join();
     const showToast = msg => { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
@@ -508,7 +509,7 @@
         reqs.forEach(req=>{
           const entry=em[req.entry_id]||{};
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${entry.ui_order||'?'}</td><td style="font-weight:600">${esc(entry.subject||'(deleted)')}</td><td style="max-width:220px;font-size:.8rem">${esc(req.reason)}</td><td style="font-size:.74rem;color:var(--muted)">${new Date(req.created_at).toLocaleDateString()}</td><td><button class="btn-a add" onclick="adminDeleteEntry('${req.entry_id}','${req.id}')">✕ Delete</button><button class="btn-a ars" onclick="adminRestoreEntry('${req.entry_id}','${req.id}')">↩ Restore</button></td>`;
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${entry.ui_order||'?'}</td><td style="font-weight:600">${esc(entry.subject||'(deleted)')}</td><td style="max-width:220px;font-size:.8rem">${esc(req.reason)}</td><td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(req.created_at)}</td><td><button class="btn-a add" onclick="adminDeleteEntry('${req.entry_id}','${req.id}')">✕ Delete</button><button class="btn-a ars" onclick="adminRestoreEntry('${req.entry_id}','${req.id}')">↩ Restore</button></td>`;
           tb.appendChild(tr);
         });
       } catch(err){tb.innerHTML=emptyRow(5,'Failed: '+err.message);}
@@ -532,7 +533,7 @@
           const tr=document.createElement('tr');
           const imgCell=ed.image_url?`<img src="${esc(ed.image_url)}" />`:'—';
           const tags=(ed.hashtags||[]).join(' ')||'—';
-          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${om[ed.entry_id]||'?'}</td><td style="font-weight:600">${esc(ed.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${imgCell}</td><td style="font-size:.8rem">${esc(ed.submitter)}</td><td style="font-size:.74rem;color:var(--muted)">${new Date(ed.created_at).toLocaleDateString()}</td><td><button class="btn-a aac" onclick='acceptEdit(${JSON.stringify(JSON.stringify(ed))})'>✓ Accept</button><button class="btn-a ar" onclick="rejectEdit('${ed.id}')">✕ Reject</button></td>`;
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${om[ed.entry_id]||'?'}</td><td style="font-weight:600">${esc(ed.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${imgCell}</td><td style="font-size:.8rem">${esc(ed.submitter)}</td><td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(ed.created_at)}</td><td><button class="btn-a aac" onclick='acceptEdit(${JSON.stringify(JSON.stringify(ed))})'>✓ Accept</button><button class="btn-a ar" onclick="rejectEdit('${ed.id}')">✕ Reject</button></td>`;
           tb.appendChild(tr);
         });
       } catch(err){tb.innerHTML=emptyRow(8,'Failed: '+err.message);}
@@ -556,7 +557,7 @@
           const entry=em[s.entry_id]||{};
           const item=document.createElement('div');item.className='vc-item';
           const statusBadge=s.status==='approved'?`<span class="vc-badge vc-badge-approved">approved</span>`:`<span class="vc-badge vc-badge-pending">pending</span>`;
-          item.innerHTML=`<div class="vc-meta">${statusBadge} <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${new Date(s.created_at).toLocaleDateString()}</span></div><div class="vc-text">${esc(s.text)}</div>`;
+          item.innerHTML=`<div class="vc-meta">${statusBadge} <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${toTS(s.created_at)}</span></div><div class="vc-text">${esc(s.text)}</div>`;
           const actions=document.createElement('div');actions.style.cssText='margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;';
           if(s.status!=='approved'){const ab=document.createElement('button');ab.className='btn-a aac';ab.textContent='✓ Approve';ab.onclick=async()=>{try{await sbPatch('victim_statements',`id=eq.${s.id}`,{status:'approved'});showToast('Statement approved.');loadVictims();}catch(e){alert(e.message);}};actions.appendChild(ab);}
           const db=document.createElement('button');db.className='btn-a ar';db.textContent='✕ Remove';db.onclick=async()=>{if(!confirm('Remove this victim statement?'))return;try{await sbPatch('victim_statements',`id=eq.${s.id}`,{status:'deleted'});showToast('Statement removed.');loadVictims();}catch(e){alert(e.message);}};actions.appendChild(db);
@@ -627,7 +628,7 @@
           const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modEntry('${e.id}','approve')">✓</button>`:'';
           const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="btn-a au" onclick="modEntry('${e.id}','unapprove')">⏸</button>`:'';
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td><input type="checkbox" class="row-cb" data-id="${e.id}" onchange="updateBulkCount()" /></td><td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.7rem;color:var(--muted);font-family:monospace">${esc(e.ip_hash||'—')}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openEntryEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modEntry('${e.id}','reject')">✕</button></td>`;
+          tr.innerHTML=`<td><input type="checkbox" class="row-cb" data-id="${e.id}" onchange="updateBulkCount()" /></td><td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.7rem;color:var(--muted);font-family:monospace">${esc(e.ip_hash||'—')}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(e.created_at)}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openEntryEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modEntry('${e.id}','reject')">✕</button></td>`;
           tb.appendChild(tr);
         });
       } catch(err){tb.innerHTML=emptyRow(10,'Failed: '+err.message);}
@@ -887,7 +888,7 @@
         rows.forEach(r => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${new Date(r.created_at).toLocaleString()}</td>
+            <td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(r.created_at)}</td>
             <td style="font-size:.74rem;font-family:monospace;color:var(--muted)">${esc(r.ip_hash)}</td>
             <td style="font-size:.78rem">${esc(nameMap[r.ip_hash]||'—')}</td>
             <td><span class="badge badge-${r.action==='admin_login'?'approved':r.action==='vote'?'pending':'approved'}">${esc(r.action)}</span></td>
@@ -911,7 +912,7 @@
         reqs.forEach(req=>{
           const entry=em[req.entry_id]||{};
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${entry.ui_order||'?'}</td><td style="font-weight:600">${esc(entry.subject||'(deleted)')}</td><td style="max-width:220px;font-size:.8rem">${esc(req.reason)}</td><td style="font-size:.74rem;color:var(--muted)">${new Date(req.created_at).toLocaleDateString()}</td><td><button class="btn-a add" onclick="napDeleteEntry('${req.entry_id}','${req.id}')">✕ Delete</button><button class="btn-a ars" onclick="napRestoreEntry('${req.entry_id}','${req.id}')">↩ Restore</button></td>`;
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${entry.ui_order||'?'}</td><td style="font-weight:600">${esc(entry.subject||'(deleted)')}</td><td style="max-width:220px;font-size:.8rem">${esc(req.reason)}</td><td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(req.created_at)}</td><td><button class="btn-a add" onclick="napDeleteEntry('${req.entry_id}','${req.id}')">✕ Delete</button><button class="btn-a ars" onclick="napRestoreEntry('${req.entry_id}','${req.id}')">↩ Restore</button></td>`;
           tb.appendChild(tr);
         });
       }catch(err){tb.innerHTML=emptyRow(5,'Failed: '+err.message);}
@@ -932,7 +933,7 @@
           const tr=document.createElement('tr');
           const imgCell=ed.image_url?`<img src="${esc(ed.image_url)}" />`:'—';
           const tags=(ed.hashtags||[]).join(' ')||'—';
-          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${om[ed.entry_id]||'?'}</td><td style="font-weight:600">${esc(ed.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${imgCell}</td><td style="font-size:.8rem">${esc(ed.submitter)}</td><td style="font-size:.74rem;color:var(--muted)">${new Date(ed.created_at).toLocaleDateString()}</td><td><button class="btn-a aac" onclick='acceptNapEdit(${JSON.stringify(JSON.stringify(ed))})'>✓ Accept</button><button class="btn-a ar" onclick="rejectNapEdit('${ed.id}')">✕ Reject</button></td>`;
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${om[ed.entry_id]||'?'}</td><td style="font-weight:600">${esc(ed.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${imgCell}</td><td style="font-size:.8rem">${esc(ed.submitter)}</td><td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(ed.created_at)}</td><td><button class="btn-a aac" onclick='acceptNapEdit(${JSON.stringify(JSON.stringify(ed))})'>✓ Accept</button><button class="btn-a ar" onclick="rejectNapEdit('${ed.id}')">✕ Reject</button></td>`;
           tb.appendChild(tr);
         });
       }catch(err){tb.innerHTML=emptyRow(8,'Failed: '+err.message);}
@@ -953,7 +954,7 @@
           const entry=em[s.entry_id]||{};
           const item=document.createElement('div');item.className='vc-item';
           const statusBadge=s.status==='approved'?`<span class="vc-badge vc-badge-approved">approved</span>`:`<span class="vc-badge vc-badge-pending">pending</span>`;
-          item.innerHTML=`<div class="vc-meta">${statusBadge} <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${new Date(s.created_at).toLocaleDateString()}</span></div><div class="vc-text">${esc(s.text)}</div>`;
+          item.innerHTML=`<div class="vc-meta">${statusBadge} <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${toTS(s.created_at)}</span></div><div class="vc-text">${esc(s.text)}</div>`;
           const actions=document.createElement('div');actions.style.cssText='margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;';
           if(s.status!=='approved'){const ab=document.createElement('button');ab.className='btn-a aac';ab.textContent='✓ Approve';ab.onclick=async()=>{try{await sbPatch('nap_defenses',`id=eq.${s.id}`,{status:'approved'});showToast('Defense approved.');loadNapDefenses();}catch(e){alert(e.message);}};actions.appendChild(ab);}
           const db=document.createElement('button');db.className='btn-a ar';db.textContent='✕ Remove';db.onclick=async()=>{if(!confirm('Remove this defense?'))return;try{await sbPatch('nap_defenses',`id=eq.${s.id}`,{status:'deleted'});showToast('Removed.');loadNapDefenses();}catch(e){alert(e.message);}};actions.appendChild(db);
@@ -998,7 +999,7 @@
           const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modNapEntry('${e.id}','approve')">✓</button>`:'';
           const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="btn-a au" onclick="modNapEntry('${e.id}','unapprove')">⏸</button>`:'';
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.7rem;color:var(--muted);font-family:monospace">${esc(e.ip_hash||'—')}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openNapEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modNapEntry('${e.id}','reject')">✕</button></td>`;
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.7rem;color:var(--muted);font-family:monospace">${esc(e.ip_hash||'—')}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(e.created_at)}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openNapEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modNapEntry('${e.id}','reject')">✕</button></td>`;
           tb.appendChild(tr);
         });
       }catch(err){tb.innerHTML=emptyRow(9,'Failed: '+err.message);}
@@ -1131,7 +1132,7 @@
           const entry = m.entry_id ? entryMap[m.entry_id] : null;
           const entryCell = entry ? `<span style="font-size:.78rem"><strong>#${entry.num||'?'}</strong> ${esc(entry.subject)} <span style="font-size:.68rem;color:var(--muted)">(${entry.type})</span></span>` : '—';
           tr.innerHTML = `
-            <td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${new Date(m.created_at).toLocaleString()}</td>
+            <td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(m.created_at)}</td>
             <td><span class="badge badge-${m.entry_type==='nap'?'pending':'approved'}">${esc(m.entry_type||'—')}</span></td>
             <td>${entryCell}</td>
             <td style="font-weight:600;max-width:140px">${esc(m.subject)}</td>
