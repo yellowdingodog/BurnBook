@@ -112,6 +112,8 @@
     .detail-meta-row{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;}
     .detail-edit-btn{background:none;border:1.5px solid rgba(44,74,110,0.25);border-radius:2px;padding:0.35rem 0.85rem;font-family:'Raleway',sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;}
     .detail-edit-btn:hover{border-color:var(--sky);color:var(--steel);background:var(--blush);}
+    .contact-btn{background:none;border:1.5px solid rgba(44,74,110,0.25);border-radius:2px;padding:0.35rem 0.85rem;font-family:'Raleway',sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;}
+    .contact-btn:hover{border-color:var(--gold);color:#7a5c00;background:rgba(212,168,67,0.06);}
 
     /* Share box */
     .share-box{background:var(--blush);border:1.5px solid rgba(44,74,110,0.15);border-radius:2px;padding:1rem;flex:1;min-width:200px;}
@@ -256,9 +258,7 @@
     <div class="hero-zzz">z z z</div>
     <h1 class="hero-title" onclick="goHome()">Nap<span>tionals</span></h1>
     <p class="hero-subtitle">If you snooze, you lose — your dignity.</p>
-    <p style="font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(0.7rem,1.5vw,0.88rem);color:rgba(255,255,255,0.35);margin-top:0.6rem;letter-spacing:0.06em;">
-      <span style="color:var(--gold)">Mean Whirls</span> Burn Book Vol. 2 &mdash; <em>The Naptioning</em>
-    </p>
+
     <div class="hero-divider"></div>
   </header>
 
@@ -310,9 +310,7 @@
                 </div>
               </div>
             </div>
-            <div style="margin-top:0.75rem">
-              <button class="detail-action-btn danger" onclick="openDeleteRequestModal(currentDetailEntry)">🗑 Request Removal</button>
-            </div>
+
           </div>
           <div class="detail-info">
             <div class="detail-num-badge" id="detail-num-badge"></div>
@@ -427,6 +425,22 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <!-- Contact Admin Modal -->
+  <div class="modal-overlay" id="contact-modal">
+    <div class="modal">
+      <div class="modal-header"><span class="modal-title">✉️ Contact the Admins</span><button class="modal-close" id="contact-modal-close">✕</button></div>
+      <div class="modal-body">
+        <div class="modal-note">Send a message to the Mean Whirls crew about this entry — whether you want to challenge something, correct the record, or flag a concern. We'll review it privately.</div>
+        <input type="hidden" id="contact-entry-id" />
+        <input type="hidden" id="contact-entry-type" value="nap" />
+        <div class="form-group"><label class="form-label">Subject *</label><input class="form-input" id="contact-subject" placeholder="e.g. I was NOT asleep" /></div>
+        <div class="form-group"><label class="form-label">Message *</label><textarea class="form-textarea" id="contact-message" placeholder="Tell us what's on your mind..." style="min-height:100px"></textarea></div>
+        <button class="btn btn-primary" id="contact-submit-btn">✉️ Send Message</button>
+        <div id="contact-status" style="display:none" class="alert"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
     // ── Config ────────────────────────────────────────────────
@@ -593,8 +607,14 @@
       const metaEl=document.getElementById('detail-meta-row');metaEl.innerHTML='';
       if(entry.is_mean_whirls)metaEl.appendChild(makeBadgeMW());
       else{const a=document.createElement('span');a.className='entry-author';a.innerHTML=`by <strong>${esc(entry.display_author)}</strong>`;metaEl.appendChild(a);}
-      const eb=document.createElement('button');eb.className='detail-edit-btn';eb.textContent='✏️ Edit';eb.addEventListener('click',()=>openEditModal(entry));metaEl.appendChild(eb);
+      const _napProf = await getIpProfile();
+      const _napIp   = await getIpHash();
+      const _napIsOwner = entry.ip_hash && entry.ip_hash === _napIp;
+      if (_napIsOwner || _napProf.is_admin) {
+        const eb=document.createElement('button');eb.className='detail-edit-btn';eb.textContent='✏️ Edit';eb.addEventListener('click',()=>openEditModal(entry));metaEl.appendChild(eb);
+      }
       const rb=document.createElement('button');rb.className='detail-edit-btn';rb.style.cssText='border-color:#ef9a9a;color:#c62828;';rb.textContent='🗑 Request Removal';rb.addEventListener('click',()=>openDeleteRequestModal(currentDetailEntry));metaEl.appendChild(rb);
+      const cb=document.createElement('button');cb.className='contact-btn';cb.textContent='✉️ Contact Admins';cb.addEventListener('click',()=>openContactModal(entry.id,'nap'));metaEl.appendChild(cb);
       const shareUrl=window.location.origin+window.location.pathname+'#nap-'+entry.id;
       const enc=encodeURIComponent(shareUrl),txt=encodeURIComponent('Check out this Naptionals entry: '+entry.subject+' got caught sleeping!');
       document.getElementById('share-url').value=shareUrl;
@@ -684,7 +704,7 @@
           const item=document.createElement('div');item.className='comment-item';
           item.innerHTML=`<div class="comment-author">${esc(c.author)}</div><div class="comment-text">${esc(c.text)}</div>`;
           const meta=document.createElement('div');meta.className='comment-meta';
-          const date=document.createElement('span');date.className='comment-date';date.textContent=new Date(c.created_at).toLocaleDateString();meta.appendChild(date);
+          const date=document.createElement('span');date.className='comment-date';date.textContent=new Date(c.created_at).toLocaleString();meta.appendChild(date);
           if(isOwn){
             const eb=document.createElement('button');eb.className='comment-own-btn';eb.textContent='✏️';eb.title='Edit';eb.addEventListener('click',()=>openCommentEdit(item,c,entryId,ipHash));meta.appendChild(eb);
             const db=document.createElement('button');db.className='comment-own-btn';db.textContent='🗑';db.title='Delete';db.addEventListener('click',async()=>{if(!confirm('Delete this comment?'))return;try{await sbDelete('nap_comments',`id=eq.${c.id}`);loadComments(entryId,ipHash);}catch(e){showToast('Failed.');}});meta.appendChild(db);
@@ -768,7 +788,7 @@
         let imageUrl='';if(selectedFile)imageUrl=await uploadImage(selectedFile);
         const existing=await sbGet('nap_entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');
         const nextOrder=((existing[0]?.ui_order)||0)+1;
-        await sbPost('nap_entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false});
+        const _subIp=await getIpHash();await sbPost('nap_entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp});
         await recordName(submitter);await logActivity('submit',null,`Nap submitted: ${subject}`);
         showStatus('success',isCode?'😴 Mean Whirls nap posted!':'✅ Submitted! Appears after moderation.');
         resetSubmitForm();
@@ -836,7 +856,41 @@
       btn.disabled=false;btn.innerHTML='Submit Edit for Review';
     });
 
-    document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(deleteModal.classList.contains('open')){closeDeleteModal();return;}if(editModal.classList.contains('open')){closeEditModal();return;}if(document.getElementById('detail-page').style.display!=='none'){closeDetail();}});
+    // ── Contact Admins modal ──────────────────────────────────
+    const contactModal = document.getElementById('contact-modal');
+    function openContactModal(entryId, entryType) {
+      document.getElementById('contact-entry-id').value = entryId || '';
+      document.getElementById('contact-entry-type').value = entryType || 'nap';
+      document.getElementById('contact-subject').value = '';
+      document.getElementById('contact-message').value = '';
+      document.getElementById('contact-status').style.display = 'none';
+      contactModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeContactModal() { contactModal.classList.remove('open'); document.body.style.overflow = ''; }
+    document.getElementById('contact-modal-close').addEventListener('click', closeContactModal);
+    contactModal.addEventListener('click', e => { if (e.target === contactModal) closeContactModal(); });
+
+    document.getElementById('contact-submit-btn').addEventListener('click', async () => {
+      const subject   = document.getElementById('contact-subject').value.trim();
+      const message   = document.getElementById('contact-message').value.trim();
+      const entryId   = document.getElementById('contact-entry-id').value || null;
+      const entryType = document.getElementById('contact-entry-type').value;
+      if (!subject) { showContactStatus('error', 'Subject is required.'); return; }
+      if (!message) { showContactStatus('error', 'Message is required.'); return; }
+      const btn = document.getElementById('contact-submit-btn');
+      btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Sending...';
+      try {
+        const ip = await getIpHash();
+        await sbPost('contact_messages', { ip_hash: ip, entry_id: entryId, entry_type: entryType, subject, message });
+        showContactStatus('success', '✅ Message sent! The Mean Whirls crew will review it.');
+        setTimeout(closeContactModal, 2500);
+      } catch(err) { showContactStatus('error', 'Failed to send: ' + err.message); }
+      btn.disabled = false; btn.innerHTML = '✉️ Send Message';
+    });
+    function showContactStatus(type, msg) { const el=document.getElementById('contact-status'); el.className='alert alert-'+type; el.textContent=msg; el.style.display='block'; }
+
+    document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(contactModal.classList.contains('open')){closeContactModal();return;}if(deleteModal.classList.contains('open')){closeDeleteModal();return;}if(editModal.classList.contains('open')){closeEditModal();return;}if(document.getElementById('detail-page').style.display!=='none'){closeDetail();}});
 
     init();
   </script>
