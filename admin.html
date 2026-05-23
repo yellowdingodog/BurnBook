@@ -180,6 +180,7 @@
       <button class="admin-tab" data-atab="reorder">↕️ Reorder</button>
       <button class="admin-tab" data-atab="ips">👤 IP Profiles</button>
       <button class="admin-tab" data-atab="nap">😴 Naptionals</button>
+      <button class="admin-tab" data-atab="contact">✉️ Messages <span class="badge-count" id="cnt-contact">0</span></button>
     </div>
 
     <!-- REMOVALS -->
@@ -232,6 +233,14 @@
     <div id="atab-ips" class="tab-content">
       <div class="section-hdr"><span class="section-title">👤 IP Profiles</span><button class="refresh-btn" onclick="loadIpProfiles()">↺ Refresh</button></div>
       <div style="margin-bottom:1rem;font-size:0.8rem;color:var(--muted)">Each row is a unique visitor IP. Blocked users cannot submit entries, edits, comments, or victim statements.</div>
+      <div style="background:#fff9c4;border-left:3px solid #f9a825;padding:0.75rem 1rem;font-size:0.78rem;color:#5d4037;margin-bottom:1rem;border-radius:2px;line-height:1.6;">
+        <strong>Button guide:</strong> &nbsp;
+        <strong>Block</strong> — prevents user from submitting entries, edits, comments, or statements. &nbsp;
+        <strong>Grant/Revoke Admin</strong> — controls whether this IP can log into the admin panel without a password. &nbsp;
+        <strong>📋 Log</strong> — filters the activity log below to show only this IP. &nbsp;
+        <strong>🗑 Delete Data</strong> — permanently removes all comments, votes, and victim/sleeper statements from this IP. &nbsp;
+        <strong>Vote Weight</strong> — enter a multiplier (e.g. 2.5) and click Apply to change how much that user's votes count. Applies retroactively to all their existing votes. Default is 1x for regular users, and the admin_vote_weight config value for admins. Does <em>not</em> delete their submitted entries or edits. Use this to wipe a troll's interactions while keeping the content record.
+      </div>
       <div id="ip-filter-bar" style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
         <input id="ip-search" class="form-input" style="max-width:260px;padding:0.4rem 0.75rem;font-size:0.82rem" placeholder="Search by name..." oninput="filterIpProfiles()" />
         <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.78rem;color:var(--muted);cursor:pointer"><input type="checkbox" id="ip-show-blocked" onchange="filterIpProfiles()" /> Show blocked only</label>
@@ -287,7 +296,7 @@
       <div class="section-hdr"><span class="section-title">📋 All Nap Entries</span><button class="refresh-btn" onclick="loadNapEntries()">↺ Refresh</button></div>
       <div id="nap-entry-edit-panel"></div>
       <div class="tbl-wrap">
-        <table><thead><tr><th>#</th><th>Photo</th><th>Sleeper</th><th>Scene</th><th>Tags</th><th>Submitter</th><th>Displays As</th><th>Status</th><th>Actions</th></tr></thead>
+        <table><thead><tr><th>#</th><th>Photo</th><th>Sleeper</th><th>Scene</th><th>Tags</th><th>Submitter</th><th>Displays As</th><th>Owner IP</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody id="tb-nap-entries"></tbody></table>
       </div>
 
@@ -296,6 +305,16 @@
       <div id="nap-reorder-list" class="reorder-list"></div>
       <button class="reorder-save-btn" id="nap-reorder-save-btn" onclick="saveNapReorder()">💾 Save Order</button>
       <div id="nap-reorder-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
+    </div>
+
+    <!-- CONTACT MESSAGES -->
+    <div id="atab-contact" class="tab-content">
+      <div class="section-hdr"><span class="section-title">✉️ Admin Messages</span><button class="refresh-btn" onclick="loadContactMessages()">↺ Refresh</button></div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Messages sent by visitors via the "Contact Admins" button on any entry. Click <strong>Mark Read</strong> to dismiss.</div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>When</th><th>Type</th><th>Entry</th><th>Subject</th><th>Message</th><th>IP Hash</th><th>Names</th><th>Actions</th></tr></thead>
+        <tbody id="tb-contact"></tbody></table>
+      </div>
     </div>
 
   </div>
@@ -398,7 +417,7 @@
       document.getElementById('admin-main').style.display='block';
       loadAll();
     }
-    function loadAll(){ loadRemovals(); loadEdits(); loadVictims(); loadComments(); loadEntries(); loadIpProfiles(); loadIpActivity(); }
+    function loadAll(){ loadRemovals(); loadEdits(); loadVictims(); loadComments(); loadEntries(); loadIpProfiles(); loadIpActivity(); loadContactMessages(); }
 
     // ── Tabs ──────────────────────────────────────────────────
     document.querySelectorAll('.admin-tab').forEach(tab => {
@@ -409,6 +428,7 @@
         document.getElementById('atab-'+tab.dataset.atab).classList.add('active');
         if(tab.dataset.atab==='reorder') loadReorder();
         if(tab.dataset.atab==='nap') { loadNapRemovals();loadNapEdits();loadNapDefenses();loadNapComments();loadNapEntries(); }
+        if(tab.dataset.atab==='contact') loadContactMessages();
       });
     });
 
@@ -508,7 +528,7 @@
         comments.forEach(c=>{
           const entry=em[c.entry_id]||{};
           const item=document.createElement('div');item.className='vc-item';
-          item.innerHTML=`<div class="vc-meta"><strong>${esc(c.author)}</strong> on <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${new Date(c.created_at).toLocaleDateString()}</span></div><div class="vc-text">${esc(c.text)}</div>`;
+          item.innerHTML=`<div class="vc-meta"><strong>${esc(c.author)}</strong> on <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${new Date(c.created_at).toLocaleString()}</span></div><div class="vc-text">${esc(c.text)}</div>`;
           const actions=document.createElement('div');actions.style.cssText='margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;';
           const db=document.createElement('button');db.className='btn-a ar';db.textContent='✕ Remove';db.onclick=async()=>{if(!confirm('Remove this comment?'))return;try{await sbDelete('comments',`id=eq.${c.id}`);showToast('Comment removed.');loadComments();}catch(e){alert(e.message);}};actions.appendChild(db);
           const eb=document.createElement('button');eb.className='btn-a ae';eb.textContent='✏️ Edit';eb.onclick=()=>openCommentEdit(item,c);actions.appendChild(eb);
@@ -534,7 +554,7 @@
       document.getElementById('entry-edit-panel').innerHTML='';
       try {
         const entries=await sbGet('entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
-        if(!entries.length){tb.innerHTML=emptyRow(10,'No entries yet.');return;}
+        if(!entries.length){tb.innerHTML=emptyRow(11,'No entries yet.');return;}
         tb.innerHTML='';
         entries.forEach(e=>{
           const isCodeSub=e.submitter&&e.submitter.toLowerCase()===CODENAME.toLowerCase();
@@ -546,7 +566,7 @@
           const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modEntry('${e.id}','approve')">✓</button>`:'';
           const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="btn-a au" onclick="modEntry('${e.id}','unapprove')">⏸</button>`:'';
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td><input type="checkbox" class="row-cb" data-id="${e.id}" onchange="updateBulkCount()" /></td><td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openEntryEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modEntry('${e.id}','reject')">✕</button></td>`;
+          tr.innerHTML=`<td><input type="checkbox" class="row-cb" data-id="${e.id}" onchange="updateBulkCount()" /></td><td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.7rem;color:var(--muted);font-family:monospace">${esc(e.ip_hash||'—')}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openEntryEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modEntry('${e.id}','reject')">✕</button></td>`;
           tb.appendChild(tr);
         });
       } catch(err){tb.innerHTML=emptyRow(10,'Failed: '+err.message);}
@@ -710,13 +730,18 @@
           ? `<button class="btn-a au" onclick="toggleAdmin('${p.ip_hash}',false)">Revoke Admin</button>`
           : `<button class="btn-a aa" onclick="toggleAdmin('${p.ip_hash}',true)">Grant Admin</button>`;
         const actBtn = `<button class="btn-a ae" onclick="viewIpLog('${p.ip_hash}')">📋 Log</button>`;
+        const effectiveWeight = p.vote_weight != null ? p.vote_weight : (p.is_admin ? `${_adminVoteWeight}x (admin)` : '1x');
+        const weightDisplay = `<span style="font-size:.8rem;font-weight:600;color:var(--ink)">${effectiveWeight}</span>`;
+        const weightInput = `<input type="number" min="0.1" max="100" step="0.1" value="${p.vote_weight != null ? p.vote_weight : (p.is_admin ? _adminVoteWeight : 1)}" style="width:65px;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.2rem 0.4rem;font-family:Raleway,sans-serif;font-size:0.8rem" id="wt-${p.ip_hash.replace(/[^a-z0-9]/gi,'_')}" />
+        <button class="btn-a ae" style="padding:0.25rem 0.5rem;font-size:0.65rem" onclick="applyVoteWeight('${p.ip_hash}',document.getElementById('wt-${p.ip_hash.replace(/[^a-z0-9]/gi,'_')}').value)">Apply</button>`;
         tr.innerHTML = `
           <td style="font-size:.75rem;color:var(--muted);font-family:monospace">${esc(p.ip_hash)}</td>
           <td>${namesHtml}</td>
           <td>${adminBadge}</td>
+          <td style="min-width:140px">${weightInput}</td>
           <td>${statusBadge}</td>
           <td style="font-size:.74rem;color:var(--muted)">${p.last_seen?new Date(p.last_seen).toLocaleString():'-'}</td>
-          <td style="min-width:200px">${blockBtn} ${adminBtn} ${actBtn}</td>`;
+          <td style="min-width:240px">${blockBtn} ${adminBtn} ${actBtn} <button class="btn-a add" onclick="deleteIpData('${p.ip_hash}')">🗑 Delete Data</button></td>`;
         tb.appendChild(tr);
       });
     }
@@ -736,6 +761,26 @@
         showToast(grant ? '✅ Admin granted.' : 'Admin revoked.');
         loadIpProfiles();
       } catch(err) { alert('Failed: '+err.message); }
+    }
+
+    async function deleteIpData(ipHash) {
+      if (!confirm(`Permanently delete all comments, votes, and victim/sleeper statements from IP ${ipHash}?\n\nThis cannot be undone. Their submitted entries will NOT be deleted.`)) return;
+      try {
+        // Delete from all interaction tables across both burn book and naptionals
+        await Promise.all([
+          sbDelete('comments',           `ip_hash=eq.${ipHash}`),
+          sbDelete('votes',              `ip_hash=eq.${ipHash}`),
+          sbDelete('victim_statements',  `ip_hash=eq.${ipHash}`),
+          sbDelete('nap_comments',       `ip_hash=eq.${ipHash}`),
+          sbDelete('nap_votes',          `ip_hash=eq.${ipHash}`),
+          sbDelete('nap_defenses',       `ip_hash=eq.${ipHash}`),
+        ]);
+        showToast('✅ All interaction data deleted for this IP.');
+        loadIpProfiles();
+        loadIpActivity();
+      } catch(err) {
+        alert('Failed to delete data: ' + err.message);
+      }
     }
 
     function viewIpLog(ipHash) {
@@ -868,7 +913,7 @@
         comments.forEach(c=>{
           const entry=em[c.entry_id]||{};
           const item=document.createElement('div');item.className='vc-item';
-          item.innerHTML=`<div class="vc-meta"><strong>${esc(c.author)}</strong> on <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${new Date(c.created_at).toLocaleDateString()}</span></div><div class="vc-text">${esc(c.text)}</div>`;
+          item.innerHTML=`<div class="vc-meta"><strong>${esc(c.author)}</strong> on <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${new Date(c.created_at).toLocaleString()}</span></div><div class="vc-text">${esc(c.text)}</div>`;
           const db=document.createElement('button');db.className='btn-a ar';db.style.marginTop='0.5rem';db.textContent='✕ Remove';db.onclick=async()=>{if(!confirm('Remove this comment?'))return;try{await sbDelete('nap_comments',`id=eq.${c.id}`);showToast('Comment removed.');loadNapComments();}catch(e){alert(e.message);}};
           item.appendChild(db);container.appendChild(item);
         });
@@ -880,7 +925,7 @@
       document.getElementById('nap-entry-edit-panel').innerHTML='';
       try{
         const entries=await sbGet('nap_entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
-        if(!entries.length){tb.innerHTML=emptyRow(9,'No nap entries yet.');return;}
+        if(!entries.length){tb.innerHTML=emptyRow(10,'No nap entries yet.');return;}
         tb.innerHTML='';
         entries.forEach(e=>{
           const isCodeSub=e.submitter&&e.submitter.toLowerCase()===CODENAME.toLowerCase();
@@ -892,7 +937,7 @@
           const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modNapEntry('${e.id}','approve')">✓</button>`:'';
           const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="btn-a au" onclick="modNapEntry('${e.id}','unapprove')">⏸</button>`:'';
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openNapEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modNapEntry('${e.id}','reject')">✕</button></td>`;
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.7rem;color:var(--muted);font-family:monospace">${esc(e.ip_hash||'—')}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openNapEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modNapEntry('${e.id}','reject')">✕</button></td>`;
           tb.appendChild(tr);
         });
       }catch(err){tb.innerHTML=emptyRow(9,'Failed: '+err.message);}
@@ -973,6 +1018,82 @@
       try{await Promise.all(napReorderData.map((e,i)=>sbPatch('nap_entries',`id=eq.${e.id}`,{ui_order:i+1})));msgEl.className='alert alert-success';msgEl.textContent='✅ Order saved!';msgEl.style.display='block';napReorderData=napReorderData.map((e,i)=>({...e,ui_order:i+1}));renderNapReorderList();}
       catch(err){msgEl.className='alert alert-error';msgEl.textContent='Failed: '+err.message;msgEl.style.display='block';}
       btn.disabled=false;btn.textContent='💾 Save Order';
+    }
+
+    // ── Vote weight per user ─────────────────────────────────
+    async function applyVoteWeight(ipHash, rawVal) {
+      const weight = parseFloat(rawVal);
+      if (isNaN(weight) || weight <= 0) { alert('Enter a valid positive number.'); return; }
+      try {
+        // Save to ip_profiles
+        await sbPatch('ip_profiles', `ip_hash=eq.${ipHash}`, { vote_weight: weight });
+        // Apply to all existing votes by this IP in both tables
+        await Promise.all([
+          sbPatch('votes',     `ip_hash=eq.${ipHash}`, { weight }),
+          sbPatch('nap_votes', `ip_hash=eq.${ipHash}`, { weight }),
+        ]);
+        showToast(`✅ Vote weight set to ${weight}x for ${ipHash} — all their votes updated.`);
+        loadIpProfiles();
+      } catch(err) { alert('Failed: ' + err.message); }
+    }
+
+    // ── Contact Messages ──────────────────────────────────────
+    async function loadContactMessages() {
+      const tb = document.getElementById('tb-contact');
+      tb.innerHTML = loadingRow(8);
+      try {
+        const msgs = await sbGet('contact_messages', 'order=created_at.desc');
+        const unread = msgs.filter(m => !m.read).length;
+        setBadge('cnt-contact', unread);
+
+        // Get ip names and entry subjects
+        const ips = [...new Set(msgs.map(m => m.ip_hash))];
+        const entryIds = [...new Set(msgs.filter(m => m.entry_id).map(m => m.entry_id))];
+        let nameMap = {}, entryMap = {};
+        if (ips.length) {
+          const profs = await sbGet('ip_profiles', `ip_hash=in.(${ips.join(',')})&select=ip_hash,names`);
+          profs.forEach(p => nameMap[p.ip_hash] = (p.names||[]).join(', ') || '—');
+        }
+        // Try burn entries then nap entries
+        if (entryIds.length) {
+          const burnEntries = await sbGet('entries', `id=in.(${entryIds.join(',')})&select=id,subject,ui_order`);
+          burnEntries.forEach(e => entryMap[e.id] = { subject: e.subject, num: e.ui_order, type: 'burn' });
+          const napEntries = await sbGet('nap_entries', `id=in.(${entryIds.join(',')})&select=id,subject,ui_order`);
+          napEntries.forEach(e => entryMap[e.id] = { subject: e.subject, num: e.ui_order, type: 'nap' });
+        }
+
+        if (!msgs.length) { tb.innerHTML = emptyRow(8, 'No messages yet.'); return; }
+        tb.innerHTML = '';
+        msgs.forEach(m => {
+          const tr = document.createElement('tr');
+          if (!m.read) tr.style.background = '#fffde7';
+          const entry = m.entry_id ? entryMap[m.entry_id] : null;
+          const entryCell = entry ? `<span style="font-size:.78rem"><strong>#${entry.num||'?'}</strong> ${esc(entry.subject)} <span style="font-size:.68rem;color:var(--muted)">(${entry.type})</span></span>` : '—';
+          tr.innerHTML = `
+            <td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${new Date(m.created_at).toLocaleString()}</td>
+            <td><span class="badge badge-${m.entry_type==='nap'?'pending':'approved'}">${esc(m.entry_type||'—')}</span></td>
+            <td>${entryCell}</td>
+            <td style="font-weight:600;max-width:140px">${esc(m.subject)}</td>
+            <td style="max-width:220px;font-size:.8rem">${esc(m.message)}</td>
+            <td style="font-size:.74rem;font-family:monospace;color:var(--muted)">${esc(m.ip_hash)}</td>
+            <td style="font-size:.78rem">${esc(nameMap[m.ip_hash]||'—')}</td>
+            <td style="white-space:nowrap">
+              ${!m.read ? `<button class="btn-a aac" onclick="markMsgRead('${m.id}')">✓ Mark Read</button>` : '<span style="font-size:.72rem;color:var(--muted)">Read</span>'}
+              <button class="btn-a ar" onclick="deleteMsg('${m.id}')">✕</button>
+            </td>`;
+          tb.appendChild(tr);
+        });
+      } catch(err) { tb.innerHTML = emptyRow(8, 'Failed: ' + err.message); }
+    }
+
+    async function markMsgRead(id) {
+      try { await sbPatch('contact_messages', `id=eq.${id}`, { read: true }); loadContactMessages(); }
+      catch(err) { alert('Failed: ' + err.message); }
+    }
+    async function deleteMsg(id) {
+      if (!confirm('Delete this message?')) return;
+      try { await sbDelete('contact_messages', `id=eq.${id}`); loadContactMessages(); }
+      catch(err) { alert('Failed: ' + err.message); }
     }
 
     // ── Go ────────────────────────────────────────────────────
