@@ -233,6 +233,14 @@
       </div>
     </div>
 
+    <!-- REORDER -->
+    <div id="stab-burn-reorder" class="sub-panel">
+      <div class="section-hdr"><span class="section-title">↕️ Reorder Entries</span><button class="refresh-btn" onclick="loadReorder()">↺ Refresh</button></div>
+      <div class="reorder-info">Drag and drop entries to reorder them. Click <strong>Save Order</strong> when done. Only approved, visible entries are shown.</div>
+      <div id="reorder-list" class="reorder-list"></div>
+      <button class="reorder-save-btn" id="reorder-save-btn" onclick="saveReorder()">💾 Save Order</button>
+      <div id="reorder-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
+    </div>
     </div><!-- /ttab-burn -->
 
     <!-- IP PROFILES -->
@@ -253,7 +261,7 @@
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>IP Hash</th><th>Names Used</th><th>Admin</th><th>Status</th><th>Last Seen</th><th>Actions</th></tr></thead>
+          <thead><tr><th>IP Hash</th><th>Names Used</th><th>Admin</th><th>Vote Weight</th><th>Status</th><th>Last Seen</th><th>Actions</th></tr></thead>
           <tbody id="tb-ips"></tbody>
         </table>
       </div>
@@ -275,15 +283,6 @@
       </div>
     </div>
 
-    <!-- REORDER -->
-    <div id="stab-burn-reorder" class="sub-panel">
-      <div class="section-hdr"><span class="section-title">↕️ Reorder Entries</span><button class="refresh-btn" onclick="loadReorder()">↺ Refresh</button></div>
-      <div class="reorder-info">Drag and drop entries to reorder them. Click <strong>Save Order</strong> when done. Only approved, visible entries are shown.</div>
-      <div id="reorder-list" class="reorder-list"></div>
-      <button class="reorder-save-btn" id="reorder-save-btn" onclick="saveReorder()">💾 Save Order</button>
-      <div id="reorder-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
-    </div>
-
     <!-- NAPTIONALS -->
     <div id="ttab-nap" class="top-panel">
       <div class="admin-tabs sub-tabs">
@@ -294,35 +293,44 @@
         <button class="admin-tab" data-stab="nap-entries">📋 All Entries</button>
         <button class="admin-tab" data-stab="nap-reorder">↕️ Reorder</button>
       </div>
+
       <div id="stab-nap-removals" class="sub-panel active">
-    <div id="ttab-nap-inner" class="top-panel">
-
-      <div class="section-hdr"><span class="section-title urgent">⚠️ Nap Removal Requests</span><button class="refresh-btn" onclick="loadNapRemovals()">↺ Refresh</button></div>
-      <div class="tbl-wrap"><table><thead><tr><th class="urgent">#</th><th class="urgent">Sleeper</th><th class="urgent">Reason</th><th class="urgent">Requested</th><th class="urgent">Actions</th></tr></thead><tbody id="tb-nap-removals"></tbody></table></div>
-
-      <div class="section-hdr"><span class="section-title">✏️ Nap Pending Edits</span><button class="refresh-btn" onclick="loadNapEdits()">↺ Refresh</button></div>
-      <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Proposed Name</th><th>Proposed Scene</th><th>Tags</th><th>Photo</th><th>Submitter</th><th>When</th><th>Actions</th></tr></thead><tbody id="tb-nap-edits"></tbody></table></div>
-
-      <div class="section-hdr"><span class="section-title">🎤 Sleeper's Defenses</span><button class="refresh-btn" onclick="loadNapDefenses()">↺ Refresh</button></div>
-      <div id="nap-defenses-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
-
-      <div class="section-hdr"><span class="section-title">💬 Nap Comments</span><button class="refresh-btn" onclick="loadNapComments()">↺ Refresh</button></div>
-      <div id="nap-comments-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
-
-      <div class="section-hdr"><span class="section-title">📋 All Nap Entries</span><button class="refresh-btn" onclick="loadNapEntries()">↺ Refresh</button></div>
-      <div id="nap-entry-edit-panel"></div>
-      <div class="tbl-wrap">
-        <table><thead><tr><th>#</th><th>Photo</th><th>Sleeper</th><th>Scene</th><th>Tags</th><th>Submitter</th><th>Displays As</th><th>Owner IP</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="tb-nap-entries"></tbody></table>
+        <div class="section-hdr"><span class="section-title urgent">⚠️ Nap Removal Requests</span><button class="refresh-btn" onclick="loadNapRemovals()">↺ Refresh</button></div>
+        <div class="tbl-wrap"><table><thead><tr><th class="urgent">#</th><th class="urgent">Sleeper</th><th class="urgent">Reason</th><th class="urgent">Requested</th><th class="urgent">Actions</th></tr></thead><tbody id="tb-nap-removals"></tbody></table></div>
       </div>
 
-      <div class="section-hdr"><span class="section-title">↕️ Reorder Nap Entries</span><button class="refresh-btn" onclick="loadNapReorder()">↺ Refresh</button></div>
-      <div class="reorder-info">Drag and drop to reorder. Only approved, visible nap entries are shown.</div>
-      <div id="nap-reorder-list" class="reorder-list"></div>
-      <button class="reorder-save-btn" id="nap-reorder-save-btn" onclick="saveNapReorder()">💾 Save Order</button>
-      <div id="nap-reorder-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
-    
+      <div id="stab-nap-edits" class="sub-panel">
+        <div class="section-hdr"><span class="section-title">✏️ Nap Pending Edits</span><button class="refresh-btn" onclick="loadNapEdits()">↺ Refresh</button></div>
+        <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Proposed Name</th><th>Proposed Scene</th><th>Tags</th><th>Photo</th><th>Submitter</th><th>When</th><th>Actions</th></tr></thead><tbody id="tb-nap-edits"></tbody></table></div>
       </div>
+
+      <div id="stab-nap-defenses" class="sub-panel">
+        <div class="section-hdr"><span class="section-title">😤 Sleeper's Defenses</span><button class="refresh-btn" onclick="loadNapDefenses()">↺ Refresh</button></div>
+        <div id="nap-defenses-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
+      </div>
+
+      <div id="stab-nap-comments" class="sub-panel">
+        <div class="section-hdr"><span class="section-title">💬 Nap Comments</span><button class="refresh-btn" onclick="loadNapComments()">↺ Refresh</button></div>
+        <div id="nap-comments-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
+      </div>
+
+      <div id="stab-nap-entries" class="sub-panel">
+        <div class="section-hdr"><span class="section-title">📋 All Nap Entries</span><button class="refresh-btn" onclick="loadNapEntries()">↺ Refresh</button></div>
+        <div id="nap-entry-edit-panel"></div>
+        <div class="tbl-wrap">
+          <table><thead><tr><th>#</th><th>Photo</th><th>Sleeper</th><th>Scene</th><th>Tags</th><th>Submitter</th><th>Displays As</th><th>Owner IP</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="tb-nap-entries"></tbody></table>
+        </div>
+      </div>
+
+      <div id="stab-nap-reorder" class="sub-panel">
+        <div class="section-hdr"><span class="section-title">↕️ Reorder Nap Entries</span><button class="refresh-btn" onclick="loadNapReorder()">↺ Refresh</button></div>
+        <div class="reorder-info">Drag and drop to reorder. Only approved, visible nap entries are shown.</div>
+        <div id="nap-reorder-list" class="reorder-list"></div>
+        <button class="reorder-save-btn" id="nap-reorder-save-btn" onclick="saveNapReorder()">💾 Save Order</button>
+        <div id="nap-reorder-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
+      </div>
+
     </div>
 
     <!-- CONTACT MESSAGES -->
