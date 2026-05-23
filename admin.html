@@ -172,43 +172,47 @@
   <div id="admin-main" class="main" style="display:none">
 
     <div class="admin-tabs">
-      <button class="admin-tab active" data-atab="removals">⚠️ Removals <span class="badge-count" id="cnt-removals">0</span></button>
-      <button class="admin-tab" data-atab="edits">✏️ Pending Edits <span class="badge-count" id="cnt-edits">0</span></button>
-      <button class="admin-tab" data-atab="victims">🎤 Victim Statements <span class="badge-count" id="cnt-victims">0</span></button>
-      <button class="admin-tab" data-atab="comments">💬 Comments <span class="badge-count" id="cnt-comments">0</span></button>
-      <button class="admin-tab" data-atab="entries">📋 All Entries</button>
-      <button class="admin-tab" data-atab="reorder">↕️ Reorder</button>
-      <button class="admin-tab" data-atab="ips">👤 IP Profiles</button>
-      <button class="admin-tab" data-atab="nap">😴 Naptionals</button>
-      <button class="admin-tab" data-atab="contact">✉️ Messages <span class="badge-count" id="cnt-contact">0</span></button>
+      <button class="admin-tab active" data-ttab="burn">📖 Burn Book</button>
+      <button class="admin-tab" data-ttab="nap">😴 Naptionals</button>
+      <button class="admin-tab" data-ttab="ips">👤 IP Profiles</button>
+      <button class="admin-tab" data-ttab="contact">✉️ Messages <span class="badge-count" id="cnt-contact">0</span></button>
     </div>
 
+    <div id="ttab-burn" class="top-panel active">
+      <div class="admin-tabs sub-tabs">
+        <button class="admin-tab active" data-stab="burn-removals">⚠️ Removals <span class="badge-count" id="cnt-removals">0</span></button>
+        <button class="admin-tab" data-stab="burn-edits">✏️ Pending Edits <span class="badge-count" id="cnt-edits">0</span></button>
+        <button class="admin-tab" data-stab="burn-victims">🎤 Victim Statements <span class="badge-count" id="cnt-victims">0</span></button>
+        <button class="admin-tab" data-stab="burn-comments">💬 Comments <span class="badge-count" id="cnt-comments">0</span></button>
+        <button class="admin-tab" data-stab="burn-entries">📋 All Entries</button>
+        <button class="admin-tab" data-stab="burn-reorder">↕️ Reorder</button>
+      </div>
     <!-- REMOVALS -->
-    <div id="atab-removals" class="tab-content active">
+    <div id="stab-burn-removals" class="sub-panel active">
       <div class="section-hdr"><span class="section-title urgent">⚠️ Removal Requests</span><button class="refresh-btn" onclick="loadRemovals()">↺ Refresh</button></div>
       <div class="tbl-wrap"><table><thead><tr><th class="urgent">#</th><th class="urgent">Subject</th><th class="urgent">Reason</th><th class="urgent">Requested</th><th class="urgent">Actions</th></tr></thead><tbody id="tb-removals"></tbody></table></div>
     </div>
 
     <!-- PENDING EDITS -->
-    <div id="atab-edits" class="tab-content">
+    <div id="stab-burn-edits" class="sub-panel">
       <div class="section-hdr"><span class="section-title">✏️ Pending Edits</span><button class="refresh-btn" onclick="loadEdits()">↺ Refresh</button></div>
       <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Proposed Subject</th><th>Proposed Burn</th><th>Tags</th><th>Photo</th><th>Submitter</th><th>When</th><th>Actions</th></tr></thead><tbody id="tb-edits"></tbody></table></div>
     </div>
 
     <!-- VICTIM STATEMENTS -->
-    <div id="atab-victims" class="tab-content">
+    <div id="stab-burn-victims" class="sub-panel">
       <div class="section-hdr"><span class="section-title">🎤 Victim Statements</span><button class="refresh-btn" onclick="loadVictims()">↺ Refresh</button></div>
       <div id="victims-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
     </div>
 
     <!-- COMMENTS -->
-    <div id="atab-comments" class="tab-content">
+    <div id="stab-burn-comments" class="sub-panel">
       <div class="section-hdr"><span class="section-title">💬 Comments</span><button class="refresh-btn" onclick="loadComments()">↺ Refresh</button></div>
       <div id="comments-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
     </div>
 
     <!-- ALL ENTRIES -->
-    <div id="atab-entries" class="tab-content">
+    <div id="stab-burn-entries" class="sub-panel">
       <div class="section-hdr"><span class="section-title">📋 All Entries</span><button class="refresh-btn" onclick="loadEntries()">↺ Refresh</button></div>
       <div id="entry-edit-panel"></div>
       <div class="bulk-bar">
@@ -229,8 +233,10 @@
       </div>
     </div>
 
+    </div><!-- /ttab-burn -->
+
     <!-- IP PROFILES -->
-    <div id="atab-ips" class="tab-content">
+    <div id="ttab-ips" class="top-panel">
       <div class="section-hdr"><span class="section-title">👤 IP Profiles</span><button class="refresh-btn" onclick="loadIpProfiles()">↺ Refresh</button></div>
       <div style="margin-bottom:1rem;font-size:0.8rem;color:var(--muted)">Each row is a unique visitor IP. Blocked users cannot submit entries, edits, comments, or victim statements.</div>
       <div style="background:#fff9c4;border-left:3px solid #f9a825;padding:0.75rem 1rem;font-size:0.78rem;color:#5d4037;margin-bottom:1rem;border-radius:2px;line-height:1.6;">
@@ -270,7 +276,7 @@
     </div>
 
     <!-- REORDER -->
-    <div id="atab-reorder" class="tab-content">
+    <div id="stab-burn-reorder" class="sub-panel">
       <div class="section-hdr"><span class="section-title">↕️ Reorder Entries</span><button class="refresh-btn" onclick="loadReorder()">↺ Refresh</button></div>
       <div class="reorder-info">Drag and drop entries to reorder them. Click <strong>Save Order</strong> when done. Only approved, visible entries are shown.</div>
       <div id="reorder-list" class="reorder-list"></div>
@@ -279,7 +285,17 @@
     </div>
 
     <!-- NAPTIONALS -->
-    <div id="atab-nap" class="tab-content">
+    <div id="ttab-nap" class="top-panel">
+      <div class="admin-tabs sub-tabs">
+        <button class="admin-tab active" data-stab="nap-removals">⚠️ Removals <span class="badge-count" id="cnt-nap-removals">0</span></button>
+        <button class="admin-tab" data-stab="nap-edits">✏️ Pending Edits</button>
+        <button class="admin-tab" data-stab="nap-defenses">😤 Defenses <span class="badge-count" id="cnt-nap-defenses">0</span></button>
+        <button class="admin-tab" data-stab="nap-comments">💬 Comments</button>
+        <button class="admin-tab" data-stab="nap-entries">📋 All Entries</button>
+        <button class="admin-tab" data-stab="nap-reorder">↕️ Reorder</button>
+      </div>
+      <div id="stab-nap-removals" class="sub-panel active">
+    <div id="ttab-nap-inner" class="top-panel">
 
       <div class="section-hdr"><span class="section-title urgent">⚠️ Nap Removal Requests</span><button class="refresh-btn" onclick="loadNapRemovals()">↺ Refresh</button></div>
       <div class="tbl-wrap"><table><thead><tr><th class="urgent">#</th><th class="urgent">Sleeper</th><th class="urgent">Reason</th><th class="urgent">Requested</th><th class="urgent">Actions</th></tr></thead><tbody id="tb-nap-removals"></tbody></table></div>
@@ -305,10 +321,12 @@
       <div id="nap-reorder-list" class="reorder-list"></div>
       <button class="reorder-save-btn" id="nap-reorder-save-btn" onclick="saveNapReorder()">💾 Save Order</button>
       <div id="nap-reorder-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
+    
+      </div>
     </div>
 
     <!-- CONTACT MESSAGES -->
-    <div id="atab-contact" class="tab-content">
+    <div id="ttab-contact" class="top-panel">
       <div class="section-hdr"><span class="section-title">✉️ Admin Messages</span><button class="refresh-btn" onclick="loadContactMessages()">↺ Refresh</button></div>
       <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Messages sent by visitors via the "Contact Admins" button on any entry. Click <strong>Mark Read</strong> to dismiss.</div>
       <div class="tbl-wrap">
@@ -417,18 +435,48 @@
       document.getElementById('admin-main').style.display='block';
       loadAll();
     }
-    function loadAll(){ loadRemovals(); loadEdits(); loadVictims(); loadComments(); loadEntries(); loadIpProfiles(); loadIpActivity(); loadContactMessages(); }
+    function loadAll(){
+      loadRemovals();    // Burn Book → Removals (default active)
+      loadNapRemovals(); // Naptionals → Removals (default active)
+      loadContactMessages(); // badge count
+    }
 
     // ── Tabs ──────────────────────────────────────────────────
-    document.querySelectorAll('.admin-tab').forEach(tab => {
+    // Top-level tab switching
+    document.querySelectorAll('[data-ttab]').forEach(tab => {
       tab.addEventListener('click', () => {
-        document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+        document.querySelectorAll('[data-ttab]').forEach(t=>t.classList.remove('active'));
+        document.querySelectorAll('.top-panel').forEach(p=>p.classList.remove('active'));
         tab.classList.add('active');
-        document.getElementById('atab-'+tab.dataset.atab).classList.add('active');
-        if(tab.dataset.atab==='reorder') loadReorder();
-        if(tab.dataset.atab==='nap') { loadNapRemovals();loadNapEdits();loadNapDefenses();loadNapComments();loadNapEntries(); }
-        if(tab.dataset.atab==='contact') loadContactMessages();
+        document.getElementById('ttab-'+tab.dataset.ttab).classList.add('active');
+        if(tab.dataset.ttab==='contact') loadContactMessages();
+        if(tab.dataset.ttab==='ips')     { loadIpProfiles(); loadIpActivity(); }
+        if(tab.dataset.ttab==='burn')    loadRemovals();
+        if(tab.dataset.ttab==='nap')     loadNapRemovals();
+      });
+    });
+
+    // Sub-tab switching
+    document.querySelectorAll('[data-stab]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const panel = tab.closest('.top-panel');
+        panel.querySelectorAll('[data-stab]').forEach(t=>t.classList.remove('active'));
+        panel.querySelectorAll('.sub-panel').forEach(p=>p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('stab-'+tab.dataset.stab).classList.add('active');
+        const s = tab.dataset.stab;
+        if(s==='burn-removals') loadRemovals();
+        if(s==='burn-edits')    loadEdits();
+        if(s==='burn-victims')  loadVictims();
+        if(s==='burn-comments') loadComments();
+        if(s==='burn-entries')  loadEntries();
+        if(s==='burn-reorder')  loadReorder();
+        if(s==='nap-removals')  loadNapRemovals();
+        if(s==='nap-edits')     loadNapEdits();
+        if(s==='nap-defenses')  loadNapDefenses();
+        if(s==='nap-comments')  loadNapComments();
+        if(s==='nap-entries')   loadNapEntries();
+        if(s==='nap-reorder')   loadNapReorder();
       });
     });
 
