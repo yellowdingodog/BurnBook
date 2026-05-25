@@ -458,6 +458,7 @@
         <div class="modal-note">Send a message to the Mean Whirls crew about this entry — whether you want to challenge something, correct the record, or flag a concern. We'll review it privately.</div>
         <input type="hidden" id="contact-entry-id" />
         <input type="hidden" id="contact-entry-type" value="burn" />
+        <div class="form-group"><label class="form-label">Your Name *</label><input class="form-input" id="contact-name" placeholder="Your name" /></div>
         <div class="form-group"><label class="form-label">Subject *</label><input class="form-input" id="contact-subject" placeholder="e.g. Please correct my name" /></div>
         <div class="form-group"><label class="form-label">Message *</label><textarea class="form-textarea" id="contact-message" placeholder="Tell us what's on your mind..." style="min-height:100px"></textarea></div>
         <button class="btn btn-primary" id="contact-submit-btn">✉️ Send Message</button>
@@ -770,6 +771,16 @@
         const form=document.createElement('div');form.className='add-comment-form';
         form.innerHTML=`<div class="add-comment-title">Leave a Comment</div>`;
         const nameInput=document.createElement('input');nameInput.className='comment-input';nameInput.placeholder='Your name *';
+        getIpProfile().then(prof=>{
+          const names=prof.names||[];
+          if(names.length>=1)nameInput.value=names[0];
+          if(names.length>1){
+            const dl=document.createElement('datalist');dl.id='cmt-name-dl-'+entryId;
+            names.forEach(n=>{const o=document.createElement('option');o.value=n;dl.appendChild(o);});
+            nameInput.setAttribute('list','cmt-name-dl-'+entryId);
+            nameInput.insertAdjacentElement('afterend',dl);
+          }
+        });
         const textInput=document.createElement('textarea');textInput.className='comment-textarea';textInput.placeholder='Say something...';
         const submitBtn=document.createElement('button');submitBtn.className='comment-submit-btn';submitBtn.textContent='💬 Post Comment';
         const msgEl=document.createElement('div');msgEl.className='comment-msg';msgEl.style.display='none';
@@ -1003,12 +1014,27 @@
 
     // ── Contact Admins modal ──────────────────────────────────
     const contactModal = document.getElementById('contact-modal');
-    function openContactModal(entryId, entryType) {
+    async function openContactModal(entryId, entryType) {
       document.getElementById('contact-entry-id').value = entryId || '';
       document.getElementById('contact-entry-type').value = entryType || 'burn';
       document.getElementById('contact-subject').value = '';
       document.getElementById('contact-message').value = '';
       document.getElementById('contact-status').style.display = 'none';
+      // Pre-populate name from IP profile
+      const _cProf = await getIpProfile();
+      const _cNames = _cProf.names || [];
+      const _cNameEl = document.getElementById('contact-name');
+      if (_cNameEl) {
+        _cNameEl.value = _cNames.length ? _cNames[0] : '';
+        const oldDl = document.getElementById('contact-name-dl');
+        if (oldDl) oldDl.remove();
+        if (_cNames.length > 1) {
+          const dl = document.createElement('datalist'); dl.id = 'contact-name-dl';
+          _cNames.forEach(n => { const o = document.createElement('option'); o.value = n; dl.appendChild(o); });
+          _cNameEl.setAttribute('list', 'contact-name-dl');
+          _cNameEl.insertAdjacentElement('afterend', dl);
+        }
+      }
       contactModal.classList.add('open');
       document.body.style.overflow = 'hidden';
     }
@@ -1021,6 +1047,7 @@
       const message  = document.getElementById('contact-message').value.trim();
       const entryId  = document.getElementById('contact-entry-id').value || null;
       const entryType = document.getElementById('contact-entry-type').value;
+      if (!contactName) { showContactStatus('error', 'Your name is required.'); return; }
       if (!subject) { showContactStatus('error', 'Subject is required.'); return; }
       if (!message) { showContactStatus('error', 'Message is required.'); return; }
       const btn = document.getElementById('contact-submit-btn');
@@ -1028,6 +1055,7 @@
       try {
         const ip = await getIpHash();
         await sbPost('contact_messages', { ip_hash: ip, entry_id: entryId, entry_type: entryType, subject, message });
+        await recordName(contactName);
         showContactStatus('success', '✅ Message sent! The Mean Whirls crew will review it.');
         setTimeout(closeContactModal, 2500);
       } catch(err) { showContactStatus('error', 'Failed to send: ' + err.message); }

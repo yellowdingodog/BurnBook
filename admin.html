@@ -185,15 +185,15 @@
 
     <div id="ttab-burn" class="top-panel active">
       <div class="admin-tabs sub-tabs">
-        <button class="admin-tab active" data-stab="burn-removals">⚠️ Removals <span class="badge-count" id="cnt-removals">0</span></button>
+        <button class="admin-tab active" data-stab="burn-entries">📋 All Entries <span class="badge-count" id="cnt-entries">0</span></button>
+        <button class="admin-tab" data-stab="burn-removals">⚠️ Removals <span class="badge-count" id="cnt-removals">0</span></button>
         <button class="admin-tab" data-stab="burn-edits">✏️ Pending Edits <span class="badge-count" id="cnt-edits">0</span></button>
         <button class="admin-tab" data-stab="burn-victims">🎤 Victim Statements <span class="badge-count" id="cnt-victims">0</span></button>
-        <button class="admin-tab" data-stab="burn-comments">💬 Comments <span class="badge-count" id="cnt-comments">0</span></button>
-        <button class="admin-tab" data-stab="burn-entries">📋 All Entries</button>
+        <button class="admin-tab" data-stab="burn-comments">💬 Comments</button>
         <button class="admin-tab" data-stab="burn-reorder">↕️ Reorder</button>
       </div>
     <!-- REMOVALS -->
-    <div id="stab-burn-removals" class="sub-panel active">
+    <div id="stab-burn-removals" class="sub-panel">
       <div class="section-hdr"><span class="section-title urgent">⚠️ Removal Requests</span><button class="refresh-btn" onclick="loadRemovals()">↺ Refresh</button></div>
       <div class="tbl-wrap"><table><thead><tr><th class="urgent">#</th><th class="urgent">Subject</th><th class="urgent">Reason</th><th class="urgent">Requested</th><th class="urgent">Actions</th></tr></thead><tbody id="tb-removals"></tbody></table></div>
     </div>
@@ -217,7 +217,7 @@
     </div>
 
     <!-- ALL ENTRIES -->
-    <div id="stab-burn-entries" class="sub-panel">
+    <div id="stab-burn-entries" class="sub-panel active">
       <div class="section-hdr"><span class="section-title">📋 All Entries</span><button class="refresh-btn" onclick="loadEntries()">↺ Refresh</button></div>
       <div id="entry-edit-panel"></div>
       <div class="bulk-bar">
@@ -291,15 +291,15 @@
     <!-- NAPTIONALS -->
     <div id="ttab-nap" class="top-panel">
       <div class="admin-tabs sub-tabs">
-        <button class="admin-tab active" data-stab="nap-removals">⚠️ Removals <span class="badge-count" id="cnt-nap-removals">0</span></button>
+        <button class="admin-tab active" data-stab="nap-entries">📋 All Entries <span class="badge-count" id="cnt-nap-entries">0</span></button>
+        <button class="admin-tab" data-stab="nap-removals">⚠️ Removals <span class="badge-count" id="cnt-nap-removals">0</span></button>
         <button class="admin-tab" data-stab="nap-edits">✏️ Pending Edits</button>
         <button class="admin-tab" data-stab="nap-defenses">😤 Defenses <span class="badge-count" id="cnt-nap-defenses">0</span></button>
         <button class="admin-tab" data-stab="nap-comments">💬 Comments</button>
-        <button class="admin-tab" data-stab="nap-entries">📋 All Entries</button>
         <button class="admin-tab" data-stab="nap-reorder">↕️ Reorder</button>
       </div>
 
-      <div id="stab-nap-removals" class="sub-panel active">
+      <div id="stab-nap-removals" class="sub-panel">
         <div class="section-hdr"><span class="section-title urgent">⚠️ Nap Removal Requests</span><button class="refresh-btn" onclick="loadNapRemovals()">↺ Refresh</button></div>
         <div class="tbl-wrap"><table><thead><tr><th class="urgent">#</th><th class="urgent">Sleeper</th><th class="urgent">Reason</th><th class="urgent">Requested</th><th class="urgent">Actions</th></tr></thead><tbody id="tb-nap-removals"></tbody></table></div>
       </div>
@@ -319,7 +319,7 @@
         <div id="nap-comments-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
       </div>
 
-      <div id="stab-nap-entries" class="sub-panel">
+      <div id="stab-nap-entries" class="sub-panel active">
         <div class="section-hdr"><span class="section-title">📋 All Nap Entries</span><button class="refresh-btn" onclick="loadNapEntries()">↺ Refresh</button></div>
         <div id="nap-entry-edit-panel"></div>
         <div class="tbl-wrap">
@@ -453,8 +453,8 @@
       loadAll();
     }
     function loadAll(){
-      loadRemovals();    // Burn Book → Removals (default active)
-      loadNapRemovals(); // Naptionals → Removals (default active)
+      loadEntries();         // Burn Book → All Entries (default active)
+      loadNapEntries();      // Naptionals → All Entries (default active)
       loadContactMessages(); // badge count
     }
 
@@ -468,8 +468,8 @@
         document.getElementById('ttab-'+tab.dataset.ttab).classList.add('active');
         if(tab.dataset.ttab==='contact') loadContactMessages();
         if(tab.dataset.ttab==='ips')     { loadIpProfiles(); loadIpActivity(); }
-        if(tab.dataset.ttab==='burn')    loadRemovals();
-        if(tab.dataset.ttab==='nap')     loadNapRemovals();
+        if(tab.dataset.ttab==='burn')    loadEntries();
+        if(tab.dataset.ttab==='nap')     loadNapEntries();
       });
     });
 
@@ -619,6 +619,7 @@
       document.getElementById('entry-edit-panel').innerHTML='';
       try {
         const entries=await sbGet('entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
+        setBadge('cnt-entries', entries.filter(e=>e.status==='pending'&&!e.hidden).length);
         if(!entries.length){tb.innerHTML=emptyRow(10,'No entries yet.');return;}
         tb.innerHTML='';
         entries.forEach(e=>{
@@ -990,6 +991,7 @@
       document.getElementById('nap-entry-edit-panel').innerHTML='';
       try{
         const entries=await sbGet('nap_entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
+        setBadge('cnt-nap-entries', entries.filter(e=>e.status==='pending'&&!e.hidden).length);
         if(!entries.length){tb.innerHTML=emptyRow(9,'No nap entries yet.');return;}
         tb.innerHTML='';
         entries.forEach(e=>{
