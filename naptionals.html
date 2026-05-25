@@ -470,6 +470,34 @@
       return `${SB}/storage/v1/object/public/${BUCKET}/${path}`;
     };
 
+
+    // ── Image resize before upload ────────────────────────────
+    async function resizeImage(file, maxDim=1920, quality=0.82) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          let {width:w, height:h} = img;
+          if (w <= maxDim && h <= maxDim) {
+            // Already small enough — still re-encode to JPEG to save space
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            canvas.toBlob(blob => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'})), 'image/jpeg', quality);
+          } else {
+            const ratio = Math.min(maxDim/w, maxDim/h);
+            w = Math.round(w*ratio); h = Math.round(h*ratio);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(blob => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'})), 'image/jpeg', quality);
+          }
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); }; // fallback: upload original
+        img.src = url;
+      });
+    }
     const getIpHash = async () => {
       try { const c=sessionStorage.getItem('mw_iphash'); if(c)return c; const {ip}=await (await fetch('https://api.ipify.org?format=json')).json(); let h=0; for(let i=0;i<ip.length;i++){h=((h<<5)-h)+ip.charCodeAt(i);h|=0;} const s='v'+Math.abs(h).toString(36); sessionStorage.setItem('mw_iphash',s); return s; }
       catch { return 'anon_'+Math.random().toString(36).slice(2); }
@@ -798,7 +826,7 @@
       const btn=document.getElementById('submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';document.getElementById('submit-status').style.display='none';
       const isCode=normalizeCode(submitter)===normalizeCode(CODENAME),displayAuthor=isCode?'MeanWhirls':(anonymous?'Anonymous':submitter),hashtags=parseHashtags(hashtagRaw);
       try{
-        let imageUrl='';if(selectedFile)imageUrl=await uploadImage(selectedFile);
+        let imageUrl='';if(selectedFile){const resized=await resizeImage(selectedFile);imageUrl=await uploadImage(resized);}
         const existing=await sbGet('nap_entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');
         const nextOrder=((existing[0]?.ui_order)||0)+1;
         const _subIp=await getIpHash();await sbPost('nap_entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp});
@@ -862,7 +890,7 @@
       const nothingChanged=!editImageFile&&subject===origSubject&&text===origText&&arraysEqual(hashtags,origTags);
       if(nothingChanged){showEditStatus('error','No changes detected.');btn.disabled=false;btn.innerHTML='Submit Edit for Review';return;}
       try{
-        let imageUrl=existingImg;if(editImageFile)imageUrl=await uploadImage(editImageFile);
+        let imageUrl=existingImg;if(editImageFile){const resized=await resizeImage(editImageFile);imageUrl=await uploadImage(resized);}
         const isCode=normalizeCode(submitter)===normalizeCode(CODENAME);
         if(isCode||onlyTagsChanged){const patch={hashtags};if(!onlyTagsChanged){patch.subject=subject;patch.text=text;patch.image_url=imageUrl;}if(isCode){patch.display_author='MeanWhirls';patch.is_mean_whirls=true;}await sbPatch('nap_entries',`id=eq.${entryId}`,patch);showEditStatus('success',onlyTagsChanged?'✅ Hashtags updated!':'😴 Mean Whirls edit applied!');setTimeout(()=>{closeEditModal();loadEntries();},1500);}
         else{await sbPost('nap_pending_edits',{entry_id:entryId,subject,text,image_url:imageUrl,submitter,display_author:displayAuthor,hashtags});await recordName(submitter);await logActivity('edit',entryId,`Nap edit submitted`);showEditStatus('success','✅ Edit submitted for review!');setTimeout(closeEditModal,3000);}

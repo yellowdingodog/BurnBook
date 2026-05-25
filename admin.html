@@ -382,6 +382,34 @@
     };
 
     // ── Utils ─────────────────────────────────────────────────
+
+    // ── Image resize before upload ────────────────────────────
+    async function resizeImage(file, maxDim=1920, quality=0.82) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          let {width:w, height:h} = img;
+          if (w <= maxDim && h <= maxDim) {
+            // Already small enough — still re-encode to JPEG to save space
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            canvas.toBlob(blob => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'})), 'image/jpeg', quality);
+          } else {
+            const ratio = Math.min(maxDim/w, maxDim/h);
+            w = Math.round(w*ratio); h = Math.round(h*ratio);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(blob => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'})), 'image/jpeg', quality);
+          }
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); }; // fallback: upload original
+        img.src = url;
+      });
+    }
     const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     const toTS = d => d ? new Date(d).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
@@ -688,7 +716,7 @@
       const btn=document.querySelector('#entry-edit-panel .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
       try{
         let imageUrl=existingImg;
-        if(editImageFile)imageUrl=await uploadImage(editImageFile);
+        if(editImageFile){const resized=await resizeImage(editImageFile);imageUrl=await uploadImage(resized);}
         await sbPatch('entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});
         showEpMsg('success','✅ Saved!');
         setTimeout(()=>{document.getElementById('entry-edit-panel').innerHTML='';loadEntries();},1200);
@@ -1050,7 +1078,7 @@
       const subject=document.getElementById('nep-subject').value.trim();const text=document.getElementById('nep-text').value.trim();const hashtags=parseHashtags(document.getElementById('nep-hashtags').value);const displayAuthor=document.getElementById('nep-display-author').value.trim();
       if(!subject){showNepMsg('error','Name required.');return;}
       const btn=document.querySelector('#nap-entry-edit-panel .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
-      try{let imageUrl=existingImg;if(napEditImageFile)imageUrl=await uploadImage(napEditImageFile);await sbPatch('nap_entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});showNepMsg('success','✅ Saved!');setTimeout(()=>{document.getElementById('nap-entry-edit-panel').innerHTML='';loadNapEntries();},1200);}
+      try{let imageUrl=existingImg;if(napEditImageFile){const resized=await resizeImage(napEditImageFile);imageUrl=await uploadImage(resized);}await sbPatch('nap_entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});showNepMsg('success','✅ Saved!');setTimeout(()=>{document.getElementById('nap-entry-edit-panel').innerHTML='';loadNapEntries();},1200);}
       catch(err){showNepMsg('error','Failed: '+err.message);}
       btn.disabled=false;btn.innerHTML='💾 Save Changes';
     }
