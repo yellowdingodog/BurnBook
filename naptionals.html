@@ -989,7 +989,59 @@
 
     document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(contactModal.classList.contains('open')){closeContactModal();return;}if(deleteModal.classList.contains('open')){closeDeleteModal();return;}if(editModal.classList.contains('open')){closeEditModal();return;}if(document.getElementById('detail-page').style.display!=='none'){closeDetail();}});
 
+
+    // ── Rickroll ──────────────────────────────────────────────
+    async function maybeRickroll() {
+      try {
+        const ip   = await getIpHash();
+        const rows = await sbGet('ip_profiles', `ip_hash=eq.${ip}&select=rickrolled`);
+        const alreadyRolled = rows.length && rows[0].rickrolled === true;
+        if (alreadyRolled) return;
+        // Show the overlay
+        const overlay = document.getElementById('rickroll-overlay');
+        overlay.style.display = 'flex';
+        // Mark as rickrolled (fire and forget)
+        if (rows.length) {
+          sbPatch('ip_profiles', `ip_hash=eq.${ip}`, { rickrolled: true }).catch(()=>{});
+        } else {
+          sbPost('ip_profiles', { ip_hash: ip, names: [], is_admin: false, is_blocked: false, rickrolled: true }).catch(()=>{});
+        }
+      } catch(e) {}
+    }
+
+    function closeRickroll() {
+      const overlay = document.getElementById('rickroll-overlay');
+      overlay.style.display = 'none';
+      // Stop the video by clearing the iframe src
+      const frame = document.getElementById('rickroll-frame');
+      if (frame) frame.src = '';
+    }
+
     init();
+    maybeRickroll();
   </script>
+
+  <!-- Rickroll Modal -->
+  <div id="rickroll-overlay" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:1.5rem;">
+    <div style="background:#fff;border-radius:4px;max-width:540px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.6);overflow:hidden;position:relative;">
+      <button onclick="closeRickroll()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#555;z-index:1;line-height:1;">✕</button>
+      <div style="background:linear-gradient(135deg,#1a0a12,#3d0f25);padding:1.25rem 1.5rem 1rem;border-bottom:2px solid #d4a843;">
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;color:#fff;">Welcome to the Burn Book</div>
+        <div style="font-family:'Raleway',sans-serif;font-size:0.82rem;color:rgba(255,255,255,0.6);margin-top:0.35rem;font-style:italic;">this is just how we roll</div>
+      </div>
+      <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
+        <iframe id="rickroll-frame"
+          src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&controls=1&rel=0"
+          style="position:absolute;inset:0;width:100%;height:100%;border:none;"
+          allow="autoplay; encrypted-media"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div style="padding:1rem 1.5rem;font-family:'Raleway',sans-serif;font-size:0.8rem;color:#8c6678;font-style:italic;text-align:center;background:#fff8f0;">
+        Four for you, Rick Astley. You go, Rick Astley. None for everyone else.
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

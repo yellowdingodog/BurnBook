@@ -266,7 +266,7 @@
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>IP Hash</th><th>Names Used</th><th>Admin</th><th>Vote Weight</th><th>Status</th><th>Last Seen</th><th>Actions</th></tr></thead>
+          <thead><tr><th>IP Hash</th><th>Names Used</th><th>Admin</th><th>Vote Weight</th><th>Status</th><th>🎵 Rolled</th><th>Last Seen</th><th>Actions</th></tr></thead>
           <tbody id="tb-ips"></tbody>
         </table>
       </div>
@@ -853,6 +853,7 @@
           <td>${adminBadge}</td>
           <td style="min-width:140px">${weightInput}</td>
           <td>${statusBadge}</td>
+          <td style="text-align:center;font-size:1rem">${p.rickrolled ? '🎵' : ''}</td>
           <td style="font-size:.74rem;color:var(--muted)">${p.last_seen?new Date(p.last_seen).toLocaleString():'-'}</td>
           <td style="min-width:240px">${blockBtn} ${adminBtn} ${actBtn} <button class="btn-a add" onclick="deleteIpData('${p.ip_hash}')">🗑 Delete Data</button></td>`;
         tb.appendChild(tr);
