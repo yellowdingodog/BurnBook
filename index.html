@@ -621,21 +621,37 @@
     const normalizeCode = s => s.toLowerCase().replace(/\s+/g,' ').trim();
     const arraysEqual = (a,b) => a.length===b.length&&[...a].sort().join()===([...b]).sort().join();
 
-    // ── Taco Bell ding 🔔 ─────────────────────────────────────
+    // ── Taco Bell bong 🔔 ─────────────────────────────────────
     function tacoBellDing() {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc  = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        gain.gain.setValueAtTime(0, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 1.5);
+        const now = ctx.currentTime;
+        // Bell partials: [frequency multiplier, relative gain, decay time]
+        const partials = [
+          [1.0,   0.6,  2.4],   // fundamental ~587 Hz
+          [2.756, 0.25, 1.6],   // minor 7th partial (bell inharmonicity)
+          [5.404, 0.12, 0.9],   // higher partial
+          [8.933, 0.05, 0.5],   // shimmer
+        ];
+        const fundamental = 587;
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(1, now);
+        master.connect(ctx.destination);
+        partials.forEach(([mult, amp, decay]) => {
+          const osc  = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(fundamental * mult, now);
+          // Slight frequency drop for bell-like quality
+          osc.frequency.exponentialRampToValueAtTime(fundamental * mult * 0.997, now + 0.3);
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(amp, now + 0.008);  // sharp attack
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + decay);
+          osc.connect(gain);
+          gain.connect(master);
+          osc.start(now);
+          osc.stop(now + decay + 0.1);
+        });
       } catch(e) {}
     }
     const showToast = msg => { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
