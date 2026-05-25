@@ -353,7 +353,7 @@
     <!-- HOTTEST BURNS -->
     <div id="tab-hot" class="tab-panel">
       <h2 class="section-title">🔥 Hottest Burns</h2>
-      <p class="section-sub">Voting works the way we want it to, Chicago-style. Here are the winners:</p>
+      <p class="section-sub">Voting works the way we want it to, Chicago-style. And when all votes are tallied, somebody is going to get cheese fries!</p>
       <div class="hot-controls">
         <label for="hot-count">Show top</label>
         <select id="hot-count" onchange="loadHottestBurns()">
@@ -906,6 +906,7 @@
     document.getElementById('submit-btn').addEventListener('click',async()=>{
       const subject=document.getElementById('f-subject').value.trim(),text=document.getElementById('f-text').value.trim(),submitter=document.getElementById('f-submitter').value.trim(),anonymous=document.getElementById('f-anonymous').checked,hashtagRaw=document.getElementById('f-hashtags').value.trim();
       if(!subject){showStatus('error','Who are we burning?');return;}if(!submitter){showStatus('error','Your name is required.');return;}
+      if(submitter.toLowerCase()==='meanwhirls'&&submitter.toLowerCase()!==CODENAME.toLowerCase()){showStatus('error','Oh honey. You are NOT a real MeanWhirl. You definitely cannot whirl with us now. 💅');return;}
       if(await isBlocked()){showStatus('error','Your access has been restricted.');return;}
       const btn=document.getElementById('submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';document.getElementById('submit-status').style.display='none';
       const isCode=submitter.toLowerCase()===CODENAME.toLowerCase(),displayAuthor=isCode?'MeanWhirls':(anonymous?'Anonymous':submitter),hashtags=parseHashtags(hashtagRaw);
@@ -959,6 +960,7 @@
     document.getElementById('edit-submit-btn').addEventListener('click',async()=>{
       const entryId=document.getElementById('edit-entry-id').value,subject=document.getElementById('edit-subject').value.trim(),text=document.getElementById('edit-text').value.trim(),submitter=document.getElementById('edit-submitter').value.trim(),anonymous=document.getElementById('edit-anonymous').checked,hashtagRaw=document.getElementById('edit-hashtags').value.trim(),existingImg=document.getElementById('edit-existing-image').value,origSubject=document.getElementById('edit-orig-subject').value,origText=document.getElementById('edit-orig-text').value,origTagsStr=document.getElementById('edit-orig-hashtags').value;
       if(!subject){showEditStatus('error','Burn victim name required.');return;}if(!submitter){showEditStatus('error','Your name is required.');return;}
+      if(submitter.toLowerCase()==='meanwhirls'&&submitter.toLowerCase()!==CODENAME.toLowerCase()){showEditStatus('error','Nice try. You are NOT a real MeanWhirl. You definitely cannot whirl with us now. 💅');return;}
       if(await isBlocked()){showEditStatus('error','Your access has been restricted.');return;}
       const btn=document.getElementById('edit-submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
       const hashtags=parseHashtags(hashtagRaw),origTags=origTagsStr?origTagsStr.split(' ').filter(Boolean):[],displayAuthor=anonymous?'Anonymous':submitter;
