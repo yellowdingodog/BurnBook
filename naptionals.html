@@ -541,6 +541,24 @@
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
     const normalizeCode = s => s.toLowerCase().replace(/\s+/g,' ').trim();
     const arraysEqual = (a,b) => a.length===b.length&&[...a].sort().join()===([...b]).sort().join();
+
+    // ── Taco Bell ding 🔔 ─────────────────────────────────────
+    function tacoBellDing() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 1.5);
+      } catch(e) {}
+    }
     const showToast = msg => { const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); };
 
     function makeBadgeMW() {
@@ -850,7 +868,7 @@
         const nextOrder=((existing[0]?.ui_order)||0)+1;
         const _subIp=await getIpHash();await sbPost('nap_entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp});
         await recordName(submitter);await logActivity('submit',null,`Nap submitted: ${subject}`);
-        showStatus('success',isCode?'😴 Mean Whirls nap posted!':'✅ Submitted! Appears after moderation.');
+        showStatus('success',isCode?'😴 Mean Whirls nap posted!':'✅ Submitted! Appears after moderation.');tacoBellDing();
         resetSubmitForm();
       }catch(err){showStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='😴 Submit to the Nap Wall';

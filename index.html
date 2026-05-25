@@ -620,6 +620,24 @@
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
     const normalizeCode = s => s.toLowerCase().replace(/\s+/g,' ').trim();
     const arraysEqual = (a,b) => a.length===b.length&&[...a].sort().join()===([...b]).sort().join();
+
+    // ── Taco Bell ding 🔔 ─────────────────────────────────────
+    function tacoBellDing() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 1.5);
+      } catch(e) {}
+    }
     const showToast = msg => { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
     const heatEmoji = avg => !avg?'❓':avg>=9?'🌋':avg>=7?'🔥':avg>=5?'♨️':avg>=3?'🌡️':'🧊';
 
@@ -969,7 +987,7 @@
       if(await isBlocked()){showStatus('error','Your access has been restricted.');return;}
       const btn=document.getElementById('submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';document.getElementById('submit-status').style.display='none';
       const isCode=normalizeCode(submitter)===normalizeCode(CODENAME),displayAuthor=isCode?'MeanWhirls':(anonymous?'Anonymous':submitter),hashtags=parseHashtags(hashtagRaw);
-      try{let imageUrl='';if(selectedFile){const resized=await resizeImage(selectedFile);imageUrl=await uploadImage(resized);}const existing=await sbGet('entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');const nextOrder=((existing[0]?.ui_order)||0)+1;const _subIp=await getIpHash();await sbPost('entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp});showStatus('success',isCode?'🏒 Mean Whirls entry posted!':'✅ Submitted! Appears after moderation. 💗');
+      try{let imageUrl='';if(selectedFile){const resized=await resizeImage(selectedFile);imageUrl=await uploadImage(resized);}const existing=await sbGet('entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');const nextOrder=((existing[0]?.ui_order)||0)+1;const _subIp=await getIpHash();await sbPost('entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp});showStatus('success',isCode?'🏒 Mean Whirls entry posted!':'✅ Submitted! Appears after moderation. 💗');tacoBellDing();
         await recordName(submitter);
         await logActivity('submit', null, `Subject: ${subject}`);
         resetSubmitForm();}
