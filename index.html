@@ -786,7 +786,7 @@
         if(!confirmed){alert('Get out of here then. 👋');return;}
         btn.disabled=true;btn.textContent='Submitting...';
         try{await sbPost('victim_statements',{entry_id:entryId,text,ip_hash:ipHash,status:'pending'});
-        await logActivity('victim_statement', entryId, 'Victim statement submitted');
+        await logActivity('victim_statement', entryId, `Victim statement for: "${currentDetailEntry?.subject||''}"`);
         msg.className='victim-msg ok';msg.textContent='✅ Submitted for moderation!';msg.style.display='block';setTimeout(()=>loadVictimStatement(entryId,ipHash),2000);}
         catch(e){msg.className='victim-msg err';msg.textContent='Failed: '+e.message;msg.style.display='block';}
         btn.disabled=false;btn.textContent='Submit Statement';
@@ -857,7 +857,7 @@
           submitBtn.disabled=true;submitBtn.textContent='Posting...';
           try{await sbPost('comments',{entry_id:entryId,author:name,text,ip_hash:ipHash});
             await recordName(name);
-            await logActivity('comment', entryId, `Author: ${name}`);
+            await logActivity('comment', entryId, `Comment by ${name} on: "${currentDetailEntry?.subject||''}"`);
             nameInput.value='';textInput.value='';loadComments(entryId,ipHash);}
           catch(e){msgEl.className='comment-msg err';msgEl.textContent='Failed: '+e.message;msgEl.style.display='block';}
           submitBtn.disabled=false;submitBtn.textContent='💬 Post Comment';
@@ -989,7 +989,7 @@
       const isCode=normalizeCode(submitter)===normalizeCode(CODENAME),displayAuthor=isCode?'MeanWhirls':(anonymous?'Anonymous':submitter),hashtags=parseHashtags(hashtagRaw);
       try{let imageUrl='';if(selectedFile){const resized=await resizeImage(selectedFile);imageUrl=await uploadImage(resized);}const existing=await sbGet('entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');const nextOrder=((existing[0]?.ui_order)||0)+1;const _subIp=await getIpHash();await sbPost('entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp});showStatus('success',isCode?'🏒 Mean Whirls entry posted!':'✅ Submitted! Appears after moderation. 💗');tacoBellDing();
         await recordName(submitter);
-        await logActivity('submit', null, `Subject: ${subject}`);
+        await logActivity('submit', null, `Submitted entry: "${subject}"`);
         resetSubmitForm();}
       catch(err){showStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='💗 Submit to the Burn Book';
@@ -1007,7 +1007,7 @@
       if(!name){showDelStatus('error','Your name is required.');return;}if(!reason){showDelStatus('error','Please provide a reason.');return;}
       const btn=document.getElementById('del-submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
       const isCode=normalizeCode(name)===normalizeCode(CODENAME);
-      try{await sbPatch('entries',`id=eq.${entryId}`,{hidden:true});if(isCode){const _delE=allEntries.find(e=>e.id===entryId);if(_delE?.image_url)await deleteStorageFile(_delE.image_url);await sbDelete('entries',`id=eq.${entryId}`);showDelStatus('success','✅ Entry removed immediately.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500);}else{await sbPost('deletion_requests',{entry_id:entryId,reason});showDelStatus('success','✅ Request submitted. Entry hidden while we review. Thank you.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},2500);}}
+      try{await sbPatch('entries',`id=eq.${entryId}`,{hidden:true});if(isCode){const _delE=allEntries.find(e=>e.id===entryId);if(_delE?.image_url)await deleteStorageFile(_delE.image_url);await sbDelete('entries',`id=eq.${entryId}`);showDelStatus('success','✅ Entry removed immediately.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500);}else{await sbPost('deletion_requests',{entry_id:entryId,reason});await logActivity('removal_request',entryId,`Removal requested: "${currentDetailEntry?.subject||''}"`);showDelStatus('success','✅ Request submitted. Entry hidden while we review. Thank you.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},2500);}}
       catch(err){showDelStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='🗑 Submit Removal Request';
     });
@@ -1050,7 +1050,7 @@
         if(isCode||onlyTagsChanged){const patch={hashtags};if(!onlyTagsChanged){patch.subject=subject;patch.text=text;patch.image_url=imageUrl;}if(isCode){patch.display_author='MeanWhirls';patch.is_mean_whirls=true;}await sbPatch('entries',`id=eq.${entryId}`,patch);showEditStatus('success',onlyTagsChanged?'✅ Hashtags updated!':'🏒 Mean Whirls edit applied!');setTimeout(()=>{closeEditModal();loadEntries();},1500);}
         else{await sbPost('pending_edits',{entry_id:entryId,subject,text,image_url:imageUrl,submitter,display_author:displayAuthor,hashtags});
             await recordName(submitter);
-            await logActivity('edit', entryId, `Edit submitted for: ${subject}`);
+            await logActivity('edit', entryId, `Proposed edit: "${subject}"`);
             showEditStatus('success','✅ Edit submitted for review!');setTimeout(closeEditModal,3000);}
       }catch(err){showEditStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='💗 Submit Edit for Review';

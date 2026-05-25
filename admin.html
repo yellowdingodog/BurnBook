@@ -282,6 +282,11 @@
             <option value="victim_statement">victim_statement</option>
             <option value="vote">vote</option>
             <option value="admin_login">admin_login</option>
+            <option value="admin_approve">admin_approve</option>
+            <option value="admin_edit">admin_edit</option>
+            <option value="admin_delete">admin_delete</option>
+            <option value="admin_approve_edit">admin_approve_edit</option>
+            <option value="removal_request">removal_request</option>
           </select>
         </div>
         <div class="tbl-wrap"><table><thead><tr><th>When</th><th>IP Hash</th><th>Names</th><th>Action</th><th>Entry #</th><th>Detail</th></tr></thead><tbody id="tb-activity"></tbody></table></div>
@@ -588,7 +593,7 @@
         });
       } catch(err){tb.innerHTML=emptyRow(8,'Failed: '+err.message);}
     }
-    async function acceptEdit(jsonStr){ const ed=JSON.parse(jsonStr); try{const _orig=await sbGet('entries',`id=eq.${ed.entry_id}&select=image_url`);const patch={subject:ed.subject,text:ed.text,image_url:ed.image_url,display_author:ed.display_author};if(ed.hashtags)patch.hashtags=ed.hashtags;if(ed.image_url&&_orig[0]?.image_url&&ed.image_url!==_orig[0].image_url)await deleteStorageFile(_orig[0].image_url);await sbPatch('entries',`id=eq.${ed.entry_id}`,patch);await sbDelete('pending_edits',`id=eq.${ed.id}`);showToast('Edit accepted.');loadEdits();loadEntries();}catch(err){alert('Failed: '+err.message);} }
+    async function acceptEdit(jsonStr){ const ed=JSON.parse(jsonStr); try{const _orig=await sbGet('entries',`id=eq.${ed.entry_id}&select=image_url`);const patch={subject:ed.subject,text:ed.text,image_url:ed.image_url,display_author:ed.display_author};if(ed.hashtags)patch.hashtags=ed.hashtags;if(ed.image_url&&_orig[0]?.image_url&&ed.image_url!==_orig[0].image_url)await deleteStorageFile(_orig[0].image_url);await sbPatch('entries',`id=eq.${ed.entry_id}`,patch);await sbDelete('pending_edits',`id=eq.${ed.id}`);await logAdminAction('admin_approve_edit',ed.entry_id,`Accepted edit: "${ed.subject}"`);showToast('Edit accepted.');loadEdits();loadEntries();}catch(err){alert('Failed: '+err.message);} }
     async function rejectEdit(id){ try{await sbDelete('pending_edits',`id=eq.${id}`);showToast('Edit rejected.');loadEdits();}catch(err){alert('Failed: '+err.message);} }
 
     // ── VICTIM STATEMENTS ─────────────────────────────────────
@@ -687,9 +692,9 @@
 
     async function modEntry(id,decision){
       try{
-        if(decision==='approve')        await sbPatch('entries',`id=eq.${id}`,{status:'approved',hidden:false});
+        if(decision==='approve')        {await sbPatch('entries',`id=eq.${id}`,{status:'approved',hidden:false});const _ae=await sbGet('entries',`id=eq.${id}&select=subject`);await logAdminAction('admin_approve',id,`Approved: "${_ae[0]?.subject||''}"`);}
         else if(decision==='unapprove') await sbPatch('entries',`id=eq.${id}`,{status:'pending'});
-        else{const _e=await sbGet('entries',`id=eq.${id}&select=image_url`);if(_e[0]?.image_url)await deleteStorageFile(_e[0].image_url);await sbDelete('entries',`id=eq.${id}`);}
+        else{const _e=await sbGet('entries',`id=eq.${id}&select=image_url,subject`);await logAdminAction('admin_delete',id,`Deleted: "${_e[0]?.subject||''}"`);if(_e[0]?.image_url)await deleteStorageFile(_e[0].image_url);await sbDelete('entries',`id=eq.${id}`);}
         loadEntries();
       }catch(err){alert('Failed: '+err.message);}
     }
@@ -868,6 +873,13 @@
         showToast(block ? '⛔ User blocked.' : '✅ User unblocked.');
         loadIpProfiles();
       } catch(err) { alert('Failed: '+err.message); }
+    }
+
+    async function logAdminAction(action, entryId, detail) {
+      try {
+        const ip = await getIpHash();
+        await sbPost('ip_activity', { ip_hash: ip, action, entry_id: entryId||null, detail: detail||'' });
+      } catch(e) {}
     }
 
     async function saveIpNote(ipHash, note) {
@@ -1076,9 +1088,9 @@
 
     async function modNapEntry(id,decision){
       try{
-        if(decision==='approve')        await sbPatch('nap_entries',`id=eq.${id}`,{status:'approved',hidden:false});
+        if(decision==='approve')        {await sbPatch('nap_entries',`id=eq.${id}`,{status:'approved',hidden:false});const _ae=await sbGet('nap_entries',`id=eq.${id}&select=subject`);await logAdminAction('admin_approve',id,`Approved nap: "${_ae[0]?.subject||''}"`)}
         else if(decision==='unapprove') await sbPatch('nap_entries',`id=eq.${id}`,{status:'pending'});
-        else{const _e=await sbGet('nap_entries',`id=eq.${id}&select=image_url`);if(_e[0]?.image_url)await deleteStorageFile(_e[0].image_url);await sbDelete('nap_entries',`id=eq.${id}`);}
+        else{const _e=await sbGet('nap_entries',`id=eq.${id}&select=image_url,subject`);await logAdminAction('admin_delete',id,`Deleted nap: "${_e[0]?.subject||''}"`);if(_e[0]?.image_url)await deleteStorageFile(_e[0].image_url);await sbDelete('nap_entries',`id=eq.${id}`);}
         loadNapEntries();
       }catch(err){alert('Failed: '+err.message);}
     }
@@ -1114,7 +1126,7 @@
       const subject=document.getElementById('nep-subject').value.trim();const text=document.getElementById('nep-text').value.trim();const hashtags=parseHashtags(document.getElementById('nep-hashtags').value);const displayAuthor=document.getElementById('nep-display-author').value.trim();
       if(!subject){showNepMsg('error','Name required.');return;}
       const btn=document.querySelector('#nap-entry-edit-panel .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
-      try{let imageUrl=existingImg;if(napEditImageFile){const resized=await resizeImage(napEditImageFile);imageUrl=await uploadImage(resized);}await sbPatch('nap_entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});showNepMsg('success','✅ Saved!');setTimeout(()=>{document.getElementById('nap-entry-edit-panel').innerHTML='';loadNapEntries();},1200);}
+      try{let imageUrl=existingImg;if(napEditImageFile){const resized=await resizeImage(napEditImageFile);imageUrl=await uploadImage(resized);}await sbPatch('nap_entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});await logAdminAction('admin_edit',id,`Admin edited nap: "${subject}"`);showNepMsg('success','✅ Saved!');setTimeout(()=>{document.getElementById('nap-entry-edit-panel').innerHTML='';loadNapEntries();},1200);}
       catch(err){showNepMsg('error','Failed: '+err.message);}
       btn.disabled=false;btn.innerHTML='💾 Save Changes';
     }

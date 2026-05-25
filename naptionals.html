@@ -738,7 +738,7 @@
       btn.addEventListener('click',async()=>{
         const text=ta.value.trim();if(!text)return;
         btn.disabled=true;btn.textContent='Submitting...';
-        try{await sbPost('nap_defenses',{entry_id:entryId,text,ip_hash:ipHash,status:'pending'});await logActivity('victim_statement',entryId,"Sleeper's defense submitted");msg.className='defense-msg ok';msg.textContent='✅ Defense submitted for moderation!';msg.style.display='block';setTimeout(()=>loadDefense(entryId,ipHash),2000);}
+        try{await sbPost('nap_defenses',{entry_id:entryId,text,ip_hash:ipHash,status:'pending'});await logActivity('victim_statement',entryId,`Sleeper's defense for: "${currentDetailEntry?.subject||''}"`); msg.className='defense-msg ok';msg.textContent='✅ Defense submitted for moderation!';msg.style.display='block';setTimeout(()=>loadDefense(entryId,ipHash),2000);}
         catch(e){msg.className='defense-msg err';msg.textContent='Failed: '+e.message;msg.style.display='block';}
         btn.disabled=false;btn.textContent='Submit Defense';
       });
@@ -799,7 +799,7 @@
           if(!name){msgEl.className='comment-msg err';msgEl.textContent='Name is required.';msgEl.style.display='block';return;}
           if(!text){msgEl.className='comment-msg err';msgEl.textContent='Comment cannot be empty.';msgEl.style.display='block';return;}
           submitBtn.disabled=true;submitBtn.textContent='Posting...';
-          try{await sbPost('nap_comments',{entry_id:entryId,author:name,text,ip_hash:ipHash});await recordName(name);await logActivity('comment',entryId,`Nap comment by: ${name}`);nameInput.value='';textInput.value='';loadComments(entryId,ipHash);}
+          try{await sbPost('nap_comments',{entry_id:entryId,author:name,text,ip_hash:ipHash});await recordName(name);await logActivity('comment',entryId,`Comment by ${name} on: "${currentDetailEntry?.subject||''}"`);nameInput.value='';textInput.value='';loadComments(entryId,ipHash);}
           catch(e){msgEl.className='comment-msg err';msgEl.textContent='Failed: '+e.message;msgEl.style.display='block';}
           submitBtn.disabled=false;submitBtn.textContent='💬 Post Comment';
         });
@@ -867,7 +867,7 @@
         const existing=await sbGet('nap_entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');
         const nextOrder=((existing[0]?.ui_order)||0)+1;
         const _subIp=await getIpHash();await sbPost('nap_entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp});
-        await recordName(submitter);await logActivity('submit',null,`Nap submitted: ${subject}`);
+        await recordName(submitter);await logActivity('submit',null,`Submitted nap entry: "${subject}"`);
         showStatus('success',isCode?'😴 Mean Whirls nap posted!':'✅ Submitted! Appears after moderation.');tacoBellDing();
         resetSubmitForm();
       }catch(err){showStatus('error','Something went wrong: '+err.message);}
@@ -890,7 +890,7 @@
       try{
         await sbPatch('nap_entries',`id=eq.${entryId}`,{hidden:true});
         if(isCode){const _delNap=allEntries.find(e=>e.id===entryId);if(_delNap?.image_url)await deleteStorageFile(_delNap.image_url);await sbDelete('nap_entries',`id=eq.${entryId}`);showDelStatus('success','✅ Entry removed immediately.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500);}
-        else{await sbPost('nap_deletion_requests',{entry_id:entryId,reason});showDelStatus('success','✅ Request submitted. Entry hidden while we review. Thank you.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},2500);}
+        else{await sbPost('nap_deletion_requests',{entry_id:entryId,reason});await logActivity('removal_request',entryId,`Removal requested: "${currentDetailEntry?.subject||''}"`);showDelStatus('success','✅ Request submitted. Entry hidden while we review. Thank you.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},2500);}
       }catch(err){showDelStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='Submit Removal Request';
     });
@@ -929,8 +929,8 @@
       try{
         let imageUrl=existingImg;if(editImageFile){const resized=await resizeImage(editImageFile);imageUrl=await uploadImage(resized);}
         const isCode=normalizeCode(submitter)===normalizeCode(CODENAME);
-        if(isCode||onlyTagsChanged){const patch={hashtags};if(!onlyTagsChanged){patch.subject=subject;patch.text=text;patch.image_url=imageUrl;if(editImageFile&&existingImg)await deleteStorageFile(existingImg);}if(isCode){patch.display_author='MeanWhirls';patch.is_mean_whirls=true;}await sbPatch('nap_entries',`id=eq.${entryId}`,patch);showEditStatus('success',onlyTagsChanged?'✅ Hashtags updated!':'😴 Mean Whirls edit applied!');setTimeout(()=>{closeEditModal();loadEntries();},1500);}
-        else{await sbPost('nap_pending_edits',{entry_id:entryId,subject,text,image_url:imageUrl,submitter,display_author:displayAuthor,hashtags});await recordName(submitter);await logActivity('edit',entryId,`Nap edit submitted`);showEditStatus('success','✅ Edit submitted for review!');setTimeout(closeEditModal,3000);}
+        if(isCode||onlyTagsChanged){const patch={hashtags};if(!onlyTagsChanged){patch.subject=subject;patch.text=text;patch.image_url=imageUrl;if(editImageFile&&existingImg)await deleteStorageFile(existingImg);}if(isCode){patch.display_author='MeanWhirls';patch.is_mean_whirls=true;}await sbPatch('nap_entries',`id=eq.${entryId}`,patch);await logActivity('edit',entryId,onlyTagsChanged?`Updated hashtags on: "${subject}"`:`Direct edit applied: "${subject}"`);showEditStatus('success',onlyTagsChanged?'✅ Hashtags updated!':'😴 Mean Whirls edit applied!');setTimeout(()=>{closeEditModal();loadEntries();},1500);}
+        else{await sbPost('nap_pending_edits',{entry_id:entryId,subject,text,image_url:imageUrl,submitter,display_author:displayAuthor,hashtags});await recordName(submitter);await logActivity('edit',entryId,`Proposed nap edit: "${subject}"`);showEditStatus('success','✅ Edit submitted for review!');setTimeout(closeEditModal,3000);}
       }catch(err){showEditStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='Submit Edit for Review';
     });
