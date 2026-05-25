@@ -231,7 +231,7 @@
           <thead><tr>
             <th class="cb"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)" /></th>
             <th>#</th><th>Photo</th><th>Subject</th><th>Burn</th><th>Tags</th>
-            <th>Submitter</th><th>Displays As</th><th>Owner IP</th><th>Submitted</th><th>Status</th><th>Actions</th>
+            <th>Submitter</th><th>Displays As</th><th>Submitted</th><th>Status</th><th>Actions</th>
           </tr></thead>
           <tbody id="tb-entries"></tbody>
         </table>
@@ -323,7 +323,7 @@
         <div class="section-hdr"><span class="section-title">📋 All Nap Entries</span><button class="refresh-btn" onclick="loadNapEntries()">↺ Refresh</button></div>
         <div id="nap-entry-edit-panel"></div>
         <div class="tbl-wrap">
-          <table><thead><tr><th>#</th><th>Photo</th><th>Sleeper</th><th>Scene</th><th>Tags</th><th>Submitter</th><th>Displays As</th><th>Owner IP</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
+          <table><thead><tr><th>#</th><th>Photo</th><th>Sleeper</th><th>Scene</th><th>Tags</th><th>Submitter</th><th>Displays As</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="tb-nap-entries"></tbody></table>
         </div>
       </div>
@@ -397,13 +397,16 @@
     }
 
     // ── Login ─────────────────────────────────────────────────
+    let _adminVoteWeight = 10;
+
     async function init() {
       try {
         const cfg = await sbGet('config');
         cfg.forEach(r => {
-          if(r.key==='codename')         CODENAME         = r.value;
-          if(r.key==='codename_display') CODENAME_DISPLAY = r.value;
-          if(r.key==='badgeicon')        BADGE_ICON_URL   = r.value;
+          if(r.key==='codename')            CODENAME          = r.value;
+          if(r.key==='codename_display')    CODENAME_DISPLAY  = r.value;
+          if(r.key==='badgeicon')           BADGE_ICON_URL    = r.value;
+          if(r.key==='admin_vote_weight')   _adminVoteWeight  = parseFloat(r.value)||10;
         });
       } catch(e) {}
     }
@@ -616,7 +619,7 @@
       document.getElementById('entry-edit-panel').innerHTML='';
       try {
         const entries=await sbGet('entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
-        if(!entries.length){tb.innerHTML=emptyRow(11,'No entries yet.');return;}
+        if(!entries.length){tb.innerHTML=emptyRow(10,'No entries yet.');return;}
         tb.innerHTML='';
         entries.forEach(e=>{
           const isCodeSub=e.submitter&&e.submitter.toLowerCase()===CODENAME.toLowerCase();
@@ -628,7 +631,7 @@
           const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modEntry('${e.id}','approve')">✓</button>`:'';
           const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="btn-a au" onclick="modEntry('${e.id}','unapprove')">⏸</button>`:'';
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td><input type="checkbox" class="row-cb" data-id="${e.id}" onchange="updateBulkCount()" /></td><td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.7rem;color:var(--muted);font-family:monospace">${esc(e.ip_hash||'—')}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(e.created_at)}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openEntryEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modEntry('${e.id}','reject')">✕</button></td>`;
+          tr.innerHTML=`<td><input type="checkbox" class="row-cb" data-id="${e.id}" onchange="updateBulkCount()" /></td><td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(e.created_at)}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openEntryEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modEntry('${e.id}','reject')">✕</button></td>`;
           tb.appendChild(tr);
         });
       } catch(err){tb.innerHTML=emptyRow(10,'Failed: '+err.message);}
@@ -987,7 +990,7 @@
       document.getElementById('nap-entry-edit-panel').innerHTML='';
       try{
         const entries=await sbGet('nap_entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
-        if(!entries.length){tb.innerHTML=emptyRow(10,'No nap entries yet.');return;}
+        if(!entries.length){tb.innerHTML=emptyRow(9,'No nap entries yet.');return;}
         tb.innerHTML='';
         entries.forEach(e=>{
           const isCodeSub=e.submitter&&e.submitter.toLowerCase()===CODENAME.toLowerCase();
@@ -999,7 +1002,7 @@
           const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modNapEntry('${e.id}','approve')">✓</button>`:'';
           const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="btn-a au" onclick="modNapEntry('${e.id}','unapprove')">⏸</button>`:'';
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.7rem;color:var(--muted);font-family:monospace">${esc(e.ip_hash||'—')}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(e.created_at)}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openNapEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modNapEntry('${e.id}','reject')">✕</button></td>`;
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(e.created_at)}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openNapEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modNapEntry('${e.id}','reject')">✕</button></td>`;
           tb.appendChild(tr);
         });
       }catch(err){tb.innerHTML=emptyRow(9,'Failed: '+err.message);}
