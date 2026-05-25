@@ -492,6 +492,7 @@
     // ── Utils ─────────────────────────────────────────────────
     const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
+    const normalizeCode = s => s.toLowerCase().replace(/\s+/g,' ').trim();
     const arraysEqual = (a,b) => a.length===b.length&&[...a].sort().join()===([...b]).sort().join();
     const showToast = msg => { const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); };
 
@@ -792,10 +793,10 @@
       const subject=document.getElementById('f-subject').value.trim(),text=document.getElementById('f-text').value.trim(),submitter=document.getElementById('f-submitter').value.trim(),anonymous=document.getElementById('f-anonymous').checked,hashtagRaw=document.getElementById('f-hashtags').value.trim();
       if(!subject){showStatus('error','Who got caught sleeping?');return;}
       if(!submitter){showStatus('error','Your name is required.');return;}
-      if(submitter.toLowerCase()==='meanwhirls'&&submitter.toLowerCase()!==CODENAME.toLowerCase()){showStatus('error','Oh honey. You are NOT a real MeanWhirl. You definitely cannot whirl with us now. 💅');return;}
+      if(submitter.trim().toLowerCase()==='meanwhirls'&&normalizeCode(submitter)!==normalizeCode(CODENAME)){showStatus('error','Oh honey. You are NOT a real MeanWhirl. You definitely cannot whirl with us now. 💅');return;}
       if(await isBlocked()){showStatus('error','Your access has been restricted.');return;}
       const btn=document.getElementById('submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';document.getElementById('submit-status').style.display='none';
-      const isCode=submitter.toLowerCase()===CODENAME.toLowerCase(),displayAuthor=isCode?'MeanWhirls':(anonymous?'Anonymous':submitter),hashtags=parseHashtags(hashtagRaw);
+      const isCode=normalizeCode(submitter)===normalizeCode(CODENAME),displayAuthor=isCode?'MeanWhirls':(anonymous?'Anonymous':submitter),hashtags=parseHashtags(hashtagRaw);
       try{
         let imageUrl='';if(selectedFile)imageUrl=await uploadImage(selectedFile);
         const existing=await sbGet('nap_entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');
@@ -820,7 +821,7 @@
       const entryId=document.getElementById('del-entry-id').value,name=document.getElementById('del-name').value.trim(),reason=document.getElementById('del-reason').value.trim();
       if(!name){showDelStatus('error','Your name is required.');return;}if(!reason){showDelStatus('error','Please provide a reason.');return;}
       const btn=document.getElementById('del-submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
-      const isCode=name.toLowerCase()===CODENAME.toLowerCase();
+      const isCode=normalizeCode(name)===normalizeCode(CODENAME);
       try{
         await sbPatch('nap_entries',`id=eq.${entryId}`,{hidden:true});
         if(isCode){await sbDelete('nap_entries',`id=eq.${entryId}`);showDelStatus('success','✅ Entry removed immediately.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500);}
@@ -853,7 +854,7 @@
     document.getElementById('edit-submit-btn').addEventListener('click',async()=>{
       const entryId=document.getElementById('edit-entry-id').value,subject=document.getElementById('edit-subject').value.trim(),text=document.getElementById('edit-text').value.trim(),submitter=document.getElementById('edit-submitter').value.trim(),anonymous=document.getElementById('edit-anonymous').checked,hashtagRaw=document.getElementById('edit-hashtags').value.trim(),existingImg=document.getElementById('edit-existing-image').value,origSubject=document.getElementById('edit-orig-subject').value,origText=document.getElementById('edit-orig-text').value,origTagsStr=document.getElementById('edit-orig-hashtags').value;
       if(!subject){showEditStatus('error','Sleeper name required.');return;}if(!submitter){showEditStatus('error','Your name is required.');return;}
-      if(submitter.toLowerCase()==='meanwhirls'&&submitter.toLowerCase()!==CODENAME.toLowerCase()){showEditStatus('error','Nice try. You are NOT a real MeanWhirl. You definitely cannot whirl with us now. 💅');return;}
+      if(submitter.trim().toLowerCase()==='meanwhirls'&&normalizeCode(submitter)!==normalizeCode(CODENAME)){showEditStatus('error','Nice try. You are NOT a real MeanWhirl. You definitely cannot whirl with us now. 💅');return;}
       if(await isBlocked()){showEditStatus('error','Your access has been restricted.');return;}
       const btn=document.getElementById('edit-submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
       const hashtags=parseHashtags(hashtagRaw),origTags=origTagsStr?origTagsStr.split(' ').filter(Boolean):[],displayAuthor=anonymous?'Anonymous':submitter;
@@ -862,7 +863,7 @@
       if(nothingChanged){showEditStatus('error','No changes detected.');btn.disabled=false;btn.innerHTML='Submit Edit for Review';return;}
       try{
         let imageUrl=existingImg;if(editImageFile)imageUrl=await uploadImage(editImageFile);
-        const isCode=submitter.toLowerCase()===CODENAME.toLowerCase();
+        const isCode=normalizeCode(submitter)===normalizeCode(CODENAME);
         if(isCode||onlyTagsChanged){const patch={hashtags};if(!onlyTagsChanged){patch.subject=subject;patch.text=text;patch.image_url=imageUrl;}if(isCode){patch.display_author='MeanWhirls';patch.is_mean_whirls=true;}await sbPatch('nap_entries',`id=eq.${entryId}`,patch);showEditStatus('success',onlyTagsChanged?'✅ Hashtags updated!':'😴 Mean Whirls edit applied!');setTimeout(()=>{closeEditModal();loadEntries();},1500);}
         else{await sbPost('nap_pending_edits',{entry_id:entryId,subject,text,image_url:imageUrl,submitter,display_author:displayAuthor,hashtags});await recordName(submitter);await logActivity('edit',entryId,`Nap edit submitted`);showEditStatus('success','✅ Edit submitted for review!');setTimeout(closeEditModal,3000);}
       }catch(err){showEditStatus('error','Something went wrong: '+err.message);}
