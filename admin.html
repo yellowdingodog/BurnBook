@@ -266,7 +266,7 @@
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>IP Hash</th><th>Names Used</th><th>Admin</th><th>Vote Weight</th><th>Status</th><th>🎵 Rolled</th><th>Last Seen</th><th>Actions</th></tr></thead>
+          <thead><tr><th>IP Hash</th><th>Names Used</th><th>Admin</th><th>Vote Weight</th><th>Status</th><th>🎵 Rolled</th><th>Admin Note</th><th>Last Seen</th><th>Actions</th></tr></thead>
           <tbody id="tb-ips"></tbody>
         </table>
       </div>
@@ -853,7 +853,8 @@
           <td>${adminBadge}</td>
           <td style="min-width:140px">${weightInput}</td>
           <td>${statusBadge}</td>
-          <td style="text-align:center;font-size:1rem">${p.rickrolled ? '🎵' : ''}</td>
+          <td style="text-align:center;font-size:1rem">${p.rickrolled ? `<span title="Has been rickrolled">🎵</span> <button class="btn-a ar" style="font-size:0.6rem;padding:0.15rem 0.4rem" onclick="unRickroll('${p.ip_hash}')">↺ Re-roll</button>` : '<span style="color:var(--muted);font-size:.75rem">—</span>'}</td>
+          <td style="min-width:160px"><input type="text" value="${esc(p.admin_note||'')}" placeholder="Who is this?" style="width:100%;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.28rem 0.5rem;font-family:Raleway,sans-serif;font-size:0.75rem;color:var(--ink);background:var(--cream);outline:none;" id="note-${p.ip_hash.replace(/[^a-z0-9]/gi,'_')}" onblur="saveIpNote('${p.ip_hash}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" /></td>
           <td style="font-size:.74rem;color:var(--muted)">${p.last_seen?new Date(p.last_seen).toLocaleString():'-'}</td>
           <td style="min-width:240px">${blockBtn} ${adminBtn} ${actBtn} <button class="btn-a add" onclick="deleteIpData('${p.ip_hash}')">🗑 Delete Data</button></td>`;
         tb.appendChild(tr);
@@ -867,6 +868,21 @@
         showToast(block ? '⛔ User blocked.' : '✅ User unblocked.');
         loadIpProfiles();
       } catch(err) { alert('Failed: '+err.message); }
+    }
+
+    async function saveIpNote(ipHash, note) {
+      try {
+        await sbPatch('ip_profiles', `ip_hash=eq.${ipHash}`, { admin_note: note });
+        showToast('Note saved.');
+      } catch(err) { alert('Failed: ' + err.message); }
+    }
+
+    async function unRickroll(ipHash) {
+      try {
+        await sbPatch('ip_profiles', `ip_hash=eq.${ipHash}`, { rickrolled: false });
+        showToast('🎵 They will be rickrolled again on next visit.');
+        loadIpProfiles();
+      } catch(err) { alert('Failed: ' + err.message); }
     }
 
     async function toggleAdmin(ipHash, grant) {
