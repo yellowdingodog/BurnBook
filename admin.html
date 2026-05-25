@@ -383,6 +383,20 @@
 
     // ── Utils ─────────────────────────────────────────────────
 
+
+    // ── Delete file from storage ──────────────────────────────
+    async function deleteStorageFile(imageUrl) {
+      if (!imageUrl) return;
+      try {
+        const prefix = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
+        if (!imageUrl.startsWith(prefix)) return;
+        const path = imageUrl.slice(prefix.length);
+        await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+          method: 'DELETE',
+          headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
+        });
+      } catch(e) {} // non-fatal — log nothing, carry on
+    }
     // ── Image resize before upload ────────────────────────────
     async function resizeImage(file, maxDim=1920, quality=0.82) {
       return new Promise((resolve) => {
@@ -569,7 +583,7 @@
         });
       } catch(err){tb.innerHTML=emptyRow(8,'Failed: '+err.message);}
     }
-    async function acceptEdit(jsonStr){ const ed=JSON.parse(jsonStr); try{const patch={subject:ed.subject,text:ed.text,image_url:ed.image_url,display_author:ed.display_author};if(ed.hashtags)patch.hashtags=ed.hashtags;await sbPatch('entries',`id=eq.${ed.entry_id}`,patch);await sbDelete('pending_edits',`id=eq.${ed.id}`);showToast('Edit accepted.');loadEdits();loadEntries();}catch(err){alert('Failed: '+err.message);} }
+    async function acceptEdit(jsonStr){ const ed=JSON.parse(jsonStr); try{const _orig=await sbGet('entries',`id=eq.${ed.entry_id}&select=image_url`);const patch={subject:ed.subject,text:ed.text,image_url:ed.image_url,display_author:ed.display_author};if(ed.hashtags)patch.hashtags=ed.hashtags;if(ed.image_url&&_orig[0]?.image_url&&ed.image_url!==_orig[0].image_url)await deleteStorageFile(_orig[0].image_url);await sbPatch('entries',`id=eq.${ed.entry_id}`,patch);await sbDelete('pending_edits',`id=eq.${ed.id}`);showToast('Edit accepted.');loadEdits();loadEntries();}catch(err){alert('Failed: '+err.message);} }
     async function rejectEdit(id){ try{await sbDelete('pending_edits',`id=eq.${id}`);showToast('Edit rejected.');loadEdits();}catch(err){alert('Failed: '+err.message);} }
 
     // ── VICTIM STATEMENTS ─────────────────────────────────────
@@ -670,7 +684,7 @@
       try{
         if(decision==='approve')        await sbPatch('entries',`id=eq.${id}`,{status:'approved',hidden:false});
         else if(decision==='unapprove') await sbPatch('entries',`id=eq.${id}`,{status:'pending'});
-        else                            await sbDelete('entries',`id=eq.${id}`);
+        else{const _e=await sbGet('entries',`id=eq.${id}&select=image_url`);if(_e[0]?.image_url)await deleteStorageFile(_e[0].image_url);await sbDelete('entries',`id=eq.${id}`);}
         loadEntries();
       }catch(err){alert('Failed: '+err.message);}
     }
@@ -716,7 +730,7 @@
       const btn=document.querySelector('#entry-edit-panel .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
       try{
         let imageUrl=existingImg;
-        if(editImageFile){const resized=await resizeImage(editImageFile);imageUrl=await uploadImage(resized);}
+        if(editImageFile){const resized=await resizeImage(editImageFile);imageUrl=await uploadImage(resized);if(existingImg)await deleteStorageFile(existingImg);}
         await sbPatch('entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});
         showEpMsg('success','✅ Saved!');
         setTimeout(()=>{document.getElementById('entry-edit-panel').innerHTML='';loadEntries();},1200);
@@ -949,7 +963,7 @@
         });
       }catch(err){tb.innerHTML=emptyRow(5,'Failed: '+err.message);}
     }
-    async function napDeleteEntry(entryId,reqId){if(!confirm('Permanently delete this nap entry?'))return;try{await sbDelete('nap_entries',`id=eq.${entryId}`);await sbDelete('nap_deletion_requests',`id=eq.${reqId}`);showToast('Entry deleted.');loadNapRemovals();loadNapEntries();}catch(err){alert('Failed: '+err.message);}}
+    async function napDeleteEntry(entryId,reqId){if(!confirm('Permanently delete this nap entry?'))return;try{const _e=await sbGet('nap_entries',`id=eq.${entryId}&select=image_url`);if(_e[0]?.image_url)await deleteStorageFile(_e[0].image_url);await sbDelete('nap_entries',`id=eq.${entryId}`);await sbDelete('nap_deletion_requests',`id=eq.${reqId}`);showToast('Entry deleted.');loadNapRemovals();loadNapEntries();}catch(err){alert('Failed: '+err.message);}}
     async function napRestoreEntry(entryId,reqId){try{await sbPatch('nap_entries',`id=eq.${entryId}`,{hidden:false});await sbDelete('nap_deletion_requests',`id=eq.${reqId}`);showToast('Entry restored.');loadNapRemovals();loadNapEntries();}catch(err){alert('Failed: '+err.message);}}
 
     async function loadNapEdits(){
@@ -970,7 +984,7 @@
         });
       }catch(err){tb.innerHTML=emptyRow(8,'Failed: '+err.message);}
     }
-    async function acceptNapEdit(jsonStr){const ed=JSON.parse(jsonStr);try{const patch={subject:ed.subject,text:ed.text,image_url:ed.image_url,display_author:ed.display_author};if(ed.hashtags)patch.hashtags=ed.hashtags;await sbPatch('nap_entries',`id=eq.${ed.entry_id}`,patch);await sbDelete('nap_pending_edits',`id=eq.${ed.id}`);showToast('Edit accepted.');loadNapEdits();loadNapEntries();}catch(err){alert('Failed: '+err.message);}}
+    async function acceptNapEdit(jsonStr){const ed=JSON.parse(jsonStr);try{const _orig=await sbGet('nap_entries',`id=eq.${ed.entry_id}&select=image_url`);const patch={subject:ed.subject,text:ed.text,image_url:ed.image_url,display_author:ed.display_author};if(ed.hashtags)patch.hashtags=ed.hashtags;if(ed.image_url&&_orig[0]?.image_url&&ed.image_url!==_orig[0].image_url)await deleteStorageFile(_orig[0].image_url);await sbPatch('nap_entries',`id=eq.${ed.entry_id}`,patch);await sbDelete('nap_pending_edits',`id=eq.${ed.id}`);showToast('Edit accepted.');loadNapEdits();loadNapEntries();}catch(err){alert('Failed: '+err.message);}}
     async function rejectNapEdit(id){try{await sbDelete('nap_pending_edits',`id=eq.${id}`);showToast('Edit rejected.');loadNapEdits();}catch(err){alert('Failed: '+err.message);}}
 
     async function loadNapDefenses(){
@@ -1042,7 +1056,7 @@
       try{
         if(decision==='approve')        await sbPatch('nap_entries',`id=eq.${id}`,{status:'approved',hidden:false});
         else if(decision==='unapprove') await sbPatch('nap_entries',`id=eq.${id}`,{status:'pending'});
-        else                            await sbDelete('nap_entries',`id=eq.${id}`);
+        else{const _e=await sbGet('nap_entries',`id=eq.${id}&select=image_url`);if(_e[0]?.image_url)await deleteStorageFile(_e[0].image_url);await sbDelete('nap_entries',`id=eq.${id}`);}
         loadNapEntries();
       }catch(err){alert('Failed: '+err.message);}
     }

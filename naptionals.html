@@ -471,6 +471,20 @@
     };
 
 
+
+    // ── Delete file from storage ──────────────────────────────
+    async function deleteStorageFile(imageUrl) {
+      if (!imageUrl) return;
+      try {
+        const prefix = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
+        if (!imageUrl.startsWith(prefix)) return;
+        const path = imageUrl.slice(prefix.length);
+        await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+          method: 'DELETE',
+          headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
+        });
+      } catch(e) {} // non-fatal — log nothing, carry on
+    }
     // ── Image resize before upload ────────────────────────────
     async function resizeImage(file, maxDim=1920, quality=0.82) {
       return new Promise((resolve) => {
@@ -852,7 +866,7 @@
       const isCode=normalizeCode(name)===normalizeCode(CODENAME);
       try{
         await sbPatch('nap_entries',`id=eq.${entryId}`,{hidden:true});
-        if(isCode){await sbDelete('nap_entries',`id=eq.${entryId}`);showDelStatus('success','✅ Entry removed immediately.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500);}
+        if(isCode){const _delNap=allEntries.find(e=>e.id===entryId);if(_delNap?.image_url)await deleteStorageFile(_delNap.image_url);await sbDelete('nap_entries',`id=eq.${entryId}`);showDelStatus('success','✅ Entry removed immediately.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500);}
         else{await sbPost('nap_deletion_requests',{entry_id:entryId,reason});showDelStatus('success','✅ Request submitted. Entry hidden while we review. Thank you.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},2500);}
       }catch(err){showDelStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='Submit Removal Request';
@@ -892,7 +906,7 @@
       try{
         let imageUrl=existingImg;if(editImageFile){const resized=await resizeImage(editImageFile);imageUrl=await uploadImage(resized);}
         const isCode=normalizeCode(submitter)===normalizeCode(CODENAME);
-        if(isCode||onlyTagsChanged){const patch={hashtags};if(!onlyTagsChanged){patch.subject=subject;patch.text=text;patch.image_url=imageUrl;}if(isCode){patch.display_author='MeanWhirls';patch.is_mean_whirls=true;}await sbPatch('nap_entries',`id=eq.${entryId}`,patch);showEditStatus('success',onlyTagsChanged?'✅ Hashtags updated!':'😴 Mean Whirls edit applied!');setTimeout(()=>{closeEditModal();loadEntries();},1500);}
+        if(isCode||onlyTagsChanged){const patch={hashtags};if(!onlyTagsChanged){patch.subject=subject;patch.text=text;patch.image_url=imageUrl;if(editImageFile&&existingImg)await deleteStorageFile(existingImg);}if(isCode){patch.display_author='MeanWhirls';patch.is_mean_whirls=true;}await sbPatch('nap_entries',`id=eq.${entryId}`,patch);showEditStatus('success',onlyTagsChanged?'✅ Hashtags updated!':'😴 Mean Whirls edit applied!');setTimeout(()=>{closeEditModal();loadEntries();},1500);}
         else{await sbPost('nap_pending_edits',{entry_id:entryId,subject,text,image_url:imageUrl,submitter,display_author:displayAuthor,hashtags});await recordName(submitter);await logActivity('edit',entryId,`Nap edit submitted`);showEditStatus('success','✅ Edit submitted for review!');setTimeout(closeEditModal,3000);}
       }catch(err){showEditStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='Submit Edit for Review';
