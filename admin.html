@@ -343,7 +343,7 @@
       <div class="section-hdr"><span class="section-title">✉️ Admin Messages</span><button class="refresh-btn" onclick="loadContactMessages()">↺ Refresh</button></div>
       <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Messages sent by visitors via the "Contact Admins" button on any entry. Click <strong>Mark Read</strong> to dismiss.</div>
       <div class="tbl-wrap">
-        <table><thead><tr><th>When</th><th>Type</th><th>Entry</th><th>Subject</th><th>Message</th><th>IP Hash</th><th>Names</th><th>Actions</th></tr></thead>
+        <table><thead><tr><th>When</th><th>Type</th><th>Entry</th><th>Subject</th><th>Message</th><th>IP Hash</th><th>Names</th><th>Admin Notes</th><th>Actions</th></tr></thead>
         <tbody id="tb-contact"></tbody></table>
       </div>
     </div>
@@ -1144,6 +1144,10 @@
             <td style="max-width:220px;font-size:.8rem">${esc(m.message)}</td>
             <td style="font-size:.74rem;font-family:monospace;color:var(--muted)">${esc(m.ip_hash)}</td>
             <td style="font-size:.78rem">${esc(nameMap[m.ip_hash]||'—')}</td>
+            <td style="min-width:180px">
+              <textarea id="notes-${m.id}" style="width:100%;min-height:55px;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.3rem 0.5rem;font-family:Raleway,sans-serif;font-size:0.75rem;color:var(--ink);background:var(--cream);resize:vertical;outline:none;" placeholder="Add notes...">${esc(m.notes||'')}</textarea>
+              <button class="btn-a ae" style="margin-top:0.25rem;font-size:0.62rem;padding:0.2rem 0.5rem" onclick="saveNotes('${m.id}')">💾 Save</button>
+            </td>
             <td style="white-space:nowrap">
               ${!m.read ? `<button class="btn-a aac" onclick="markMsgRead('${m.id}')">✓ Mark Read</button>` : '<span style="font-size:.72rem;color:var(--muted)">Read</span>'}
               <button class="btn-a ar" onclick="deleteMsg('${m.id}')">✕</button>
@@ -1156,6 +1160,17 @@
     async function markMsgRead(id) {
       try { await sbPatch('contact_messages', `id=eq.${id}`, { read: true }); loadContactMessages(); }
       catch(err) { alert('Failed: ' + err.message); }
+    }
+    async function saveNotes(id) {
+      const el = document.getElementById('notes-'+id);
+      if (!el) return;
+      try {
+        await sbPatch('contact_messages', `id=eq.${id}`, { notes: el.value, read: true });
+        showToast('Notes saved.');
+        // Refresh badge count without full reload
+        const msgs = await sbGet('contact_messages', 'select=read');
+        setBadge('cnt-contact', msgs.filter(m => !m.read).length);
+      } catch(err) { alert('Failed: ' + err.message); }
     }
     async function deleteMsg(id) {
       if (!confirm('Delete this message?')) return;
