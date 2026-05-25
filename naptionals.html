@@ -479,11 +479,16 @@
         const prefix = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
         if (!imageUrl.startsWith(prefix)) return;
         const path = imageUrl.slice(prefix.length);
-        await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+        await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}`, {
           method: 'DELETE',
-          headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON,
+            'Authorization': 'Bearer ' + SUPABASE_ANON
+          },
+          body: JSON.stringify({ prefixes: [path] })
         });
-      } catch(e) {} // non-fatal — log nothing, carry on
+      } catch(e) {} // non-fatal
     }
     // ── Image resize before upload ────────────────────────────
     async function resizeImage(file, maxDim=1920, quality=0.82) {
