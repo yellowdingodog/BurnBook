@@ -6,7 +6,7 @@
   <title>Mean Whirls — Naptionals 2026</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Raleway:wght@300;400;500;600&family=Permanent+Marker&family=Lilita+One&display=swap" rel="stylesheet" />
   <style>
     :root {
       --navy:#0d1b2a; --navy2:#1b2d3f; --steel:#2c4a6e; --sky:#4a90c4;
@@ -20,19 +20,47 @@
       background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");}
 
     /* ── Hero ── */
-    .hero{background:linear-gradient(135deg,#060d14 0%,#0d1b2a 40%,#1b2d3f 100%);padding:3rem 2rem 2.5rem;text-align:center;position:relative;overflow:hidden;border-bottom:3px solid var(--gold);}
-    .hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(74,144,196,0.2) 0%,transparent 70%);pointer-events:none;}
-    .hero-eyebrow{font-size:0.7rem;font-weight:600;letter-spacing:0.35em;text-transform:uppercase;color:var(--gold);margin-bottom:0.75rem;}
-    .hero-zzz{font-size:clamp(1.5rem,4vw,2.5rem);letter-spacing:0.2em;color:var(--sky);margin-bottom:0.5rem;animation:zzz 3s ease-in-out infinite;}
+    .hero{
+      position:relative;overflow:hidden;border-bottom:none;
+      background:#b8cfe0;
+      padding:2rem 2rem 1.75rem;text-align:center;
+    }
+    .hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(255,255,255,0.25) 0%,transparent 70%);pointer-events:none;}
+    .hero-logo{display:inline-block;cursor:pointer;margin-bottom:0.25rem;
+      background:#1b2d3f;
+      border-radius:6px;padding:6px 12px;
+      box-shadow:0 4px 18px rgba(0,20,40,0.45);}
+    .hero-logo img{max-width:min(340px,60vw);height:auto;display:block;margin:0 auto;}
+    .hero-subtitle{font-family:'Permanent Marker',cursive;
+      font-size:clamp(0.92rem,2vw,1.2rem);font-weight:400;
+      color:#1b2d3f;margin-top:0.5rem;letter-spacing:0.06em;
+      display:block;text-align:center;}
+    .hero-subtitle span{
+      background:rgba(200,225,245,0.72);
+      display:inline-block;padding:0.25rem 1.25rem;border-radius:20px;
+      backdrop-filter:blur(2px);border:1.5px solid #2c4a6e;}
+    .hero-eyebrow{font-size:0.78rem;font-weight:800;letter-spacing:0.3em;text-transform:uppercase;
+      color:#0d1b2a;margin-bottom:0.5rem;
+      display:block;text-align:center;}
+    .hero-eyebrow span{
+      background:rgba(200,225,245,0.72);
+      display:inline-block;padding:0.25rem 1.1rem;border-radius:20px;
+      backdrop-filter:blur(2px);border:1.5px solid #2c4a6e;}
+    .hero-zzz{font-size:clamp(1.5rem,4vw,2.5rem);letter-spacing:0.2em;color:#2c4a6e;margin-bottom:0.5rem;
+      animation:zzz 3s ease-in-out infinite;position:relative;z-index:1;
+      text-shadow:0 1px 3px rgba(255,255,255,0.5);}
+    .hero-title-wrap{display:inline-block;cursor:pointer;margin:0.25rem 0;
+      background:#0d1b2a;
+      border-radius:6px;padding:6px 20px 10px;
+      box-shadow:0 4px 18px rgba(0,20,40,0.5);}
+    .hero-title{font-family:'Lilita One',cursive;font-size:clamp(3rem,10vw,6rem);color:#fff;line-height:1;text-shadow:0 0 40px rgba(74,144,196,0.6),2px 4px 8px rgba(0,0,0,0.4);position:relative;z-index:1;letter-spacing:0.05em;display:block;}
+    .hero-title span{color:#5ba4d4;}
     @keyframes zzz{0%,100%{opacity:0.4;transform:translateY(0)}50%{opacity:1;transform:translateY(-6px)}}
-    .hero-title{font-family:'Pinyon Script',cursive;font-size:clamp(4rem,12vw,8rem);color:#fff;line-height:0.9;text-shadow:0 0 60px rgba(74,144,196,0.5),2px 4px 12px rgba(0,0,0,0.6);position:relative;z-index:1;cursor:pointer;}
-    .hero-title span{color:var(--sky);}
-    .hero-subtitle{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(0.85rem,2vw,1.1rem);color:rgba(255,255,255,0.55);margin-top:1rem;letter-spacing:0.08em;}
-    .hero-divider{display:flex;align-items:center;justify-content:center;gap:1rem;margin-top:1.5rem;}
-    .hero-divider::before,.hero-divider::after{content:'';flex:1;max-width:120px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+    .hero-divider{display:none;}
+    .hero-divider::before,.hero-divider::after{content:'';}
 
     /* ── Nav ── */
-    .nav{display:flex;justify-content:center;flex-wrap:wrap;background:var(--navy);border-bottom:2px solid var(--gold);}
+    .nav{display:flex;justify-content:center;flex-wrap:wrap;background:var(--navy);border-top:3px solid var(--steel);border-bottom:3px solid var(--steel);}
     .nav button{background:none;border:none;padding:0.85rem 1.25rem;font-family:'Raleway',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.6);cursor:pointer;transition:all 0.2s;border-bottom:3px solid transparent;position:relative;top:2px;}
     .nav button:hover{color:#fff;}
     .nav button.active{color:#fff;border-bottom-color:var(--gold);}
@@ -40,15 +68,29 @@
     /* ── Main ── */
     .main{max-width:1100px;margin:0 auto;padding:3rem 1.5rem;}
     .tab-panel{display:none;} .tab-panel.active{display:block;}
-    .section-title{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--steel);margin-bottom:0.3rem;}
+    .section-title{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:#1b2d3f;margin-bottom:0.3rem;}
+    .section-header-box{
+      background:rgba(180,210,235,0.38);
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+      border:1.5px solid rgba(44,74,110,0.25);
+      border-radius:4px;
+      padding:0.85rem 1.25rem 0.75rem;
+      margin-bottom:1.5rem;
+      position:relative;
+    }
+    .section-header-box::before,.section-header-box::after{
+      content:'';position:absolute;left:1.25rem;right:1.25rem;height:2px;
+      background:linear-gradient(90deg,transparent,#2c4a6e,transparent);
+    }
+    .section-header-box::before{top:0;}
+    .section-header-box::after{bottom:0;}
     .section-sub{font-size:0.8rem;color:var(--muted);letter-spacing:0.05em;margin-bottom:1.25rem;}
 
     /* Filter */
-    .filter-bar{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.75rem;align-items:center;}
-    .filter-tag{background:var(--blush);border:1.5px solid rgba(44,74,110,0.2);border-radius:20px;padding:0.3rem 0.85rem;font-size:0.72rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all 0.2s;}
-    .filter-tag:hover,.filter-tag.active{background:var(--steel);border-color:var(--steel);color:#fff;}
-    .filter-clear{font-size:0.7rem;color:var(--muted);cursor:pointer;text-decoration:underline;}
-    .filter-clear:hover{color:var(--steel);}
+    .filter-bar{display:flex;gap:0.75rem;margin-bottom:1.75rem;align-items:center;flex-wrap:wrap;}
+    .filter-select{border:1.5px solid rgba(44,74,110,0.3);border-radius:20px;padding:0.35rem 1rem;font-family:'Raleway',sans-serif;font-size:0.78rem;font-weight:600;color:#1b2d3f;background:rgba(180,210,235,0.35);outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;padding-right:2rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%232c4a6e'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 0.75rem center;}
+    .filter-clear{font-size:0.72rem;color:var(--muted);cursor:pointer;text-decoration:underline;background:none;border:none;font-family:'Raleway',sans-serif;padding:0;}
+    .filter-tag{display:none;}
 
     /* Grid */
     .entries-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;}
@@ -254,16 +296,14 @@
 </head>
 <body>
   <header class="hero">
-    <p class="hero-eyebrow">2026 Whirlyball Nationals</p>
+    <p class="hero-eyebrow"><span>2026 Whirlyball Nationals</span></p>
     <div class="hero-zzz">z z z</div>
-    <h1 class="hero-title" onclick="goHome()">Nap<span>tionals</span></h1>
-    <p class="hero-subtitle">If you snooze, you lose — your dignity.</p>
-
-    <div class="hero-divider"></div>
+    <div class="hero-title-wrap" onclick="goHome()"><h1 class="hero-title">Nap<span>tionals</span></h1></div>
+    <p class="hero-subtitle"><span>If you snooze, you lose — your dignity.</span></p>
   </header>
 
   <nav class="nav">
-    <a href="index.html" class="nav-btn" style="text-decoration:none;display:inline-flex;align-items:center">📖 Burn Book</a>
+    <a href="index.html" class="nav-btn" style="text-decoration:none;display:inline-flex;align-items:center;color:rgba(255,255,255,0.7);">📖 BURN BOOK</a>
     <button class="nav-btn active" data-tab="book">😴 The Nap Wall</button>
     <button class="nav-btn" data-tab="hot">🏆 Hall of Shame</button>
     <button class="nav-btn" data-tab="submit">📸 Caught One!</button>
@@ -274,14 +314,16 @@
     <!-- NAP WALL -->
     <div id="tab-book" class="tab-panel active">
       <div id="book-grid-view">
-        <div style="margin-bottom:1rem">
+        <div class="section-header-box">
           <h2 class="section-title">The Nap Wall</h2>
           <p class="section-sub">Caught sleeping at Nationals. These heroes deserve recognition.</p>
         </div>
         <div id="filter-bar" class="filter-bar" style="display:none">
-          <span style="font-size:0.72rem;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase">Filter:</span>
-          <span id="filter-tags"></span>
-          <span class="filter-clear" id="filter-clear" style="display:none" onclick="clearFilter()">✕ clear</span>
+          <span style="font-size:0.72rem;font-weight:600;color:#1b2d3f;letter-spacing:0.08em;text-transform:uppercase">Filter by tag:</span>
+          <select class="filter-select" id="filter-select" onchange="setFilterFromSelect(this.value)">
+            <option value="">— All entries —</option>
+          </select>
+          <button class="filter-clear" id="filter-clear" style="display:none" onclick="clearFilter()">✕ clear</button>
         </div>
         <div id="entries-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
       </div>
@@ -541,40 +583,6 @@
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
     const normalizeCode = s => s.toLowerCase().replace(/\s+/g,' ').trim();
     const arraysEqual = (a,b) => a.length===b.length&&[...a].sort().join()===([...b]).sort().join();
-
-    // ── Taco Bell bong 🔔 ─────────────────────────────────────
-    function tacoBellDing() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const now = ctx.currentTime;
-        // Bell partials: [frequency multiplier, relative gain, decay time]
-        const partials = [
-          [1.0,   0.6,  2.4],   // fundamental ~587 Hz
-          [2.756, 0.25, 1.6],   // minor 7th partial (bell inharmonicity)
-          [5.404, 0.12, 0.9],   // higher partial
-          [8.933, 0.05, 0.5],   // shimmer
-        ];
-        const fundamental = 587;
-        const master = ctx.createGain();
-        master.gain.setValueAtTime(1, now);
-        master.connect(ctx.destination);
-        partials.forEach(([mult, amp, decay]) => {
-          const osc  = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(fundamental * mult, now);
-          // Slight frequency drop for bell-like quality
-          osc.frequency.exponentialRampToValueAtTime(fundamental * mult * 0.997, now + 0.3);
-          gain.gain.setValueAtTime(0, now);
-          gain.gain.linearRampToValueAtTime(amp, now + 0.008);  // sharp attack
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + decay);
-          osc.connect(gain);
-          gain.connect(master);
-          osc.start(now);
-          osc.stop(now + decay + 0.1);
-        });
-      } catch(e) {}
-    }
     const showToast = msg => { const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); };
 
     function makeBadgeMW() {
@@ -624,7 +632,12 @@
     function goHome(){document.querySelector('.nav-btn[data-tab="book"]').click();}
 
     // ── Filter ────────────────────────────────────────────────
-    function setFilter(tag){activeFilter=tag;document.getElementById('filter-clear').style.display=tag?'inline':'none';document.querySelectorAll('.filter-tag').forEach(el=>el.classList.toggle('active',el.dataset.tag===tag));renderEntries(tag?allEntries.filter(e=>(e.hashtags||[]).includes(tag)):allEntries,window._defMap,window._ccMap);}
+    function setFilter(tag){
+      activeFilter=tag;
+      document.getElementById('filter-clear').style.display=tag?'inline':'none';
+      const sel=document.getElementById('filter-select');if(sel)sel.value=tag||'';
+      renderEntries(tag?allEntries.filter(e=>(e.hashtags||[]).includes(tag)):allEntries,window._defMap,window._ccMap);
+    }
     function clearFilter(){setFilter(null);}
     function buildFilterBar(entries){const counts={};entries.forEach(e=>(e.hashtags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;}));const tags=Object.keys(counts).sort();const bar=document.getElementById('filter-bar');const wrap=document.getElementById('filter-tags');if(!tags.length){bar.style.display='none';return;}bar.style.display='flex';wrap.innerHTML='';tags.forEach(tag=>{const el=document.createElement('span');el.className='filter-tag';el.dataset.tag=tag;el.textContent=`${tag} (${counts[tag]})`;el.addEventListener('click',()=>setFilter(activeFilter===tag?null:tag));wrap.appendChild(el);});}
 
@@ -884,7 +897,7 @@
         const nextOrder=((existing[0]?.ui_order)||0)+1;
         const _subIp=await getIpHash();await sbPost('nap_entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp});
         await recordName(submitter);await logActivity('submit',null,`Submitted nap entry: "${subject}"`);
-        showStatus('success',isCode?'😴 Mean Whirls nap posted!':'✅ Submitted! Appears after moderation.');tacoBellDing();
+        showStatus('success',isCode?'😴 Mean Whirls nap posted!':'✅ Submitted! Appears after moderation.');
         resetSubmitForm();
       }catch(err){showStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='😴 Submit to the Nap Wall';
