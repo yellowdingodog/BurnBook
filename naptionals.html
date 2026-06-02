@@ -293,6 +293,7 @@
       .nav button{padding:0.75rem 0.85rem;font-size:0.62rem;}
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <header class="hero">
@@ -307,6 +308,7 @@
     <button class="nav-btn active" data-tab="book">😴 The Nap Wall</button>
     <button class="nav-btn" data-tab="hot">🏆 Hall of Shame</button>
     <button class="nav-btn" data-tab="submit">📸 Caught One!</button>
+    <div id="auth-widget" style="display:flex;align-items:center;gap:0.5rem;padding:0 0.75rem;margin-left:auto;"></div>
   </nav>
 
   <main class="main">
@@ -426,7 +428,6 @@
   <footer class="footer">
     <strong>Mean Whirls</strong> &mdash; Naptionals 2026 &nbsp;|&nbsp; Sleep is for the weak. Or the champions. &nbsp;😴
     &nbsp;&nbsp;·&nbsp;&nbsp;<a href="index.html">Burn Book</a>
-    &nbsp;&nbsp;·&nbsp;&nbsp;<a href="admin.html">Admin</a>
   </footer>
 
   <!-- Edit Modal -->
@@ -490,6 +491,7 @@
     const SUPABASE_URL  = 'https://dhguaomtjclcldkkhlmt.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZ3Vhb210amNsY2xka2tobG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MjI5MzQsImV4cCI6MjA5NDI5ODkzNH0.hfaNxo9m1Tkpn8pIVoyTXcIRhf9jbpkTlw0kTpn6gyY';
     const BUCKET = 'burnbook-images';
+    const getSb = () => window._sb;
 
     let CODENAME = 'BananaDuck', BADGE_ICON_URL = '';
     let PLACEHOLDER_EMOJI = '😴', PLACEHOLDER_IMAGE_URL = '';
@@ -569,14 +571,21 @@
     async function getIpProfile() {
       if(_ipProfile)return _ipProfile;
       const ip=await getIpHash();
-      try { const rows=await sbGet('ip_profiles',`ip_hash=eq.${ip}`); if(rows.length){_ipProfile=rows[0];}else{const c=await sbPost('ip_profiles',{ip_hash:ip,names:[],is_admin:false,is_blocked:false});_ipProfile=c[0];} }
-      catch(e){_ipProfile={ip_hash:ip,names:[],is_admin:false,is_blocked:false};}
+      try { const rows=await sbGet('ip_profiles',`ip_hash=eq.${ip}`); if(rows.length){_ipProfile=rows[0];}else{const c=await sbPost('ip_profiles',{ip_hash:ip,is_blocked:false});_ipProfile=c[0];} }
+      catch(e){_ipProfile={ip_hash:ip,is_blocked:false};}
       return _ipProfile;
     }
     async function recordName(name){ if(!name||name==='Anonymous'||name==='MeanWhirls')return; try{const ip=await getIpHash();const prof=await getIpProfile();const names=prof.names||[];if(!names.map(n=>n.toLowerCase()).includes(name.toLowerCase())){const updated=[...names,name];await sbPatch('ip_profiles',`ip_hash=eq.${ip}`,{names:updated});_ipProfile={..._ipProfile,names:updated};}}catch(e){} }
-    async function isBlocked(){ const prof=await getIpProfile(); return prof.is_blocked===true; }
+    // isBlocked: now handled by auth module
     async function logActivity(action,entryId,detail){ try{const ip=await getIpHash();await sbPost('ip_activity',{ip_hash:ip,action,entry_id:entryId||null,detail:detail||''});await sbPatch('ip_profiles',`ip_hash=eq.${ip}`,{last_seen:new Date().toISOString()});}catch(e){} }
-    async function makeNameInput(inputId){ const prof=await getIpProfile();const names=prof.names||[];const input=document.getElementById(inputId);if(!input)return;const oldDl=document.getElementById(inputId+'-dl');if(oldDl)oldDl.remove();if(names.length===1){input.value=names[0];}else if(names.length>1){input.value=names[0];const dl=document.createElement('datalist');dl.id=inputId+'-dl';names.forEach(n=>{const opt=document.createElement('option');opt.value=n;dl.appendChild(opt);});input.setAttribute('list',inputId+'-dl');input.insertAdjacentElement('afterend',dl);} }
+    async function makeNameInput(inputId){
+      const input=document.getElementById(inputId);if(!input)return;
+      if(isLoggedIn()){input.value=getDisplayName();return;}
+      const prof=await getIpProfile();const names=prof.names||[];
+      const oldDl=document.getElementById(inputId+'-dl');if(oldDl)oldDl.remove();
+      if(names.length===1){input.value=names[0];}
+      else if(names.length>1){input.value=names[0];const dl=document.createElement('datalist');dl.id=inputId+'-dl';names.forEach(n=>{const opt=document.createElement('option');opt.value=n;dl.appendChild(opt);});input.setAttribute('list',inputId+'-dl');input.insertAdjacentElement('afterend',dl);}
+    }
 
     // ── Utils ─────────────────────────────────────────────────
     const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -705,7 +714,7 @@
       else{const a=document.createElement('span');a.className='entry-author';a.innerHTML=`by <strong>${esc(entry.display_author)}</strong>`;metaEl.appendChild(a);}
       const _napProf = await getIpProfile();
       const _napIp   = await getIpHash();
-      const _napIsOwner = entry.ip_hash && entry.ip_hash === _napIp;
+      const _napIsOwner = (entry.user_id && entry.user_id === getUserId()) || (entry.ip_hash && entry.ip_hash === _napIp);
       if (_napIsOwner || _napProf.is_admin) {
         const eb=document.createElement('button');eb.className='detail-edit-btn';eb.textContent='✏️ Edit';eb.addEventListener('click',()=>openEditModal(entry));metaEl.appendChild(eb);
       }
@@ -766,8 +775,9 @@
       const msg=document.createElement('div');msg.className='defense-msg';msg.style.display='none';
       btn.addEventListener('click',async()=>{
         const text=ta.value.trim();if(!text)return;
+        if (!requireAuth('defense')) return;
         btn.disabled=true;btn.textContent='Submitting...';
-        try{await sbPost('nap_defenses',{entry_id:entryId,text,ip_hash:ipHash,status:'pending'});await logActivity('victim_statement',entryId,`Sleeper's defense for: "${currentDetailEntry?.subject||''}"`); msg.className='defense-msg ok';msg.textContent='✅ Defense submitted for moderation!';msg.style.display='block';setTimeout(()=>loadDefense(entryId,ipHash),2000);}
+        try{await sbPost('nap_defenses',{entry_id:entryId,text,ip_hash:ipHash,status:'pending',user_id:getUserId()});await logActivity('victim_statement',entryId,`Sleeper's defense for: "${currentDetailEntry?.subject||''}"`); msg.className='defense-msg ok';msg.textContent='✅ Defense submitted for moderation!';msg.style.display='block';setTimeout(()=>loadDefense(entryId,ipHash),2000);}
         catch(e){msg.className='defense-msg err';msg.textContent='Failed: '+e.message;msg.style.display='block';}
         btn.disabled=false;btn.textContent='Submit Defense';
       });
@@ -827,8 +837,9 @@
           const name=nameInput.value.trim(),text=textInput.value.trim();
           if(!name){msgEl.className='comment-msg err';msgEl.textContent='Name is required.';msgEl.style.display='block';return;}
           if(!text){msgEl.className='comment-msg err';msgEl.textContent='Comment cannot be empty.';msgEl.style.display='block';return;}
+          if (!requireAuth('comment')) return;
           submitBtn.disabled=true;submitBtn.textContent='Posting...';
-          try{await sbPost('nap_comments',{entry_id:entryId,author:name,text,ip_hash:ipHash});await recordName(name);await logActivity('comment',entryId,`Comment by ${name} on: "${currentDetailEntry?.subject||''}"`);nameInput.value='';textInput.value='';loadComments(entryId,ipHash);}
+          try{await sbPost('nap_comments',{entry_id:entryId,author:name,text,ip_hash:ipHash,user_id:getUserId()});await recordName(name);await logActivity('comment',entryId,`Comment by ${name} on: "${currentDetailEntry?.subject||''}"`);nameInput.value='';textInput.value='';loadComments(entryId,ipHash);}
           catch(e){msgEl.className='comment-msg err';msgEl.textContent='Failed: '+e.message;msgEl.style.display='block';}
           submitBtn.disabled=false;submitBtn.textContent='💬 Post Comment';
         });
@@ -895,7 +906,7 @@
         let imageUrl='';if(selectedFile){const resized=await resizeImage(selectedFile);imageUrl=await uploadImage(resized);}
         const existing=await sbGet('nap_entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');
         const nextOrder=((existing[0]?.ui_order)||0)+1;
-        const _subIp=await getIpHash();await sbPost('nap_entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp});
+        const _subIp=await getIpHash();await sbPost('nap_entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp,user_id:getUserId()});
         await recordName(submitter);await logActivity('submit',null,`Submitted nap entry: "${subject}"`);
         showStatus('success',isCode?'😴 Mean Whirls nap posted!':'✅ Submitted! Appears after moderation.');
         resetSubmitForm();
@@ -1020,34 +1031,407 @@
 
 
     // ── Rickroll ──────────────────────────────────────────────
-    async function maybeRickroll() {
-      try {
-        const ip   = await getIpHash();
-        const rows = await sbGet('ip_profiles', `ip_hash=eq.${ip}&select=rickrolled`);
-        const alreadyRolled = rows.length && rows[0].rickrolled === true;
-        if (alreadyRolled) return;
-        // Show the overlay
-        const overlay = document.getElementById('rickroll-overlay');
-        overlay.style.display = 'flex';
-        // Mark as rickrolled (fire and forget)
-        if (rows.length) {
-          sbPatch('ip_profiles', `ip_hash=eq.${ip}`, { rickrolled: true }).catch(()=>{});
-        } else {
-          sbPost('ip_profiles', { ip_hash: ip, names: [], is_admin: false, is_blocked: false, rickrolled: true }).catch(()=>{});
-        }
-      } catch(e) {}
-    }
 
-    function closeRickroll() {
-      const overlay = document.getElementById('rickroll-overlay');
-      overlay.style.display = 'none';
-      // Stop the video by clearing the iframe src
-      const frame = document.getElementById('rickroll-frame');
-      if (frame) frame.src = '';
+
+    // ── Auth ─────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════
+// SUPABASE AUTH — shared across all pages
+// Uses Supabase JS v2 CDN
+// ════════════════════════════════════════════════════════
+const LEGACY_USER_ID = '00000000-0000-0000-0000-000000000001';
+
+// Supabase client (v2)
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+window._sb = _sb; // expose for getSb()
+
+// ── Auth state ────────────────────────────────────────
+let _currentUser     = null;  // auth.users row
+let _currentProfile  = null;  // user_profiles row
+let _authReady       = false;
+let _authReadyResolve;
+const authReadyPromise = new Promise(r => _authReadyResolve = r);
+
+async function initAuth() {
+  const { data: { session } } = await getSb().auth.getSession();
+  if (session?.user) {
+    _currentUser = session.user;
+    _currentProfile = await fetchProfile(session.user.id);
+    await linkIpToAccount();
+  }
+  _authReady = true;
+  _authReadyResolve();
+
+  // Listen for changes
+  getSb().auth.onAuthStateChange(async (event, session) => {
+    if (session?.user) {
+      _currentUser = session.user;
+      _currentProfile = await fetchProfile(session.user.id);
+      if (event === 'SIGNED_IN') {
+        await linkIpToAccount();
+        await checkNeedsPassword();
+      }
+    } else {
+      _currentUser = null;
+      _currentProfile = null;
+    }
+    updateAuthUI();
+  });
+  updateAuthUI();
+}
+
+async function fetchProfile(userId) {
+  const { data } = await getSb().from('user_profiles').select('*').eq('id', userId).single();
+  return data;
+}
+
+async function checkNeedsPassword() {
+  // If profile has no password set yet (new admin account), prompt
+  if (_currentProfile && _currentProfile.needs_password) {
+    openSetPasswordModal();
+  }
+}
+
+// ── IP linking ────────────────────────────────────────
+async function linkIpToAccount() {
+  if (!_currentUser) return;
+  try {
+    const ip = await getIpHash();
+    await getSb().from('ip_account_links').upsert({ ip_hash: ip, user_id: _currentUser.id }, { onConflict: 'ip_hash,user_id' });
+    // Update last_seen
+    await getSb().from('user_profiles').update({ last_seen: new Date().toISOString() }).eq('id', _currentUser.id);
+  } catch(e) {}
+}
+
+// ── Convenience getters ───────────────────────────────
+const isLoggedIn  = () => !!_currentUser;
+const isAdmin     = () => _currentProfile?.is_admin === true;
+const isBlocked   = () => _currentProfile?.is_blocked === true;
+const getUserId   = () => _currentUser?.id || null;
+const getDisplayName = () => _currentProfile?.display_name || _currentUser?.email || 'Anonymous';
+
+// ── REST helpers (keep existing pattern) ─────────────
+
+// Auth-aware REST (includes session token when logged in)
+async function authHeaders() {
+  const { data: { session } } = await getSb().auth.getSession();
+  const token = session?.access_token || SUPABASE_ANON;
+  return { 'Content-Type':'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + token };
+}
+async function sbAuthPost(t,b) {
+  const h = await authHeaders();
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${t}`,{method:'POST',headers:{...h,'Prefer':'return=representation'},body:JSON.stringify(b)});
+  if(!r.ok)throw new Error(await r.text()); return r.json();
+}
+async function sbAuthPatch(t,p,b) {
+  const h = await authHeaders();
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...h,'Prefer':'return=representation'},body:JSON.stringify(b)});
+  if(!r.ok)throw new Error(await r.text()); return r.json();
+}
+
+// ── Sign up ───────────────────────────────────────────
+async function signUp(email, password, displayName) {
+  const { data, error } = await getSb().auth.signUp({ email, password });
+  if (error) throw error;
+  if (data.user) {
+    await getSb().from('user_profiles').insert({ id: data.user.id, display_name: displayName, is_admin: false });
+    _currentProfile = await fetchProfile(data.user.id);
+  }
+  return data;
+}
+
+// ── Sign in ───────────────────────────────────────────
+async function signIn(email, password) {
+  const { data, error } = await getSb().auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  return data;
+}
+
+// ── Sign out ──────────────────────────────────────────
+async function signOut() {
+  await getSb().auth.signOut();
+  _currentUser = null; _currentProfile = null;
+  updateAuthUI();
+}
+
+// ── Password recovery ─────────────────────────────────
+async function sendPasswordReset(email) {
+  const { error } = await getSb().auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/account.html'
+  });
+  if (error) throw error;
+}
+
+// ── Update password ───────────────────────────────────
+async function updatePassword(newPassword) {
+  const { error } = await getSb().auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
+// ── Rickroll check ────────────────────────────────────
+async function maybeRickroll() {
+  try {
+    let alreadyRolled = false;
+    if (isLoggedIn()) {
+      alreadyRolled = _currentProfile?.rickrolled === true;
+      if (!alreadyRolled) {
+        await getSb().from('user_profiles').update({ rickrolled: true }).eq('id', _currentUser.id);
+        _currentProfile = { ..._currentProfile, rickrolled: true };
+      }
+    } else {
+      // Fall back to IP-based for guests
+      const ip = await getIpHash();
+      const rows = await sbGet('ip_profiles', `ip_hash=eq.${ip}&select=rickrolled`);
+      alreadyRolled = rows.length && rows[0].rickrolled === true;
+      if (!alreadyRolled) {
+        if (rows.length) sbPatch('ip_profiles', `ip_hash=eq.${ip}`, { rickrolled: true }).catch(()=>{});
+        else sbPost('ip_profiles', { ip_hash: ip, is_blocked: false, rickrolled: true }).catch(()=>{});
+      }
+    }
+    if (!alreadyRolled) {
+      document.getElementById('rickroll-overlay').style.display = 'flex';
+    }
+  } catch(e) {}
+}
+
+function closeRickroll() {
+  document.getElementById('rickroll-overlay').style.display = 'none';
+  const frame = document.getElementById('rickroll-frame');
+  if (frame) frame.src = '';
+}
+
+// ── Auth modal (shared) ───────────────────────────────
+const AUTH_MODAL_HTML = `
+<div id="auth-modal" class="modal-overlay">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <span class="modal-title" id="auth-modal-title">Sign In</span>
+      <button class="modal-close" onclick="closeAuthModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="auth-gate-msg" style="display:none" class="modal-note"></div>
+
+      <!-- Sign In form -->
+      <div id="auth-signin-form">
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="auth-email" type="email" placeholder="your@email.com" /></div>
+        <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="auth-password" type="password" placeholder="••••••" /></div>
+        <button class="btn btn-primary" id="auth-signin-btn" onclick="handleSignIn()">💗 Sign In</button>
+        <div style="margin-top:0.75rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+          <span style="font-size:0.78rem;color:var(--muted)">No account? <a href="#" onclick="showSignupForm();return false;" style="color:var(--deep-pink)">Create one</a></span>
+          <a href="#" onclick="showForgotForm();return false;" style="font-size:0.78rem;color:var(--muted)">Forgot password?</a>
+        </div>
+        <div id="auth-signin-err" style="display:none" class="alert alert-error"></div>
+      </div>
+
+      <!-- Sign Up form -->
+      <div id="auth-signup-form" style="display:none">
+        <div class="modal-note" style="background:#fff3e0;border-color:#ff9800;color:#6d4c00;margin-bottom:1rem">
+          🙄 Fine. We get it. You need an account.<br/>
+          We promise we won't spam you. We have burns to write, not newsletters.<br/>
+          <em style="font-size:0.75rem">Also this is almost as secure as Doug's credit card processing system. So. There's that.</em>
+        </div>
+        <div class="form-group"><label class="form-label">Display Name *</label><input class="form-input" id="auth-displayname" placeholder="What should we call you?" /></div>
+        <div class="form-group"><label class="form-label">Email *</label><input class="form-input" id="auth-signup-email" type="email" placeholder="your@email.com" /></div>
+        <div class="form-group"><label class="form-label">Password *</label><input class="form-input" id="auth-signup-password" type="password" placeholder="At least 6 characters (we're not picky)" /></div>
+        <div class="form-group"><label class="form-label">Confirm Password *</label><input class="form-input" id="auth-signup-password2" type="password" placeholder="Same thing again" /></div>
+        <button class="btn btn-primary" onclick="handleSignUp()">💗 Create Account</button>
+        <div style="margin-top:0.75rem"><span style="font-size:0.78rem;color:var(--muted)">Already have one? <a href="#" onclick="showSigninForm();return false;" style="color:var(--deep-pink)">Sign in</a></span></div>
+        <div id="auth-signup-err" style="display:none" class="alert alert-error"></div>
+      </div>
+
+      <!-- Forgot password form -->
+      <div id="auth-forgot-form" style="display:none">
+        <div class="modal-note">Enter your email and we'll send you a link to reset your password. It might take a minute. We're busy.</div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="auth-forgot-email" type="email" placeholder="your@email.com" /></div>
+        <button class="btn btn-primary" onclick="handleForgotPassword()">📧 Send Reset Link</button>
+        <div style="margin-top:0.75rem"><a href="#" onclick="showSigninForm();return false;" style="font-size:0.78rem;color:var(--muted)">← Back to sign in</a></div>
+        <div id="auth-forgot-msg" style="display:none" class="alert"></div>
+      </div>
+
+      <!-- Set password form (for admin accounts with null password) -->
+      <div id="auth-setpw-form" style="display:none">
+        <div class="modal-note">Welcome! Please set your password to continue.</div>
+        <div class="form-group"><label class="form-label">New Password *</label><input class="form-input" id="auth-newpw" type="password" placeholder="At least 6 characters" /></div>
+        <div class="form-group"><label class="form-label">Confirm Password *</label><input class="form-input" id="auth-newpw2" type="password" placeholder="Same thing again" /></div>
+        <button class="btn btn-primary" onclick="handleSetPassword()">💾 Set Password</button>
+        <div id="auth-setpw-err" style="display:none" class="alert alert-error"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Set password modal (standalone) -->
+<div id="setpw-modal" class="modal-overlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header"><span class="modal-title">🔑 Create Your Password</span></div>
+    <div class="modal-body">
+      <div class="modal-note">Hey! Your account was created by an admin. Please set a password before continuing.</div>
+      <div class="form-group"><label class="form-label">New Password *</label><input class="form-input" id="setpw-pw" type="password" placeholder="At least 6 characters" /></div>
+      <div class="form-group"><label class="form-label">Confirm *</label><input class="form-input" id="setpw-pw2" type="password" /></div>
+      <button class="btn btn-primary" onclick="submitSetPassword()">💾 Set Password</button>
+      <div id="setpw-err" style="display:none" class="alert alert-error"></div>
+    </div>
+  </div>
+</div>`;
+
+function injectAuthModal() {
+  const div = document.createElement('div');
+  div.innerHTML = AUTH_MODAL_HTML;
+  document.body.appendChild(div);
+}
+
+function openAuthModal(gateMsg) {
+  const modal = document.getElementById('auth-modal');
+  if (!modal) return;
+  if (gateMsg) {
+    const el = document.getElementById('auth-gate-msg');
+    el.textContent = gateMsg; el.style.display = 'block';
+  }
+  showSigninForm();
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeAuthModal() {
+  const modal = document.getElementById('auth-modal');
+  if (modal) { modal.classList.remove('open'); document.body.style.overflow = ''; }
+}
+function showSigninForm() {
+  document.getElementById('auth-modal-title').textContent = 'Sign In';
+  document.getElementById('auth-signin-form').style.display  = 'block';
+  document.getElementById('auth-signup-form').style.display  = 'none';
+  document.getElementById('auth-forgot-form').style.display  = 'none';
+  document.getElementById('auth-setpw-form').style.display   = 'none';
+}
+function showSignupForm() {
+  document.getElementById('auth-modal-title').textContent = 'Create Account';
+  document.getElementById('auth-signin-form').style.display  = 'none';
+  document.getElementById('auth-signup-form').style.display  = 'block';
+  document.getElementById('auth-forgot-form').style.display  = 'none';
+  document.getElementById('auth-setpw-form').style.display   = 'none';
+}
+function showForgotForm() {
+  document.getElementById('auth-modal-title').textContent = 'Reset Password';
+  document.getElementById('auth-signin-form').style.display  = 'none';
+  document.getElementById('auth-signup-form').style.display  = 'none';
+  document.getElementById('auth-forgot-form').style.display  = 'block';
+  document.getElementById('auth-setpw-form').style.display   = 'none';
+}
+function openSetPasswordModal() {
+  const m = document.getElementById('setpw-modal');
+  if (m) { m.classList.add('open'); document.body.style.overflow = 'hidden'; }
+}
+
+async function handleSignIn() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pw    = document.getElementById('auth-password').value;
+  const btn   = document.getElementById('auth-signin-btn');
+  const err   = document.getElementById('auth-signin-err');
+  if (!email || !pw) { showAuthErr(err,'Email and password required.'); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Signing in...';
+  try {
+    await signIn(email, pw);
+    closeAuthModal();
+    showToast('💗 Welcome back, ' + getDisplayName() + '!');
+    if (typeof onAuthSuccess === 'function') onAuthSuccess();
+  } catch(e) { showAuthErr(err, e.message); }
+  btn.disabled = false; btn.innerHTML = '💗 Sign In';
+}
+
+async function handleSignUp() {
+  const name  = document.getElementById('auth-displayname').value.trim();
+  const email = document.getElementById('auth-signup-email').value.trim();
+  const pw    = document.getElementById('auth-signup-password').value;
+  const pw2   = document.getElementById('auth-signup-password2').value;
+  const err   = document.getElementById('auth-signup-err');
+  if (!name)         { showAuthErr(err,'Display name is required.'); return; }
+  if (!email)        { showAuthErr(err,'Email is required.'); return; }
+  if (pw.length < 6) { showAuthErr(err,'Password must be at least 6 characters.'); return; }
+  if (pw !== pw2)    { showAuthErr(err,'Passwords do not match.'); return; }
+  if (name.toLowerCase() === 'meanwhirls') { showAuthErr(err,'Oh honey. You are NOT a real MeanWhirl. You definitely cannot whirl with us now. 💅'); return; }
+  try {
+    await signUp(email, pw, name);
+    closeAuthModal();
+    showToast('💗 Welcome to the burn book, ' + name + '!');
+    if (typeof onAuthSuccess === 'function') onAuthSuccess();
+  } catch(e) { showAuthErr(err, e.message); }
+}
+
+async function handleForgotPassword() {
+  const email = document.getElementById('auth-forgot-email').value.trim();
+  const msg   = document.getElementById('auth-forgot-msg');
+  if (!email) { msg.className='alert alert-error'; msg.textContent='Email required.'; msg.style.display='block'; return; }
+  try {
+    await sendPasswordReset(email);
+    msg.className='alert alert-success'; msg.textContent='✅ Reset link sent! Check your email.'; msg.style.display='block';
+  } catch(e) { msg.className='alert alert-error'; msg.textContent=e.message; msg.style.display='block'; }
+}
+
+async function handleSetPassword() {
+  const pw  = document.getElementById('auth-newpw').value;
+  const pw2 = document.getElementById('auth-newpw2').value;
+  const err = document.getElementById('auth-setpw-err');
+  if (pw.length < 6) { showAuthErr(err,'At least 6 characters.'); return; }
+  if (pw !== pw2)    { showAuthErr(err,'Passwords do not match.'); return; }
+  try { await updatePassword(pw); closeAuthModal(); showToast('✅ Password set!'); } catch(e) { showAuthErr(err,e.message); }
+}
+
+async function submitSetPassword() {
+  const pw  = document.getElementById('setpw-pw').value;
+  const pw2 = document.getElementById('setpw-pw2').value;
+  const err = document.getElementById('setpw-err');
+  if (pw.length < 6) { err.textContent='At least 6 characters.'; err.style.display='block'; return; }
+  if (pw !== pw2)    { err.textContent='Passwords do not match.'; err.style.display='block'; return; }
+  try {
+    await updatePassword(pw);
+    document.getElementById('setpw-modal').classList.remove('open');
+    document.body.style.overflow = '';
+    showToast('✅ Password set! Welcome aboard. 💗');
+  } catch(e) { err.textContent=e.message; err.style.display='block'; }
+}
+
+function showAuthErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+
+// ── Auth nav bar widget ───────────────────────────────
+function updateAuthUI() {
+  const widget = document.getElementById('auth-widget');
+  if (!widget) return;
+  if (isLoggedIn()) {
+    const _adminLink = isAdmin()
+      ? `<a href="admin.html" style="box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;height:24px;padding:0 8px;font-family:Raleway,sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.25);border-radius:2px;text-decoration:none;background:none;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">Admin</a>`
+      : '';
+    widget.innerHTML = `<span style="font-size:0.7rem;color:rgba(255,255,255,0.7);letter-spacing:0.05em">👤 ${getDisplayName()}</span>
+      ${_adminLink}
+      <a href="account.html" style="box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;height:24px;padding:0 8px;font-family:Raleway,sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.25);border-radius:2px;text-decoration:none;background:none;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">My Account</a>
+      <button onclick="signOut()" style="box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;height:24px;padding:0 8px;font-family:Raleway,sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.25);border-radius:2px;background:none;cursor:pointer;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">Sign Out</button>`;
+  } else {
+    widget.innerHTML = `<button onclick="openAuthModal()" style="background:none;border:1px solid rgba(255,255,255,0.35);border-radius:2px;padding:0.3rem 0.85rem;font-family:Raleway,sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.8);cursor:pointer;transition:all 0.2s" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.8)';this.style.borderColor='rgba(255,255,255,0.35)'">Sign In / Join</button>`;
+  }
+}
+
+// ── Gate check — require login for interactive actions ──
+function requireAuth(action) {
+  if (isLoggedIn()) return true;
+  const msgs = {
+    vote:    "Oh, you want to rate this burn? Look at you, having opinions. Sign in first, honey. 💅",
+    comment: "Got something to say? Of course you do. Sign in to leave a comment.",
+    victim:  "Defending yourself? Bold. Sign in first.",
+    defense: "Denying the nap? Brave. Sign in to add your defense.",
+    submit:  "Ready to burn someone? Respect. Sign in first.",
+    edit:    "Editing? Sign in first.",
+  };
+  openAuthModal(msgs[action] || "You need an account for that. We know, we know. 🙄");
+  return false;
+}
+
+
+    function onAuthSuccess() {
+      updateAuthUI();
+      loadEntries();
     }
 
     init();
-    maybeRickroll();
+    injectAuthModal();
+    initAuth().then(() => { updateAuthUI(); maybeRickroll(); });
   </script>
 
   <!-- Rickroll Modal -->

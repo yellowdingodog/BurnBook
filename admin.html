@@ -150,6 +150,7 @@
     .sub-tabs .admin-tab{font-size:0.68rem;padding:0.7rem 1.1rem;color:var(--muted);border-right:1px solid rgba(200,30,90,0.1);}
     .sub-tabs .admin-tab.active{background:var(--white);color:var(--deep-pink);border-bottom:2px solid var(--deep-pink);}
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -158,18 +159,26 @@
       <div class="header-title">Mean <span>Whirls</span> — Admin</div>
       <div class="header-sub">2026 Whirlyball Nationals · Burn Book Management</div>
     </div>
-    <a href="index.html" class="header-back">← Back to Burn Book</a>
+    <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+      <span id="admin-user-info" style="font-size:0.75rem;color:rgba(255,255,255,0.6);"></span>
+      <a href="index.html" class="header-back">← Back to Burn Book</a>
+      <button onclick="adminSignOut()" style="background:none;border:1px solid rgba(255,255,255,0.25);border-radius:2px;padding:0.35rem 0.75rem;font-family:Raleway,sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);cursor:pointer">Sign Out</button>
+    </div>
   </header>
 
   <!-- Login -->
-  <div id="login-wrap" class="login-wrap">
+  <div id="login-wrap" class="login-wrap" style="display:none">
     <div class="login-title">Admin Access</div>
-    <div class="login-sub">Enter the admin password to continue.</div>
+    <div class="login-sub">Sign in with your admin account.</div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="admin-email" type="email" placeholder="your@email.com" />
+    </div>
     <div class="form-group">
       <label class="form-label">Password</label>
       <input class="form-input" id="admin-pass" type="password" placeholder="••••••••••" />
     </div>
-    <button class="btn btn-primary" id="login-btn">🔐 Enter</button>
+    <button class="btn btn-primary" id="login-btn">🔐 Sign In</button>
     <div id="login-err" style="display:none" class="alert alert-error"></div>
   </div>
 
@@ -181,6 +190,7 @@
       <button class="admin-tab" data-ttab="nap">😴 Naptionals</button>
       <button class="admin-tab" data-ttab="ips">👤 IP Profiles</button>
       <button class="admin-tab" data-ttab="contact">✉️ Messages <span class="badge-count" id="cnt-contact">0</span></button>
+      <button class="admin-tab" data-ttab="accounts">👥 Accounts</button>
     </div>
 
     <div id="ttab-burn" class="top-panel active">
@@ -266,7 +276,7 @@
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>IP Hash</th><th>Names Used</th><th>Admin</th><th>Vote Weight</th><th>Status</th><th>🎵 Rolled</th><th>Admin Note</th><th>Last Seen</th><th>Actions</th></tr></thead>
+          <thead><tr><th>IP Hash</th><th>Status</th><th>🎵 Rolled</th><th>Linked Account</th><th>Admin Note</th><th>Last Seen</th><th>Actions</th></tr></thead>
           <tbody id="tb-ips"></tbody>
         </table>
       </div>
@@ -353,6 +363,19 @@
       </div>
     </div>
 
+    <!-- ACCOUNTS -->
+    <div id="ttab-accounts" class="top-panel">
+      <div class="section-hdr"><span class="section-title">👥 User Accounts</span><button class="refresh-btn" onclick="loadAccounts()">↺ Refresh</button></div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Manage user accounts. Grant or revoke admin. Block users. Adjust vote weight.</div>
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>Display Name</th><th>Email</th><th>Admin</th><th>Vote Weight</th>
+          <th>Status</th><th>Note</th><th>Joined</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="tb-accounts"></tbody></table>
+      </div>
+    </div>
+
   </div>
 
   <div class="toast" id="toast"></div>
@@ -366,6 +389,8 @@
 
     let CODENAME = 'BananaDuck', CODENAME_DISPLAY = 'B******D***', BADGE_ICON_URL = '';
     let adminAuthed = false;
+    const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    let _adminUser = null, _adminProfile = null;
 
     // ── Supabase ──────────────────────────────────────────────
     const SB = SUPABASE_URL;
@@ -479,19 +504,41 @@
       } catch(e) {}
     })();
 
+    // ── Supabase auth init ──
+    (async () => {
+      const { data: { session } } = await _sb.auth.getSession();
+      if (session?.user) {
+        const { data: prof } = await _sb.from('user_profiles').select('*').eq('id', session.user.id).single();
+        if (prof?.is_admin) {
+          _adminUser = session.user; _adminProfile = prof;
+          document.getElementById('login-wrap').style.display = 'none';
+          document.getElementById('admin-main').style.display = 'block';
+          document.getElementById('admin-user-info').textContent = '👤 ' + (prof.display_name || session.user.email);
+          loadAll(); return;
+        }
+      }
+    })();
+
     document.getElementById('admin-pass').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-btn').click(); });
     document.getElementById('login-btn').addEventListener('click', async () => {
-      const entered = document.getElementById('admin-pass').value;
+      const email    = document.getElementById('admin-email')?.value.trim() || '';
+      const password = document.getElementById('admin-pass').value;
+      if (!email) { showLoginErr('Email required.'); return; }
       try {
-        const cfg = await sbGet('config','key=eq.adminpass');
-        const stored = cfg[0]?.value || ADMIN_PASSWORD_FALLBACK;
-        if(entered === stored) unlockAdmin();
-        else showLoginErr('Wrong password. So not fetch.');
-      } catch { if(entered===ADMIN_PASSWORD_FALLBACK) unlockAdmin(); else showLoginErr('Wrong password. So not fetch.'); }
+        const { data, error } = await _sb.auth.signInWithPassword({ email, password });
+        if (error) { showLoginErr('Wrong credentials. So not fetch.'); return; }
+        const { data: prof } = await _sb.from('user_profiles').select('*').eq('id', data.user.id).single();
+        if (!prof?.is_admin) { await _sb.auth.signOut(); showLoginErr('You are not an admin. Sit down.'); return; }
+        _adminUser = data.user; _adminProfile = prof;
+        unlockAdmin();
+      } catch(e) { showLoginErr(e.message); }
     });
     function showLoginErr(msg){ const el=document.getElementById('login-err'); el.textContent=msg; el.style.display='block'; }
     async function unlockAdmin(){
       adminAuthed=true;
+      if (_adminProfile) {
+        document.getElementById('admin-user-info').textContent = '👤 ' + (_adminProfile.display_name || _adminUser?.email || '');
+      }
       // Remember this IP as admin
       try {
         const ip = await getIpHash();
@@ -505,9 +552,9 @@
       loadAll();
     }
     function loadAll(){
-      loadEntries();         // Burn Book → All Entries (default active)
-      loadNapEntries();      // Naptionals → All Entries (default active)
-      loadContactMessages(); // badge count
+      loadEntries();
+      loadNapEntries();
+      loadContactMessages();
     }
 
     // ── Tabs ──────────────────────────────────────────────────
@@ -518,8 +565,9 @@
         document.querySelectorAll('.top-panel').forEach(p=>p.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById('ttab-'+tab.dataset.ttab).classList.add('active');
-        if(tab.dataset.ttab==='contact') loadContactMessages();
-        if(tab.dataset.ttab==='ips')     { loadIpProfiles(); loadIpActivity(); }
+        if(tab.dataset.ttab==='contact')  loadContactMessages();
+        if(tab.dataset.ttab==='ips')      { loadIpProfiles(); loadIpActivity(); }
+        if(tab.dataset.ttab==='accounts') loadAccounts();
         if(tab.dataset.ttab==='burn')    loadEntries();
         if(tab.dataset.ttab==='nap')     loadNapEntries();
       });
@@ -817,6 +865,20 @@
       tb.innerHTML = loadingRow(6);
       try {
         _allIpProfiles = await sbGet('ip_profiles', 'order=last_seen.desc');
+        // Fetch linked accounts for display
+        try {
+          const links = await sbGet('ip_account_links', 'select=ip_hash,user_id');
+          const userIds = [...new Set(links.map(l=>l.user_id))];
+          let accountMap = {};
+          if (userIds.length) {
+            const profiles = await sbGet('user_profiles', `id=in.(${userIds.join(',')})&select=id,display_name`);
+            profiles.forEach(p => { accountMap[p.id] = p.display_name; });
+          }
+          _allIpProfiles = _allIpProfiles.map(p => {
+            const link = links.find(l => l.ip_hash === p.ip_hash);
+            return { ...p, _linkedAccount: link ? accountMap[link.user_id] || link.user_id : null };
+          });
+        } catch(e) {}
         filterIpProfiles();
       } catch(err) { tb.innerHTML = emptyRow(6, 'Failed: '+err.message); }
     }
@@ -826,7 +888,7 @@
       const blockedOnly = document.getElementById('ip-show-blocked')?.checked;
       const filtered = _allIpProfiles.filter(p => {
         if (blockedOnly && !p.is_blocked) return false;
-        if (search && !(p.names||[]).some(n=>n.toLowerCase().includes(search)) && !p.ip_hash.includes(search)) return false;
+        if (search && !p.ip_hash.includes(search)) return false;
         return true;
       });
       renderIpProfiles(filtered);
@@ -838,30 +900,22 @@
       tb.innerHTML = '';
       profiles.forEach(p => {
         const tr = document.createElement('tr');
-        const namesHtml = (p.names||[]).map(n=>`<span class="ip-name-tag">${esc(n)}</span>`).join('')||'<span style="color:var(--muted);font-size:.78rem">none</span>';
-        const adminBadge = p.is_admin ? '<span class="badge-admin">Admin</span>' : '';
         const statusBadge = p.is_blocked ? '<span class="badge-blocked">Blocked</span>' : '<span class="badge-ok">OK</span>';
         const blockBtn = p.is_blocked
           ? `<button class="btn-a ars" onclick="toggleBlock('${p.ip_hash}',false)">↩ Unblock</button>`
           : `<button class="btn-a add" onclick="toggleBlock('${p.ip_hash}',true)">⛔ Block</button>`;
-        const adminBtn = p.is_admin
-          ? `<button class="btn-a au" onclick="toggleAdmin('${p.ip_hash}',false)">Revoke Admin</button>`
-          : `<button class="btn-a aa" onclick="toggleAdmin('${p.ip_hash}',true)">Grant Admin</button>`;
         const actBtn = `<button class="btn-a ae" onclick="viewIpLog('${p.ip_hash}')">📋 Log</button>`;
-        const effectiveWeight = p.vote_weight != null ? p.vote_weight : (p.is_admin ? `${_adminVoteWeight}x (admin)` : '1x');
-        const weightDisplay = `<span style="font-size:.8rem;font-weight:600;color:var(--ink)">${effectiveWeight}</span>`;
-        const weightInput = `<input type="number" min="0.1" max="100" step="0.1" value="${p.vote_weight != null ? p.vote_weight : (p.is_admin ? _adminVoteWeight : 1)}" style="width:65px;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.2rem 0.4rem;font-family:Raleway,sans-serif;font-size:0.8rem" id="wt-${p.ip_hash.replace(/[^a-z0-9]/gi,'_')}" />
-        <button class="btn-a ae" style="padding:0.25rem 0.5rem;font-size:0.65rem" onclick="applyVoteWeight('${p.ip_hash}',document.getElementById('wt-${p.ip_hash.replace(/[^a-z0-9]/gi,'_')}').value)">Apply</button>`;
+        const accountHtml = p._linkedAccount
+          ? `<span style="font-size:.8rem;font-weight:600;color:var(--deep-pink)">${esc(p._linkedAccount)}</span>`
+          : '<span style="color:var(--muted);font-size:.78rem">—</span>';
         tr.innerHTML = `
           <td style="font-size:.75rem;color:var(--muted);font-family:monospace">${esc(p.ip_hash)}</td>
-          <td>${namesHtml}</td>
-          <td>${adminBadge}</td>
-          <td style="min-width:140px">${weightInput}</td>
           <td>${statusBadge}</td>
           <td style="text-align:center;font-size:1rem">${p.rickrolled ? `<span title="Has been rickrolled">🎵</span> <button class="btn-a ar" style="font-size:0.6rem;padding:0.15rem 0.4rem" onclick="unRickroll('${p.ip_hash}')">↺ Re-roll</button>` : '<span style="color:var(--muted);font-size:.75rem">—</span>'}</td>
+          <td>${accountHtml}</td>
           <td style="min-width:160px"><input type="text" value="${esc(p.admin_note||'')}" placeholder="Who is this?" style="width:100%;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.28rem 0.5rem;font-family:Raleway,sans-serif;font-size:0.75rem;color:var(--ink);background:var(--cream);outline:none;" id="note-${p.ip_hash.replace(/[^a-z0-9]/gi,'_')}" onblur="saveIpNote('${p.ip_hash}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" /></td>
           <td style="font-size:.74rem;color:var(--muted)">${p.last_seen?new Date(p.last_seen).toLocaleString():'-'}</td>
-          <td style="min-width:240px">${blockBtn} ${adminBtn} ${actBtn} <button class="btn-a add" onclick="deleteIpData('${p.ip_hash}')">🗑 Delete Data</button></td>`;
+          <td style="min-width:180px">${blockBtn} ${actBtn} <button class="btn-a add" onclick="deleteIpData('${p.ip_hash}')">🗑 Delete Data</button></td>`;
         tb.appendChild(tr);
       });
     }
@@ -1254,7 +1308,62 @@
       catch(err) { alert('Failed: ' + err.message); }
     }
 
+    // ── Accounts management ───────────────────────────────────
+    async function loadAccounts() {
+      const tb = document.getElementById('tb-accounts');
+      if (!tb) return;
+      tb.innerHTML = loadingRow(9);
+      try {
+        const profiles = await sbGet('user_profiles', 'order=created_at.asc');
+        if (!profiles.length) { tb.innerHTML = emptyRow(9, 'No accounts yet.'); return; }
+        tb.innerHTML = '';
+        profiles.forEach(p => {
+          const isLegacy = p.id === '00000000-0000-0000-0000-000000000001';
+          const adminBadge = p.is_admin ? '<span class="badge-admin">Admin</span>' : '';
+          const statusBadge = p.is_blocked ? '<span class="badge-blocked">Blocked</span>' : '<span class="badge-ok">OK</span>';
+          const effectiveWeight = p.vote_weight != null ? p.vote_weight : (p.is_admin ? _adminVoteWeight : 1);
+          const safeId = p.id.replace(/-/g,'_');
+          const weightInput = isLegacy ? '—' : `<input type="number" min="0.1" max="100" step="0.1" value="${effectiveWeight}" style="width:60px;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.2rem 0.4rem;font-size:0.8rem" id="awt-${safeId}" /><button class="btn-a ae" style="padding:0.25rem 0.5rem;font-size:0.65rem" onclick="applyAccountWeight('${p.id}',document.getElementById('awt-${safeId}').value)">Apply</button>`;
+          const noteInput = `<input type="text" value="${esc(p.admin_note||'')}" placeholder="Who is this?" style="width:120px;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.28rem 0.5rem;font-size:0.75rem;background:var(--cream)" onblur="saveAccountNote('${p.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" />`;
+          const blockBtn = isLegacy ? '' : (p.is_blocked ? `<button class="btn-a ars" onclick="toggleAccountBlock('${p.id}',false)">↩ Unblock</button>` : `<button class="btn-a add" onclick="toggleAccountBlock('${p.id}',true)">⛔ Block</button>`);
+          const adminBtn = isLegacy ? '' : (p.is_admin ? `<button class="btn-a au" onclick="toggleAccountAdmin('${p.id}',false)">Revoke Admin</button>` : `<button class="btn-a aa" onclick="toggleAccountAdmin('${p.id}',true)">Grant Admin</button>`);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td style="font-weight:600">${esc(p.display_name)}${isLegacy?'<br><span style="font-size:.65rem;color:var(--muted)">(legacy)</span>':''}</td><td style="font-size:.75rem;color:var(--muted)">${isLegacy?'—':'<em style="font-size:.7rem">see auth dashboard</em>'}</td><td>${adminBadge}</td><td style="min-width:130px">${weightInput}</td><td>${statusBadge}</td><td>${noteInput}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(p.created_at)}</td><td style="min-width:180px">${blockBtn} ${adminBtn}</td>`;
+          tb.appendChild(tr);
+        });
+      } catch(err) { tb.innerHTML = emptyRow(8, 'Failed: '+err.message); }
+    }
+    async function toggleAccountBlock(userId, block) {
+      if (block && !confirm('Block this user?')) return;
+      if (!block && !confirm('Unblock this user?')) return;
+      try { await sbPatch('user_profiles', `id=eq.${userId}`, { is_blocked: block }); showToast(block?'⛔ Blocked.':'✅ Unblocked.'); loadAccounts(); }
+      catch(err) { alert('Failed: '+err.message); }
+    }
+    async function toggleAccountAdmin(userId, grant) {
+      if (grant  && !confirm('Grant admin access?')) return;
+      if (!grant && !confirm('Revoke admin access? Are you sure?')) return;
+      try { await sbPatch('user_profiles', `id=eq.${userId}`, { is_admin: grant }); showToast(grant?'✅ Admin granted.':'Admin revoked.'); loadAccounts(); }
+      catch(err) { alert('Failed: '+err.message); }
+    }
+    async function saveAccountNote(userId, note) {
+      try { await sbPatch('user_profiles', `id=eq.${userId}`, { admin_note: note }); showToast('Note saved.'); } catch(err) {}
+    }
+    async function applyAccountWeight(userId, rawVal) {
+      const weight = parseFloat(rawVal);
+      if (isNaN(weight)||weight<=0) { alert('Enter a valid positive number.'); return; }
+      try {
+        await sbPatch('user_profiles', `id=eq.${userId}`, { vote_weight: weight });
+        await Promise.all([sbPatch('votes',`user_id=eq.${userId}`,{weight}),sbPatch('nap_votes',`user_id=eq.${userId}`,{weight})]);
+        showToast(`✅ Vote weight set to ${weight}x.`); loadAccounts();
+      } catch(err) { alert('Failed: '+err.message); }
+    }
+
     // ── Go ────────────────────────────────────────────────────
+    async function adminSignOut() {
+      await _sb.auth.signOut();
+      window.location.reload();
+    }
+
     init();
   </script>
 </body>

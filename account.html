@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mean Whirls — My Account</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--pink:#e8527a;--deep-pink:#c2185b;--blush:#fde8ef;--cream:#fff8f0;--gold:#b71c1c;--ink:#2a1a24;--muted:#8c6678;--white:#ffffff;--shadow:rgba(200,30,90,0.18);}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--cream);font-family:'Raleway',sans-serif;color:var(--ink);min-height:100vh;}
+    .hero{background:linear-gradient(135deg,#1a0a12,#3d0f25);padding:2rem;text-align:center;border-bottom:3px solid #7a0030;}
+    .hero-title{font-family:'Pinyon Script',cursive;font-size:clamp(3rem,8vw,5rem);color:#fff;text-shadow:0 0 40px rgba(232,82,122,0.5);}
+    .hero-title span{color:var(--pink);}
+    .hero-sub{font-size:0.72rem;font-weight:600;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-top:0.4rem;}
+    .nav{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;background:#7a3050;border-top:3px solid #4b1a2a;border-bottom:3px solid #4b1a2a;gap:0;}
+    .nav a,.nav button{background:none;border:none;padding:0.85rem 1.25rem;font-family:'Raleway',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.7);cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;border-bottom:3px solid transparent;position:relative;top:2px;}
+    .nav a:hover,.nav button:hover{color:#fff;}
+    .nav a.active,.nav button.active{color:#fff;border-bottom-color:#fff;}
+    .nav-right{display:flex;align-items:center;gap:0.5rem;padding:0 0.75rem;margin-left:auto;}
+    .main{max-width:900px;margin:0 auto;padding:2.5rem 1.5rem;}
+    .page-title{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:#7a0030;margin-bottom:0.25rem;}
+    .page-sub{font-size:0.82rem;color:var(--muted);margin-bottom:2rem;}
+    .card{background:var(--white);border:1.5px solid rgba(200,30,90,0.12);border-radius:2px;box-shadow:4px 6px 24px var(--shadow);margin-bottom:1.75rem;overflow:hidden;}
+    .card-header{background:linear-gradient(135deg,#1a0a12,#3d0f25);padding:0.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7a0030;}
+    .card-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#fff;}
+    .card-body{padding:1.5rem;}
+    .form-group{margin-bottom:1.1rem;}
+    .form-label{display:block;font-size:0.72rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--deep-pink);margin-bottom:0.4rem;}
+    .form-input{width:100%;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.65rem 0.85rem;font-family:'Raleway',sans-serif;font-size:0.9rem;color:var(--ink);background:var(--cream);outline:none;transition:border-color 0.2s;}
+    .form-input:focus{border-color:var(--pink);}
+    .btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.75rem 1.75rem;font-family:'Raleway',sans-serif;font-size:0.78rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border:none;border-radius:2px;cursor:pointer;transition:all 0.2s;}
+    .btn-primary{background:linear-gradient(135deg,var(--deep-pink),var(--pink));color:#fff;box-shadow:0 4px 16px rgba(194,24,91,0.35);}
+    .btn-primary:hover{transform:translateY(-1px);}
+    .btn-primary:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+    .btn-ghost{background:none;border:1.5px solid rgba(200,30,90,0.2);color:var(--muted);}
+    .btn-ghost:hover{border-color:var(--pink);color:var(--deep-pink);}
+    .alert{padding:0.85rem 1rem;border-radius:2px;font-size:0.82rem;margin-top:0.75rem;}
+    .alert-success{background:#e8f5e9;border-left:3px solid #4caf50;color:#1b5e20;}
+    .alert-error{background:var(--blush);border-left:3px solid var(--pink);color:var(--deep-pink);}
+    .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem;margin-bottom:1.5rem;}
+    .stat{background:var(--blush);border:1.5px solid rgba(200,30,90,0.12);border-radius:2px;padding:1rem;text-align:center;}
+    .stat-num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--deep-pink);}
+    .stat-label{font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-top:0.2rem;}
+    .activity-item{background:var(--white);border:1.5px solid rgba(200,30,90,0.08);border-radius:2px;padding:0.85rem 1rem;margin-bottom:0.6rem;display:flex;gap:1rem;align-items:flex-start;}
+    .activity-icon{font-size:1.2rem;flex-shrink:0;margin-top:0.1rem;}
+    .activity-text{font-size:0.85rem;color:var(--ink);line-height:1.5;}
+    .activity-time{font-size:0.68rem;color:var(--muted);margin-top:0.2rem;}
+    .entry-thumb{display:grid;grid-template-columns:60px 1fr;gap:0.75rem;align-items:center;background:var(--white);border:1.5px solid rgba(200,30,90,0.1);border-radius:2px;padding:0.75rem;margin-bottom:0.6rem;cursor:pointer;transition:all 0.2s;}
+    .entry-thumb:hover{background:var(--blush);border-color:rgba(200,30,90,0.2);}
+    .entry-thumb img,.entry-thumb-ph{width:60px;height:45px;object-fit:contain;border-radius:1px;background:linear-gradient(135deg,var(--blush),#fce4ec);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;}
+    .entry-thumb-subject{font-weight:700;font-size:0.88rem;color:var(--deep-pink);}
+    .entry-thumb-sub{font-size:0.72rem;color:var(--muted);margin-top:0.15rem;}
+    .badge-type{display:inline-block;padding:0.1rem 0.5rem;border-radius:10px;font-size:0.62rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-left:0.4rem;}
+    .badge-burn{background:var(--blush);color:var(--deep-pink);}
+    .badge-nap{background:#e3f2fd;color:#1565c0;}
+    .loading-wrap{text-align:center;padding:2rem;color:var(--muted);}
+    .spinner{display:inline-block;width:24px;height:24px;border:2px solid rgba(200,30,90,0.2);border-top-color:var(--pink);border-radius:50%;animation:spin 0.7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .spinner-sm{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;}
+    .tabs{display:flex;border-bottom:2px solid var(--blush);margin-bottom:1.5rem;flex-wrap:wrap;}
+    .tab-btn{background:none;border:none;padding:0.75rem 1.25rem;font-family:'Raleway',sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;position:relative;bottom:-2px;transition:all 0.2s;}
+    .tab-btn:hover{color:var(--deep-pink);}
+    .tab-btn.active{color:var(--deep-pink);border-bottom-color:var(--deep-pink);}
+    .tab-panel{display:none;} .tab-panel.active{display:block;}
+    .not-logged-in{text-align:center;padding:4rem 2rem;color:var(--muted);}
+    .not-logged-in h2{font-family:'Playfair Display',serif;color:var(--deep-pink);font-size:1.4rem;margin-bottom:0.75rem;}
+    .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(4rem);background:var(--ink);color:#fff;padding:0.65rem 1.5rem;border-radius:20px;font-size:0.8rem;font-weight:600;z-index:9999;transition:transform 0.3s ease,opacity 0.3s ease;opacity:0;pointer-events:none;}
+    .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+    .danger-zone{border:1.5px solid #ef9a9a;border-radius:2px;padding:1.25rem;}
+    .danger-title{font-size:0.75rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#c62828;margin-bottom:0.75rem;}
+    .btn-danger{background:none;border:1.5px solid #c62828;border-radius:2px;padding:0.55rem 1.25rem;font-family:'Raleway',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#c62828;cursor:pointer;transition:all 0.2s;}
+    .btn-danger:hover{background:#c62828;color:#fff;}
+    @media(max-width:600px){.main{padding:1.5rem 1rem;}.stat-row{grid-template-columns:repeat(2,1fr);}}
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-title" onclick="window.location='index.html'">Mean <span>Whirls</span></div>
+    <div class="hero-sub">My Account</div>
+  </header>
+  <nav class="nav">
+    <a href="index.html">📖 Burn Book</a>
+    <a href="naptionals.html">😴 Naptionals</a>
+    <div class="nav-right" id="auth-widget"></div>
+  </nav>
+
+  <main class="main" id="main-content">
+    <div class="loading-wrap"><div class="spinner"></div></div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SUPABASE_URL  = 'https://dhguaomtjclcldkkhlmt.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZ3Vhb210amNsY2xka2tobG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MjI5MzQsImV4cCI6MjA5NDI5ODkzNH0.hfaNxo9m1Tkpn8pIVoyTXcIRhf9jbpkTlw0kTpn6gyY';
+    const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    let _currentUser = null, _currentProfile = null;
+
+    const H = {'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON};
+    const sbGet   = async(t,p='')=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}?${p}`,{headers:H});if(!r.ok)throw new Error(await r.text());return r.json();};
+    const sbPatch = async(t,p,b)=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());return r.json();};
+
+    const showToast = msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);};
+    const esc = s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const toTS = d=>d?new Date(d).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+
+    async function init() {
+      // Handle password reset redirect
+      const hash = window.location.hash;
+      if (hash.includes('type=recovery')) {
+        const { data: { session } } = await _sb.auth.getSession();
+        if (session) { _currentUser = session.user; renderPasswordReset(); return; }
+      }
+
+      // DEBUG: dump ALL localStorage keys and getSession result
+      const allKeys = Object.keys(localStorage);
+      const { data: sessionData, error: sessionError } = await _sb.auth.getSession();
+      const session = sessionData?.session;
+
+      document.getElementById('main-content').innerHTML = `
+        <div style="font-family:monospace;font-size:0.75rem;background:#fff;border:2px solid #c00;padding:1.5rem;margin:2rem;border-radius:4px;white-space:pre-wrap;word-break:break-all">
+<b>DEBUG — Auth State</b>
+
+All localStorage keys (${allKeys.length} total):
+${allKeys.length ? allKeys.map(k => '  ' + k).join('\n') : '  (none)'}
+
+getSession() error: ${sessionError ? JSON.stringify(sessionError) : 'none'}
+getSession() session: ${session ? 'YES — user: '+session.user?.email : 'NULL'}
+
+onAuthStateChange events:
+        </div>
+        <div id="auth-events" style="font-family:monospace;font-size:0.75rem;background:#fff;border:2px solid #090;padding:1rem;margin:2rem;border-radius:4px;white-space:pre-wrap"></div>
+      `;
+
+      _sb.auth.onAuthStateChange(async (event, session) => {
+        const el = document.getElementById('auth-events');
+        if (el) el.innerHTML += event + ': ' + (session?.user?.email || 'no user') + '\n';
+        if (event === 'PASSWORD_RECOVERY') { renderPasswordReset(); return; }
+        if (event === 'SIGNED_OUT') { renderNotLoggedIn(); return; }
+        if (event === 'SIGNED_IN') {
+          _currentUser = session.user;
+          const { data } = await _sb.from('user_profiles').select('*').eq('id', session.user.id).single();
+          _currentProfile = data;
+          updateAuthWidget();
+          renderAccountPage();
+        }
+      });
+
+      if (session?.user) {
+        _currentUser = session.user;
+        const { data } = await _sb.from('user_profiles').select('*').eq('id', session.user.id).single();
+        _currentProfile = data;
+        updateAuthWidget();
+        renderAccountPage();
+      }
+    }
+
+    function updateAuthWidget() {
+      const w = document.getElementById('auth-widget');
+      if (!w) return;
+      if (_currentUser) {
+        w.innerHTML = `<span style="font-size:0.7rem;color:rgba(255,255,255,0.7)">👤 ${esc(_currentProfile?.display_name||'')}</span>
+          <button onclick="doSignOut()" style="background:none;border:1px solid rgba(255,255,255,0.25);border-radius:2px;padding:0.2rem 0.6rem;font-family:Raleway,sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);cursor:pointer">Sign Out</button>`;
+      }
+    }
+
+    async function doSignOut() {
+      await _sb.auth.signOut();
+      window.location.href = 'index.html';
+    }
+
+    function renderNotLoggedIn() {
+      document.getElementById('main-content').innerHTML = `
+        <div class="not-logged-in">
+          <h2>You're not signed in</h2>
+          <p style="margin-bottom:1.5rem">Sign in to view your account, activity, and settings.</p>
+          <button class="btn btn-primary" onclick="window.location.href='index.html'">← Back to the Burn Book</button>
+        </div>`;
+    }
+
+    function renderPasswordReset() {
+      document.getElementById('main-content').innerHTML = `
+        <div class="page-title">Reset Your Password</div>
+        <p class="page-sub">Enter a new password below.</p>
+        <div class="card" style="max-width:420px">
+          <div class="card-header"><span class="card-title">🔑 New Password</span></div>
+          <div class="card-body">
+            <div class="form-group"><label class="form-label">New Password *</label><input class="form-input" id="reset-pw" type="password" placeholder="At least 6 characters" /></div>
+            <div class="form-group"><label class="form-label">Confirm *</label><input class="form-input" id="reset-pw2" type="password" /></div>
+            <button class="btn btn-primary" onclick="submitReset()">💾 Set New Password</button>
+            <div id="reset-msg" style="display:none" class="alert"></div>
+          </div>
+        </div>`;
+    }
+
+    async function submitReset() {
+      const pw = document.getElementById('reset-pw').value;
+      const pw2 = document.getElementById('reset-pw2').value;
+      const msg = document.getElementById('reset-msg');
+      if (pw.length < 6) { msg.className='alert alert-error';msg.textContent='At least 6 characters.';msg.style.display='block';return; }
+      if (pw !== pw2)    { msg.className='alert alert-error';msg.textContent='Passwords do not match.';msg.style.display='block';return; }
+      const { error } = await _sb.auth.updateUser({ password: pw });
+      if (error) { msg.className='alert alert-error';msg.textContent=error.message;msg.style.display='block'; }
+      else { msg.className='alert alert-success';msg.textContent='✅ Password updated! Redirecting...';msg.style.display='block';setTimeout(()=>window.location.href='index.html',2000); }
+    }
+
+    async function renderAccountPage() {
+      const main = document.getElementById('main-content');
+      const prof = _currentProfile;
+
+      // Fetch stats
+      const [myEntries, myNapEntries, myComments, myNapComments, myVotes, myActivity] = await Promise.all([
+        sbGet('entries',     `user_id=eq.${_currentUser.id}&select=id,subject,image_url,status,created_at,ui_order`),
+        sbGet('nap_entries', `user_id=eq.${_currentUser.id}&select=id,subject,image_url,status,created_at,ui_order`),
+        sbGet('comments',     `user_id=eq.${_currentUser.id}&select=id,text,created_at,entry_id`),
+        sbGet('nap_comments', `user_id=eq.${_currentUser.id}&select=id,text,created_at,entry_id`),
+        sbGet('votes',        `user_id=eq.${_currentUser.id}&select=id`),
+        sbGet('ip_activity',  `user_id=eq.${_currentUser.id}&order=created_at.desc&limit=30`),
+      ]);
+
+      main.innerHTML = `
+        <div class="page-title">👤 ${esc(prof.display_name)}</div>
+        <p class="page-sub">${esc(_currentUser.email)} &nbsp;·&nbsp; Member since ${toTS(prof.created_at)}</p>
+
+        <div class="stat-row">
+          <div class="stat"><div class="stat-num">${myEntries.length+myNapEntries.length}</div><div class="stat-label">Entries</div></div>
+          <div class="stat"><div class="stat-num">${myComments.length+myNapComments.length}</div><div class="stat-label">Comments</div></div>
+          <div class="stat"><div class="stat-num">${myVotes.length}</div><div class="stat-label">Votes Cast</div></div>
+          <div class="stat"><div class="stat-num">${prof.is_admin?'⭐':'—'}</div><div class="stat-label">${prof.is_admin?'Admin':' '}</div></div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab-btn active" data-atab="entries">📋 My Entries</button>
+          <button class="tab-btn" data-atab="comments">💬 My Comments</button>
+          <button class="tab-btn" data-atab="activity">📜 Activity</button>
+          <button class="tab-btn" data-atab="settings">⚙️ Settings</button>
+        </div>
+
+        <div id="atab-entries" class="tab-panel active">
+          ${renderEntriesTab(myEntries, myNapEntries)}
+        </div>
+        <div id="atab-comments" class="tab-panel">
+          ${renderCommentsTab(myComments, myNapComments)}
+        </div>
+        <div id="atab-activity" class="tab-panel">
+          ${renderActivityTab(myActivity)}
+        </div>
+        <div id="atab-settings" class="tab-panel">
+          ${renderSettingsTab(prof)}
+        </div>`;
+
+      // Tab switching
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+          document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById('atab-'+btn.dataset.atab).classList.add('active');
+        });
+      });
+    }
+
+    function renderEntriesTab(entries, napEntries) {
+      if (!entries.length && !napEntries.length) return '<p style="color:var(--muted);font-size:.88rem;padding:1rem 0">You haven\'t submitted any entries yet. Get out there and burn someone! 🔥</p>';
+      let html = '';
+      entries.forEach(e => {
+        const img = e.image_url ? `<img src="${esc(e.image_url)}" />` : `<div class="entry-thumb-ph">🔥</div>`;
+        html += `<div class="entry-thumb" onclick="window.location='index.html#entry-${e.id}'">
+          ${img}
+          <div><div class="entry-thumb-subject">${esc(e.subject)}<span class="badge-type badge-burn">Burn Book</span></div>
+          <div class="entry-thumb-sub">#${e.ui_order||'?'} &nbsp;·&nbsp; ${esc(e.status)} &nbsp;·&nbsp; ${toTS(e.created_at)}</div></div>
+        </div>`;
+      });
+      napEntries.forEach(e => {
+        const img = e.image_url ? `<img src="${esc(e.image_url)}" />` : `<div class="entry-thumb-ph">😴</div>`;
+        html += `<div class="entry-thumb" onclick="window.location='naptionals.html#nap-${e.id}'">
+          ${img}
+          <div><div class="entry-thumb-subject">${esc(e.subject)}<span class="badge-type badge-nap">Naptionals</span></div>
+          <div class="entry-thumb-sub">#${e.ui_order||'?'} &nbsp;·&nbsp; ${esc(e.status)} &nbsp;·&nbsp; ${toTS(e.created_at)}</div></div>
+        </div>`;
+      });
+      return html;
+    }
+
+    function renderCommentsTab(comments, napComments) {
+      if (!comments.length && !napComments.length) return '<p style="color:var(--muted);font-size:.88rem;padding:1rem 0">No comments yet. You\'ve been strangely quiet.</p>';
+      let html = '';
+      [...comments.map(c=>({...c,type:'burn'})), ...napComments.map(c=>({...c,type:'nap'}))]
+        .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))
+        .forEach(c => {
+          html += `<div class="activity-item">
+            <div class="activity-icon">${c.type==='burn'?'🔥':'😴'}</div>
+            <div><div class="activity-text">${esc(c.text)}</div>
+            <div class="activity-time">${toTS(c.created_at)} <span class="badge-type badge-${c.type}">${c.type==='burn'?'Burn Book':'Naptionals'}</span></div></div>
+          </div>`;
+        });
+      return html;
+    }
+
+    function renderActivityTab(activity) {
+      if (!activity.length) return '<p style="color:var(--muted);font-size:.88rem;padding:1rem 0">No activity logged yet.</p>';
+      const icons = {submit:'📝',edit:'✏️',comment:'💬',vote:'🔥',victim_statement:'🎤',removal_request:'🗑',admin_login:'🔐',admin_approve:'✓',admin_edit:'✏️',admin_delete:'✕'};
+      return activity.map(a => `<div class="activity-item">
+        <div class="activity-icon">${icons[a.action]||'•'}</div>
+        <div><div class="activity-text"><strong>${esc(a.action)}</strong>${a.detail?' — '+esc(a.detail):''}</div>
+        <div class="activity-time">${toTS(a.created_at)}</div></div>
+      </div>`).join('');
+    }
+
+    function renderSettingsTab(prof) {
+      return `
+        <div class="card">
+          <div class="card-header"><span class="card-title">✏️ Display Name</span></div>
+          <div class="card-body">
+            <div class="form-group"><label class="form-label">Display Name</label><input class="form-input" id="s-displayname" value="${esc(prof.display_name)}" /></div>
+            <button class="btn btn-primary" onclick="saveDisplayName()">💾 Save</button>
+            <div id="s-name-msg" style="display:none" class="alert"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🔑 Change Password</span></div>
+          <div class="card-body">
+            <div class="form-group"><label class="form-label">New Password</label><input class="form-input" id="s-newpw" type="password" placeholder="At least 6 characters" /></div>
+            <div class="form-group"><label class="form-label">Confirm</label><input class="form-input" id="s-newpw2" type="password" /></div>
+            <button class="btn btn-primary" onclick="savePassword()">🔑 Update Password</button>
+            <div id="s-pw-msg" style="display:none" class="alert"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">📧 Email</span></div>
+          <div class="card-body">
+            <p style="font-size:.85rem;color:var(--muted);margin-bottom:0.75rem">Your email: <strong style="color:var(--ink)">${esc(_currentUser.email)}</strong></p>
+            <p style="font-size:.78rem;color:var(--muted)">To change your email, contact an admin. We're not making that easy on purpose.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title" style="color:#ef9a9a">⚠️ Danger Zone</span></div>
+          <div class="card-body">
+            <div class="danger-zone">
+              <div class="danger-title">Sign out everywhere</div>
+              <p style="font-size:.82rem;color:var(--muted);margin-bottom:0.75rem">Signs you out on all devices. You'll need to sign back in.</p>
+              <button class="btn-danger" onclick="doSignOut()">Sign Out</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    async function saveDisplayName() {
+      const val = document.getElementById('s-displayname').value.trim();
+      const msg = document.getElementById('s-name-msg');
+      if (!val) { msg.className='alert alert-error';msg.textContent='Name cannot be empty.';msg.style.display='block';return; }
+      if (val.toLowerCase()==='meanwhirls') { msg.className='alert alert-error';msg.textContent='Oh honey. No. 💅';msg.style.display='block';return; }
+      try {
+        await _sb.from('user_profiles').update({ display_name: val }).eq('id', _currentUser.id);
+        _currentProfile.display_name = val;
+        msg.className='alert alert-success';msg.textContent='✅ Display name updated!';msg.style.display='block';
+        updateAuthWidget();
+        document.querySelector('.page-title').textContent='👤 '+val;
+      } catch(e) { msg.className='alert alert-error';msg.textContent=e.message;msg.style.display='block'; }
+    }
+
+    async function savePassword() {
+      const pw  = document.getElementById('s-newpw').value;
+      const pw2 = document.getElementById('s-newpw2').value;
+      const msg = document.getElementById('s-pw-msg');
+      if (pw.length < 6) { msg.className='alert alert-error';msg.textContent='At least 6 characters.';msg.style.display='block';return; }
+      if (pw !== pw2)    { msg.className='alert alert-error';msg.textContent='Passwords do not match.';msg.style.display='block';return; }
+      const { error } = await _sb.auth.updateUser({ password: pw });
+      if (error) { msg.className='alert alert-error';msg.textContent=error.message;msg.style.display='block'; }
+      else { msg.className='alert alert-success';msg.textContent='✅ Password updated!';msg.style.display='block'; document.getElementById('s-newpw').value='';document.getElementById('s-newpw2').value=''; }
+    }
+
+    init();
+  </script>
+</body>
+</html>
