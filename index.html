@@ -814,7 +814,9 @@
           section.appendChild(btn);
         } else if (!isLoggedIn()) {
           const note=document.createElement('div');note.style.cssText='font-size:0.75rem;color:var(--muted);margin-top:0.5rem;';
-          note.innerHTML='<a href="#" onclick="openAuthModal('Defending yourself? Bold. Sign in first.');return false;" style="color:var(--deep-pink)">Sign in</a> to add a victim statement.';
+          note.onclick=()=>openAuthModal('Defending yourself? Bold. Sign in first.');
+          note.innerHTML='<a href="#" style="color:var(--deep-pink)">Sign in</a> to add a victim statement.';
+          note.querySelector('a').addEventListener('click',e=>{e.preventDefault();openAuthModal('Defending yourself? Bold. Sign in first.');});
           section.appendChild(note);
         }
 
@@ -1561,7 +1563,14 @@ async function handleSignIn() {
       // Show resend option instead of plain error
       btn.disabled = false; btn.innerHTML = '💗 Sign In';
       window._pendingConfirmEmail = email;
-      showAuthErr(err, 'Your email isn't confirmed yet. <a href="#" onclick="showCheckEmailForm(''+email.replace(/'/g,"\'")+'')" style="color:var(--deep-pink)">Resend confirmation →</a>', true);
+      // Show resend option inline
+      err.innerHTML = '';
+      const _msg = document.createTextNode("Your email isn’t confirmed yet. ");
+      const _link = document.createElement('a');
+      _link.href = '#'; _link.style.color = 'var(--deep-pink)';
+      _link.textContent = 'Resend confirmation →';
+      _link.onclick = (ev) => { ev.preventDefault(); showCheckEmailForm(email); };
+      err.appendChild(_msg); err.appendChild(_link); err.style.display = 'block';
       return;
     }
     showAuthErr(err, msg);
