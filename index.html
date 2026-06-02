@@ -607,7 +607,19 @@
         img.src = url;
       });
     }
-    // getIpHash defined above
+    // ── IP hash helper ───────────────────────────────────────
+    const getIpHash = async () => {
+      try {
+        const c = sessionStorage.getItem('mw_iphash');
+        if (c) return c;
+        const { ip } = await (await fetch('https://api.ipify.org?format=json')).json();
+        let h = 0;
+        for (let i = 0; i < ip.length; i++) { h = ((h << 5) - h) + ip.charCodeAt(i); h |= 0; }
+        const s = 'v' + Math.abs(h).toString(36);
+        sessionStorage.setItem('mw_iphash', s);
+        return s;
+      } catch { return 'anon_' + Math.random().toString(36).slice(2); }
+    };
 
     // ── IP profile helpers ────────────────────────────────────
     let _ipProfile = null;
@@ -741,7 +753,7 @@
         allVoteData[entryId]={avg:tw?+(ws/tw).toFixed(1):null,count:votes.length,myVote:myVotes[entryId]||null};
         const w=document.querySelector(`[data-heat-compact="${entryId}"]`); if(w)updateCompactHeat(w,entryId);
         if(currentDetailEntry?.id===entryId)renderDetailHeat(currentDetailEntry);
-      }catch(e){showToast('Vote failed — try again.');}
+      }catch(e){showToast('Vote failed: '+e.message);}
     }
     function updateCompactHeat(wrap,entryId){ const vd=allVoteData[entryId]||{}; const btn=wrap.querySelector('.heat-fire-btn'); const avg=wrap.querySelector('.heat-avg'); if(btn){btn.className='heat-fire-btn'+(vd.myVote?' voted':'');btn.textContent=vd.myVote?`🔥 ${vd.myVote}/10`:'🔥 Rate';} if(avg){avg.className='heat-avg'+((vd.avg&&vd.avg>=7)?' hot':'');avg.textContent=vd.avg?`avg ${vd.avg} (${vd.count} vote${vd.count!==1?'s':''})`:'';} }
     function makeCompactHeat(entry){ const vd=allVoteData[entry.id]||{}; const wrap=document.createElement('div'); wrap.className='heat-compact'; wrap.dataset.heatCompact=entry.id; const btn=document.createElement('button'); btn.className='heat-fire-btn'+(vd.myVote?' voted':''); btn.textContent=vd.myVote?`🔥 ${vd.myVote}/10`:'🔥 Rate'; btn.addEventListener('click',e=>{e.stopPropagation();openHeatPicker(entry.id,btn);}); const avg=document.createElement('span'); avg.className='heat-avg'+((vd.avg&&vd.avg>=7)?' hot':''); avg.textContent=vd.avg?`avg ${vd.avg} (${vd.count} vote${vd.count!==1?'s':''})`:''; wrap.appendChild(btn);wrap.appendChild(avg);return wrap; }
