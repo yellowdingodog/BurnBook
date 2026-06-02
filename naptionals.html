@@ -1212,6 +1212,19 @@ const AUTH_MODAL_HTML = `
       </div>
 
       <!-- Forgot password form -->
+      <!-- Check email confirmation panel -->
+      <div id="auth-checkemail-form" style="display:none">
+        <div style="text-align:center;padding:1.5rem 0.5rem">
+          <div style="font-size:2.5rem;margin-bottom:0.75rem">📬</div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:0.75rem">Check your email!</div>
+          <div style="font-size:0.88rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.6">We sent a confirmation link to <strong id="auth-checkemail-addr"></strong>.<br/>Click it to activate your account, then come back and sign in.</div>
+          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Didn't get it? Check your spam folder. Still nothing?</div>
+          <button class="btn btn-primary" onclick="resendConfirmation()" id="auth-resend-btn">📧 Resend Confirmation Email</button>
+          <div id="auth-resend-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
+          <div style="margin-top:1rem"><a href="#" onclick="showSigninForm();return false;" style="font-size:0.78rem;color:var(--muted)">← Back to sign in</a></div>
+        </div>
+      </div>
+
       <div id="auth-forgot-form" style="display:none">
         <div class="modal-note">Enter your email and we'll send you a link to reset your password. It might take a minute. We're busy.</div>
         <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="auth-forgot-email" type="email" placeholder="your@email.com" /></div>
@@ -1270,24 +1283,38 @@ function closeAuthModal() {
 }
 function showSigninForm() {
   document.getElementById('auth-modal-title').textContent = 'Sign In';
-  document.getElementById('auth-signin-form').style.display  = 'block';
-  document.getElementById('auth-signup-form').style.display  = 'none';
-  document.getElementById('auth-forgot-form').style.display  = 'none';
-  document.getElementById('auth-setpw-form').style.display   = 'none';
+  document.getElementById('auth-signin-form').style.display       = 'block';
+  document.getElementById('auth-signup-form').style.display       = 'none';
+  document.getElementById('auth-checkemail-form').style.display   = 'none';
+  document.getElementById('auth-forgot-form').style.display       = 'none';
+  document.getElementById('auth-setpw-form').style.display        = 'none';
 }
 function showSignupForm() {
   document.getElementById('auth-modal-title').textContent = 'Create Account';
-  document.getElementById('auth-signin-form').style.display  = 'none';
-  document.getElementById('auth-signup-form').style.display  = 'block';
-  document.getElementById('auth-forgot-form').style.display  = 'none';
-  document.getElementById('auth-setpw-form').style.display   = 'none';
+  document.getElementById('auth-signin-form').style.display       = 'none';
+  document.getElementById('auth-signup-form').style.display       = 'block';
+  document.getElementById('auth-checkemail-form').style.display   = 'none';
+  document.getElementById('auth-forgot-form').style.display       = 'none';
+  document.getElementById('auth-setpw-form').style.display        = 'none';
 }
 function showForgotForm() {
   document.getElementById('auth-modal-title').textContent = 'Reset Password';
-  document.getElementById('auth-signin-form').style.display  = 'none';
-  document.getElementById('auth-signup-form').style.display  = 'none';
-  document.getElementById('auth-forgot-form').style.display  = 'block';
-  document.getElementById('auth-setpw-form').style.display   = 'none';
+  document.getElementById('auth-signin-form').style.display       = 'none';
+  document.getElementById('auth-signup-form').style.display       = 'none';
+  document.getElementById('auth-checkemail-form').style.display   = 'none';
+  document.getElementById('auth-forgot-form').style.display       = 'block';
+  document.getElementById('auth-setpw-form').style.display        = 'none';
+}
+function showCheckEmailForm(email) {
+  document.getElementById('auth-modal-title').textContent = 'Almost there!';
+  document.getElementById('auth-signin-form').style.display       = 'none';
+  document.getElementById('auth-signup-form').style.display       = 'none';
+  document.getElementById('auth-checkemail-form').style.display   = 'block';
+  document.getElementById('auth-forgot-form').style.display       = 'none';
+  document.getElementById('auth-setpw-form').style.display        = 'none';
+  document.getElementById('auth-checkemail-addr').textContent     = email;
+  document.getElementById('auth-resend-msg').style.display        = 'none';
+  window._pendingConfirmEmail = email;
 }
 function openSetPasswordModal() {
   const m = document.getElementById('setpw-modal');
@@ -1306,7 +1333,16 @@ async function handleSignIn() {
     closeAuthModal();
     showToast('💗 Welcome back, ' + getDisplayName() + '!');
     if (typeof onAuthSuccess === 'function') onAuthSuccess();
-  } catch(e) { showAuthErr(err, e.message); }
+  } catch(e) {
+    const msg = e.message || '';
+    if (msg.toLowerCase().includes('email not confirmed') || msg.toLowerCase().includes('not confirmed')) {
+      btn.disabled = false; btn.innerHTML = '💗 Sign In';
+      window._pendingConfirmEmail = email;
+      showAuthErr(err, 'Your email isn't confirmed yet. <a href="#" onclick="showCheckEmailForm(''+email.replace(/'/g,"\'")+'\')" style="color:var(--deep-pink)">Resend confirmation →</a>', true);
+      return;
+    }
+    showAuthErr(err, msg);
+  }
   btn.disabled = false; btn.innerHTML = '💗 Sign In';
 }
 
@@ -1322,11 +1358,36 @@ async function handleSignUp() {
   if (pw !== pw2)    { showAuthErr(err,'Passwords do not match.'); return; }
   if (name.toLowerCase() === 'meanwhirls') { showAuthErr(err,'Oh honey. You are NOT a real MeanWhirl. You definitely cannot whirl with us now. 💅'); return; }
   try {
+    const existing = await sbGet('user_profiles', `display_name=ilike.${encodeURIComponent(name)}&select=id&limit=1`);
+    if (existing.length) { showAuthErr(err, 'That display name is already taken. Pick another one.'); return; }
+  } catch(e) { /* non-fatal */ }
+  const btn = document.querySelector('#auth-signup-form .btn.btn-primary');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Creating...'; }
+  try {
     await signUp(email, pw, name);
-    closeAuthModal();
-    showToast('💗 Welcome to the burn book, ' + name + '!');
-    if (typeof onAuthSuccess === 'function') onAuthSuccess();
+    showCheckEmailForm(email);
   } catch(e) { showAuthErr(err, e.message); }
+  if (btn) { btn.disabled = false; btn.innerHTML = '💗 Create Account'; }
+}
+
+function showAuthErr(el, msg, isHtml=false) { if(isHtml){el.innerHTML=msg;}else{el.textContent=msg;} el.style.display='block'; }
+
+async function resendConfirmation() {
+  const email = window._pendingConfirmEmail;
+  if (!email) return;
+  const btn = document.getElementById('auth-resend-btn');
+  const msg = document.getElementById('auth-resend-msg');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const { error } = await getSb().auth.resend({ type: 'signup', email });
+    if (error) throw error;
+    msg.className = 'alert alert-success'; msg.textContent = '✅ Confirmation email resent! Check your inbox (and spam).'; msg.style.display = 'block';
+    btn.textContent = '✅ Sent!';
+    setTimeout(() => { btn.disabled = false; btn.textContent = '📧 Resend Confirmation Email'; }, 5000);
+  } catch(e) {
+    msg.className = 'alert alert-error'; msg.textContent = 'Failed to resend: ' + e.message; msg.style.display = 'block';
+    btn.disabled = false; btn.textContent = '📧 Resend Confirmation Email';
+  }
 }
 
 async function handleForgotPassword() {
@@ -1362,7 +1423,6 @@ async function submitSetPassword() {
   } catch(e) { err.textContent=e.message; err.style.display='block'; }
 }
 
-function showAuthErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
 
 // ── Auth nav bar widget ───────────────────────────────
 function updateAuthUI() {

@@ -1200,6 +1200,12 @@ async function initAuth() {
     } else {
       _currentUser = null;
       _currentProfile = null;
+      window._sessionToken = null;
+      if (event === 'SIGNED_OUT') {
+        myVotes = {};
+        localStorage.removeItem('mw_votes_heat');
+        loadEntries();
+      }
     }
     updateAuthUI();
   });
@@ -1225,7 +1231,11 @@ async function linkIpToAccount() {
     const ip = await getIpHash();
     await getSb().from('ip_account_links').upsert({ ip_hash: ip, user_id: _currentUser.id }, { onConflict: 'ip_hash,user_id' });
     // Update last_seen
-    await getSb().from('user_profiles').update({ last_seen: new Date().toISOString() }).eq('id', _currentUser.id);
+    await getSb().from('user_profiles').update({
+      last_seen: new Date().toISOString(),
+      visit_count: (_currentProfile?.visit_count || 0) + 1
+    }).eq('id', _currentUser.id);
+    if (_currentProfile) _currentProfile.visit_count = (_currentProfile.visit_count || 0) + 1;
   } catch(e) {}
 }
 
@@ -1290,7 +1300,12 @@ async function signIn(email, password) {
 async function signOut() {
   await getSb().auth.signOut();
   _currentUser = null; _currentProfile = null;
+  window._sessionToken = null;
+  // Clear per-user vote cache so the next visitor doesn't see stale votes
+  myVotes = {};
+  localStorage.removeItem('mw_votes_heat');
   updateAuthUI();
+  loadEntries();
 }
 
 // ── Password recovery ─────────────────────────────────
@@ -1309,27 +1324,13 @@ async function updatePassword(newPassword) {
 
 // ── Rickroll check ────────────────────────────────────
 async function maybeRickroll() {
+  // Only track for logged-in users; guests are never rickrolled
+  if (!isLoggedIn()) return;
   try {
-    let alreadyRolled = false;
-    if (isLoggedIn()) {
-      alreadyRolled = _currentProfile?.rickrolled === true;
-      if (!alreadyRolled) {
-        await getSb().from('user_profiles').update({ rickrolled: true }).eq('id', _currentUser.id);
-        _currentProfile = { ..._currentProfile, rickrolled: true };
-      }
-    } else {
-      // Fall back to IP-based for guests
-      const ip = await getIpHash();
-      const rows = await sbGet('ip_profiles', `ip_hash=eq.${ip}&select=rickrolled`);
-      alreadyRolled = rows.length && rows[0].rickrolled === true;
-      if (!alreadyRolled) {
-        if (rows.length) sbPatch('ip_profiles', `ip_hash=eq.${ip}`, { rickrolled: true }).catch(()=>{});
-        else sbPost('ip_profiles', { ip_hash: ip, is_blocked: false, rickrolled: true }).catch(()=>{});
-      }
-    }
-    if (!alreadyRolled) {
-      document.getElementById('rickroll-overlay').style.display = 'flex';
-    }
+    if (_currentProfile?.rickrolled === true) return;
+    await getSb().from('user_profiles').update({ rickrolled: true }).eq('id', _currentUser.id);
+    _currentProfile = { ..._currentProfile, rickrolled: true };
+    document.getElementById('rickroll-overlay').style.display = 'flex';
   } catch(e) {}
 }
 
@@ -1377,6 +1378,19 @@ const AUTH_MODAL_HTML = `
         <button class="btn btn-primary" onclick="handleSignUp()">💗 Create Account</button>
         <div style="margin-top:0.75rem"><span style="font-size:0.78rem;color:var(--muted)">Already have one? <a href="#" onclick="showSigninForm();return false;" style="color:var(--deep-pink)">Sign in</a></span></div>
         <div id="auth-signup-err" style="display:none" class="alert alert-error"></div>
+      </div>
+
+      <!-- Check email confirmation panel (shown after signup) -->
+      <div id="auth-checkemail-form" style="display:none">
+        <div style="text-align:center;padding:1.5rem 0.5rem">
+          <div style="font-size:2.5rem;margin-bottom:0.75rem">📬</div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:0.75rem">Check your email!</div>
+          <div style="font-size:0.88rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.6">We sent a confirmation link to <strong id="auth-checkemail-addr"></strong>.<br/>Click it to activate your account, then come back and sign in.</div>
+          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Didn't get it? Check your spam folder. Still nothing?</div>
+          <button class="btn btn-primary" onclick="resendConfirmation()" id="auth-resend-btn">📧 Resend Confirmation Email</button>
+          <div id="auth-resend-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
+          <div style="margin-top:1rem"><a href="#" onclick="showSigninForm();return false;" style="font-size:0.78rem;color:var(--muted)">← Back to sign in</a></div>
+        </div>
       </div>
 
       <!-- Forgot password form -->
@@ -1438,24 +1452,38 @@ function closeAuthModal() {
 }
 function showSigninForm() {
   document.getElementById('auth-modal-title').textContent = 'Sign In';
-  document.getElementById('auth-signin-form').style.display  = 'block';
-  document.getElementById('auth-signup-form').style.display  = 'none';
-  document.getElementById('auth-forgot-form').style.display  = 'none';
-  document.getElementById('auth-setpw-form').style.display   = 'none';
+  document.getElementById('auth-signin-form').style.display       = 'block';
+  document.getElementById('auth-signup-form').style.display       = 'none';
+  document.getElementById('auth-checkemail-form').style.display   = 'none';
+  document.getElementById('auth-forgot-form').style.display       = 'none';
+  document.getElementById('auth-setpw-form').style.display        = 'none';
 }
 function showSignupForm() {
   document.getElementById('auth-modal-title').textContent = 'Create Account';
-  document.getElementById('auth-signin-form').style.display  = 'none';
-  document.getElementById('auth-signup-form').style.display  = 'block';
-  document.getElementById('auth-forgot-form').style.display  = 'none';
-  document.getElementById('auth-setpw-form').style.display   = 'none';
+  document.getElementById('auth-signin-form').style.display       = 'none';
+  document.getElementById('auth-signup-form').style.display       = 'block';
+  document.getElementById('auth-checkemail-form').style.display   = 'none';
+  document.getElementById('auth-forgot-form').style.display       = 'none';
+  document.getElementById('auth-setpw-form').style.display        = 'none';
 }
 function showForgotForm() {
   document.getElementById('auth-modal-title').textContent = 'Reset Password';
-  document.getElementById('auth-signin-form').style.display  = 'none';
-  document.getElementById('auth-signup-form').style.display  = 'none';
-  document.getElementById('auth-forgot-form').style.display  = 'block';
-  document.getElementById('auth-setpw-form').style.display   = 'none';
+  document.getElementById('auth-signin-form').style.display       = 'none';
+  document.getElementById('auth-signup-form').style.display       = 'none';
+  document.getElementById('auth-checkemail-form').style.display   = 'none';
+  document.getElementById('auth-forgot-form').style.display       = 'block';
+  document.getElementById('auth-setpw-form').style.display        = 'none';
+}
+function showCheckEmailForm(email) {
+  document.getElementById('auth-modal-title').textContent = 'Almost there!';
+  document.getElementById('auth-signin-form').style.display       = 'none';
+  document.getElementById('auth-signup-form').style.display       = 'none';
+  document.getElementById('auth-checkemail-form').style.display   = 'block';
+  document.getElementById('auth-forgot-form').style.display       = 'none';
+  document.getElementById('auth-setpw-form').style.display        = 'none';
+  document.getElementById('auth-checkemail-addr').textContent     = email;
+  document.getElementById('auth-resend-msg').style.display        = 'none';
+  window._pendingConfirmEmail = email;
 }
 function openSetPasswordModal() {
   const m = document.getElementById('setpw-modal');
@@ -1474,7 +1502,17 @@ async function handleSignIn() {
     closeAuthModal();
     showToast('💗 Welcome back, ' + getDisplayName() + '!');
     if (typeof onAuthSuccess === 'function') onAuthSuccess();
-  } catch(e) { showAuthErr(err, e.message); }
+  } catch(e) {
+    const msg = e.message || '';
+    if (msg.toLowerCase().includes('email not confirmed') || msg.toLowerCase().includes('not confirmed')) {
+      // Show resend option instead of plain error
+      btn.disabled = false; btn.innerHTML = '💗 Sign In';
+      window._pendingConfirmEmail = email;
+      showAuthErr(err, 'Your email isn't confirmed yet. <a href="#" onclick="showCheckEmailForm(''+email.replace(/'/g,"\'")+'')" style="color:var(--deep-pink)">Resend confirmation →</a>', true);
+      return;
+    }
+    showAuthErr(err, msg);
+  }
   btn.disabled = false; btn.innerHTML = '💗 Sign In';
 }
 
@@ -1489,12 +1527,36 @@ async function handleSignUp() {
   if (pw.length < 6) { showAuthErr(err,'Password must be at least 6 characters.'); return; }
   if (pw !== pw2)    { showAuthErr(err,'Passwords do not match.'); return; }
   if (name.toLowerCase() === 'meanwhirls') { showAuthErr(err,'Oh honey. You are NOT a real MeanWhirl. You definitely cannot whirl with us now. 💅'); return; }
+  // Check display name uniqueness
+  try {
+    const existing = await sbGet('user_profiles', `display_name=ilike.${encodeURIComponent(name)}&select=id&limit=1`);
+    if (existing.length) { showAuthErr(err, 'That display name is already taken. Pick another one.'); return; }
+  } catch(e) { /* non-fatal, proceed */ }
+  const btn = document.querySelector('#auth-signup-form .btn.btn-primary');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Creating...'; }
   try {
     await signUp(email, pw, name);
-    closeAuthModal();
-    showToast('💗 Welcome to the burn book, ' + name + '!');
-    if (typeof onAuthSuccess === 'function') onAuthSuccess();
+    showCheckEmailForm(email);
   } catch(e) { showAuthErr(err, e.message); }
+  if (btn) { btn.disabled = false; btn.innerHTML = '💗 Create Account'; }
+}
+
+async function resendConfirmation() {
+  const email = window._pendingConfirmEmail;
+  if (!email) return;
+  const btn = document.getElementById('auth-resend-btn');
+  const msg = document.getElementById('auth-resend-msg');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const { error } = await getSb().auth.resend({ type: 'signup', email });
+    if (error) throw error;
+    msg.className = 'alert alert-success'; msg.textContent = '✅ Confirmation email resent! Check your inbox (and spam).'; msg.style.display = 'block';
+    btn.textContent = '✅ Sent!';
+    setTimeout(() => { btn.disabled = false; btn.textContent = '📧 Resend Confirmation Email'; }, 5000);
+  } catch(e) {
+    msg.className = 'alert alert-error'; msg.textContent = 'Failed to resend: ' + e.message; msg.style.display = 'block';
+    btn.disabled = false; btn.textContent = '📧 Resend Confirmation Email';
+  }
 }
 
 async function handleForgotPassword() {
@@ -1530,7 +1592,7 @@ async function submitSetPassword() {
   } catch(e) { err.textContent=e.message; err.style.display='block'; }
 }
 
-function showAuthErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+function showAuthErr(el, msg, isHtml=false) { if(isHtml){el.innerHTML=msg;}else{el.textContent=msg;} el.style.display='block'; }
 
 // ── Auth nav bar widget ───────────────────────────────
 function updateAuthUI() {

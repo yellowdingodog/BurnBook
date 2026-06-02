@@ -288,7 +288,7 @@
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>IP Hash</th><th>Status</th><th>🎵 Rolled</th><th>Linked Account</th><th>Admin Note</th><th>Last Seen</th><th>Actions</th></tr></thead>
+          <thead><tr><th>IP Hash</th><th>Status</th><th>Linked Account</th><th>Admin Note</th><th>Last Seen</th><th>Actions</th></tr></thead>
           <tbody id="tb-ips"></tbody>
         </table>
       </div>
@@ -378,13 +378,34 @@
     <!-- ACCOUNTS -->
     <div id="ttab-accounts" class="top-panel">
       <div class="section-hdr"><span class="section-title">👥 User Accounts</span><button class="refresh-btn" onclick="loadAccounts()">↺ Refresh</button></div>
-      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Manage user accounts. Grant or revoke admin. Block users. Adjust vote weight.</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem">Manage user accounts. Grant or revoke admin. Block users. Adjust vote weight.</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem;background:#e8f5e9;border-left:3px solid #388e3c;padding:0.5rem 0.75rem;border-radius:2px;">
+        <strong>Blocking an account</strong> prevents that user from posting entries, comments, victim statements, or votes. It does <em>not</em> delete their existing content.<br/>
+        <strong>Blocking an IP</strong> (on the IP Profiles tab) prevents that IP address from creating new accounts.
+      </div>
       <div class="tbl-wrap">
         <table><thead><tr>
           <th>Display Name</th><th>Email</th><th>Admin</th><th>Vote Weight</th>
-          <th>Status</th><th>Note</th><th>Joined</th><th>Actions</th>
+          <th>Status</th><th>Note</th><th>Joined</th><th>Visits</th><th>Actions</th>
         </tr></thead>
         <tbody id="tb-accounts"></tbody></table>
+      </div>
+    </div>
+
+    <!-- User detail drawer -->
+    <div class="drawer-overlay" id="user-drawer-overlay" onclick="closeUserDrawer()"></div>
+    <div class="user-drawer" id="user-drawer">
+      <div class="user-drawer-header">
+        <div class="user-drawer-title" id="user-drawer-title">User</div>
+        <button class="user-drawer-close" onclick="closeUserDrawer()">✕</button>
+      </div>
+      <div class="user-drawer-tabs">
+        <button class="user-drawer-tab active" onclick="switchDrawerTab('ud-activity',this)">📋 Activity Log</button>
+        <button class="user-drawer-tab" onclick="switchDrawerTab('ud-content',this)">📝 Content</button>
+      </div>
+      <div class="user-drawer-body">
+        <div id="ud-activity" class="user-drawer-panel active"></div>
+        <div id="ud-content" class="user-drawer-panel"></div>
       </div>
     </div>
 
@@ -988,7 +1009,7 @@
 
     async function loadIpProfiles() {
       const tb = document.getElementById('tb-ips');
-      tb.innerHTML = loadingRow(6);
+      tb.innerHTML = loadingRow(5);
       try {
         _allIpProfiles = await sbGet('ip_profiles', 'order=last_seen.desc');
         // Fetch linked accounts for display
@@ -1022,7 +1043,7 @@
 
     function renderIpProfiles(profiles) {
       const tb = document.getElementById('tb-ips');
-      if (!profiles.length) { tb.innerHTML = emptyRow(6, 'No profiles found.'); return; }
+      if (!profiles.length) { tb.innerHTML = emptyRow(5, 'No profiles found.'); return; }
       tb.innerHTML = '';
       profiles.forEach(p => {
         const tr = document.createElement('tr');
@@ -1037,7 +1058,6 @@
         tr.innerHTML = `
           <td style="font-size:.75rem;color:var(--muted);font-family:monospace">${esc(p.ip_hash)}</td>
           <td>${statusBadge}</td>
-          <td style="text-align:center;font-size:1rem">${p.rickrolled ? `<span title="Has been rickrolled">🎵</span> <button class="btn-a ar" style="font-size:0.6rem;padding:0.15rem 0.4rem" onclick="unRickroll('${p.ip_hash}')">↺ Re-roll</button>` : '<span style="color:var(--muted);font-size:.75rem">—</span>'}</td>
           <td>${accountHtml}</td>
           <td style="min-width:160px"><input type="text" value="${esc(p.admin_note||'')}" placeholder="Who is this?" style="width:100%;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.28rem 0.5rem;font-family:Raleway,sans-serif;font-size:0.75rem;color:var(--ink);background:var(--cream);outline:none;" id="note-${p.ip_hash.replace(/[^a-z0-9]/gi,'_')}" onblur="saveIpNote('${p.ip_hash}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" /></td>
           <td style="font-size:.74rem;color:var(--muted)">${p.last_seen?new Date(p.last_seen).toLocaleString():'-'}</td>
@@ -1069,13 +1089,6 @@
       } catch(err) { alert('Failed: ' + err.message); }
     }
 
-    async function unRickroll(ipHash) {
-      try {
-        await sbPatch('ip_profiles', `ip_hash=eq.${ipHash}`, { rickrolled: false });
-        showToast('🎵 They will be rickrolled again on next visit.');
-        loadIpProfiles();
-      } catch(err) { alert('Failed: ' + err.message); }
-    }
 
     async function toggleAdmin(ipHash, grant) {
       try {
@@ -1119,7 +1132,7 @@
 
     async function loadIpActivity() {
       const tb = document.getElementById('tb-activity');
-      tb.innerHTML = loadingRow(6);
+      tb.innerHTML = loadingRow(5);
       try {
         let params = 'order=created_at.desc&limit=200';
         const ipFilter = document.getElementById('act-ip-filter')?.value.trim();
@@ -1423,7 +1436,7 @@
     async function loadAccounts() {
       const tb = document.getElementById('tb-accounts');
       if (!tb) return;
-      tb.innerHTML = loadingRow(9);
+      tb.innerHTML = loadingRow(10);
       try {
         const profiles = await sbGet('user_profiles', 'order=created_at.asc');
         if (!profiles.length) { tb.innerHTML = emptyRow(9, 'No accounts yet.'); return; }
@@ -1438,8 +1451,10 @@
           const noteInput = `<input type="text" value="${esc(p.admin_note||'')}" placeholder="Who is this?" style="width:120px;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.28rem 0.5rem;font-size:0.75rem;background:var(--cream)" onblur="saveAccountNote('${p.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" />`;
           const blockBtn = isLegacy ? '' : (p.is_blocked ? `<button class="btn-a ars" onclick="toggleAccountBlock('${p.id}',false)">↩ Unblock</button>` : `<button class="btn-a add" onclick="toggleAccountBlock('${p.id}',true)">⛔ Block</button>`);
           const adminBtn = isLegacy ? '' : (p.is_admin ? `<button class="btn-a au" onclick="toggleAccountAdmin('${p.id}',false)">Revoke Admin</button>` : `<button class="btn-a aa" onclick="toggleAccountAdmin('${p.id}',true)">Grant Admin</button>`);
+          const viewBtn = isLegacy ? '' : `<button class="btn-a ae" onclick="openUserDrawer('${p.id}','${esc(p.display_name)}')">👤 View</button>`;
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td style="font-weight:600">${esc(p.display_name)}${isLegacy?'<br><span style="font-size:.65rem;color:var(--muted)">(legacy)</span>':''}</td><td style="font-size:.75rem;color:var(--muted)">${isLegacy?'—':esc(p.email||'—')}</td><td>${adminBadge}</td><td style="min-width:130px">${weightInput}</td><td>${statusBadge}</td><td>${noteInput}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(p.created_at)}</td><td style="min-width:180px">${blockBtn} ${adminBtn}</td>`;
+          const reRollBtn = isLegacy ? '' : (p.rickrolled ? `<button class="btn-a ae" title="Reset rickroll" onclick="adminResetRickroll('${p.id}')">🎵 Re-roll</button>` : '');
+          tr.innerHTML = `<td style="font-weight:600">${esc(p.display_name)}${isLegacy?'<br><span style="font-size:.65rem;color:var(--muted)">(legacy)</span>':''}</td><td style="font-size:.75rem;color:var(--muted)">${isLegacy?'—':esc(p.email||'—')}</td><td>${adminBadge}</td><td style="min-width:130px">${weightInput}</td><td>${statusBadge}</td><td>${noteInput}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(p.created_at)}</td><td style="font-size:.8rem;text-align:center">${p.visit_count||0}</td><td style="min-width:200px">${viewBtn} ${reRollBtn} ${blockBtn} ${adminBtn}</td>`;
           tb.appendChild(tr);
         });
       } catch(err) { tb.innerHTML = emptyRow(8, 'Failed: '+err.message); }
@@ -1467,6 +1482,180 @@
         await Promise.all([sbPatch('votes',`user_id=eq.${userId}`,{weight}),sbPatch('nap_votes',`user_id=eq.${userId}`,{weight})]);
         showToast(`✅ Vote weight set to ${weight}x.`); loadAccounts();
       } catch(err) { alert('Failed: '+err.message); }
+    }
+
+
+    // ── User detail drawer ───────────────────────────────────
+    let _drawerUserId = null;
+
+    function openUserDrawer(userId, displayName) {
+      _drawerUserId = userId;
+      document.getElementById('user-drawer-title').textContent = '👤 ' + displayName;
+      document.getElementById('user-drawer').classList.add('open');
+      document.getElementById('user-drawer-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      // Reset to first tab
+      document.querySelectorAll('.user-drawer-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.user-drawer-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('ud-activity').classList.add('active');
+      document.querySelector('.user-drawer-tab').classList.add('active');
+      loadDrawerActivity(userId);
+      loadDrawerContent(userId);
+    }
+
+    function closeUserDrawer() {
+      document.getElementById('user-drawer').classList.remove('open');
+      document.getElementById('user-drawer-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+      _drawerUserId = null;
+    }
+
+    function switchDrawerTab(panelId, btn) {
+      document.querySelectorAll('.user-drawer-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.user-drawer-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(panelId).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    async function loadDrawerActivity(userId) {
+      const el = document.getElementById('ud-activity');
+      el.innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
+      try {
+        const rows = await sbGet('ip_activity', `user_id=eq.${userId}&order=created_at.desc&limit=100`);
+        if (!rows.length) { el.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:0.5rem 0">No activity logged.</div>'; return; }
+        let html = '<div class="ud-section"><div class="ud-section-title">Activity Log (last 100)</div>';
+        html += '<table style="width:100%;border-collapse:collapse;font-size:.78rem">';
+        html += '<thead><tr style="background:rgba(0,0,0,0.04)"><th style="text-align:left;padding:.3rem .5rem">When</th><th style="text-align:left;padding:.3rem .5rem">Action</th><th style="text-align:left;padding:.3rem .5rem">Detail</th></tr></thead><tbody>';
+        rows.forEach(r => {
+          html += `<tr style="border-top:1px solid rgba(0,0,0,0.05)">
+            <td style="padding:.3rem .5rem;white-space:nowrap;color:var(--muted)">${toTS(r.created_at)}</td>
+            <td style="padding:.3rem .5rem;font-weight:600">${esc(r.action)}</td>
+            <td style="padding:.3rem .5rem;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.detail||'')}">${esc(r.detail||'—')}</td>
+          </tr>`;
+        });
+        html += '</tbody></table></div>';
+        el.innerHTML = html;
+      } catch(e) { el.innerHTML = `<div class="alert alert-error">Failed: ${e.message}</div>`; }
+    }
+
+    async function loadDrawerContent(userId) {
+      const el = document.getElementById('ud-content');
+      el.innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
+      try {
+        const [entries, napEntries, comments, napComments, victims, defenses] = await Promise.all([
+          sbGet('entries',           `user_id=eq.${userId}&order=created_at.desc&select=id,subject,status,hidden,created_at`),
+          sbGet('nap_entries',       `user_id=eq.${userId}&order=created_at.desc&select=id,subject,status,hidden,created_at`),
+          sbGet('comments',          `user_id=eq.${userId}&order=created_at.desc&select=id,text,created_at,entry_id`),
+          sbGet('nap_comments',      `user_id=eq.${userId}&order=created_at.desc&select=id,text,created_at,entry_id`),
+          sbGet('victim_statements', `user_id=eq.${userId}&order=created_at.desc&select=id,text,status,created_at,entry_id`),
+          sbGet('nap_defenses',      `user_id=eq.${userId}&order=created_at.desc&select=id,text,status,created_at,entry_id`),
+        ]);
+
+        el.innerHTML = '';
+
+        function makeSection(title, items, type) {
+          if (!items.length) return;
+          const sec = document.createElement('div');
+          sec.className = 'ud-section';
+
+          const isDeleted = item => item.hidden || item.status === 'deleted' || item.text === '[deleted]';
+
+          const hdr = document.createElement('div');
+          hdr.className = 'ud-section-title';
+          hdr.textContent = title + ' (' + items.length + ')';
+          sec.appendChild(hdr);
+
+          const bulkBar = document.createElement('div');
+          bulkBar.className = 'ud-bulk-bar';
+          bulkBar.innerHTML = `
+            <button class="btn-a ae" onclick="udSelectAll('${type}', true)">Select All</button>
+            <button class="btn-a" onclick="udSelectAll('${type}', false)">Deselect</button>
+            <button class="btn-a add" onclick="udDeleteSelected('${type}')">🗑 Delete Selected</button>
+            <button class="btn-a add" onclick="udDeleteAll('${type}', ${JSON.stringify(items.map(i=>i.id))})">⚠️ Delete All</button>`;
+          sec.appendChild(bulkBar);
+
+          items.forEach(item => {
+            const deleted = isDeleted(item);
+            const row = document.createElement('div');
+            row.className = 'ud-item' + (deleted ? ' ud-item-deleted' : '');
+            row.dataset.type = type;
+            row.dataset.id = item.id;
+
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.className = 'ud-item-cb';
+            cb.dataset.id = item.id;
+            cb.dataset.type = type;
+            cb.disabled = deleted;
+
+            const body = document.createElement('div');
+            body.className = 'ud-item-body';
+            const subject = item.subject || (item.text ? (item.text.slice(0,80)+(item.text.length>80?'…':'')) : '—');
+            const statusTag = deleted ? ' <span style="font-size:.65rem;color:#c62828;font-weight:700">[deleted]</span>' : (item.status ? ` <span class="badge-${item.status==='approved'?'approved':item.status==='pending'?'pending':'hidden'}" style="font-size:.6rem;padding:.1rem .35rem">${item.status}</span>` : '');
+            body.innerHTML = `<div class="ud-item-subject">${esc(subject)}${statusTag}</div><div class="ud-item-meta">${toTS(item.created_at)}</div>`;
+
+            row.appendChild(cb);
+            row.appendChild(body);
+            sec.appendChild(row);
+          });
+
+          el.appendChild(sec);
+        }
+
+        makeSection('📖 Burn Entries',       entries,    'entries');
+        makeSection('😴 Nap Entries',         napEntries, 'nap_entries');
+        makeSection('💬 Burn Comments',       comments,   'comments');
+        makeSection('💬 Nap Comments',        napComments,'nap_comments');
+        makeSection('🎤 Victim Statements',   victims,    'victim_statements');
+        makeSection('🛡 Nap Defenses',        defenses,   'nap_defenses');
+
+        if (!el.children.length) {
+          el.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:.5rem 0">No content found for this user.</div>';
+        }
+      } catch(e) { el.innerHTML = `<div class="alert alert-error">Failed: ${e.message}</div>`; }
+    }
+
+    function udSelectAll(type, checked) {
+      document.querySelectorAll(`#ud-content .ud-item-cb[data-type="${type}"]`).forEach(cb => { if (!cb.disabled) cb.checked = checked; });
+    }
+
+    async function udDeleteSelected(type) {
+      const ids = [...document.querySelectorAll(`#ud-content .ud-item-cb[data-type="${type}"]:checked`)].map(cb => cb.dataset.id);
+      if (!ids.length) { showToast('Nothing selected.'); return; }
+      if (!confirm(`Soft-delete ${ids.length} selected item(s)?`)) return;
+      await udSoftDelete(type, ids);
+    }
+
+    async function udDeleteAll(type, ids) {
+      if (!confirm(`Soft-delete ALL ${ids.length} item(s) in this section? This cannot be easily undone.`)) return;
+      await udSoftDelete(type, ids);
+    }
+
+    async function udSoftDelete(type, ids) {
+      if (!ids.length) return;
+      const idList = ids.join(',');
+      try {
+        if (type === 'entries') {
+          await sbPatch('entries', `id=in.(${idList})`, { hidden: true, status: 'deleted' });
+        } else if (type === 'nap_entries') {
+          await sbPatch('nap_entries', `id=in.(${idList})`, { hidden: true, status: 'deleted' });
+        } else if (type === 'comments') {
+          await sbPatch('comments', `id=in.(${idList})`, { text: '[deleted]' });
+        } else if (type === 'nap_comments') {
+          await sbPatch('nap_comments', `id=in.(${idList})`, { text: '[deleted]' });
+        } else if (type === 'victim_statements') {
+          await sbPatch('victim_statements', `id=in.(${idList})`, { status: 'deleted' });
+        } else if (type === 'nap_defenses') {
+          await sbPatch('nap_defenses', `id=in.(${idList})`, { status: 'deleted' });
+        }
+        showToast(`✅ ${ids.length} item(s) soft-deleted.`);
+        loadDrawerContent(_drawerUserId);
+      } catch(e) { alert('Failed: ' + e.message); }
+    }
+
+    async function adminResetRickroll(userId) {
+      try { await sbPatch('user_profiles', `id=eq.${userId}`, { rickrolled: false }); showToast('🎵 They'll be welcomed again on next visit.'); loadAccounts(); }
+      catch(err) { alert('Failed: ' + err.message); }
     }
 
     // ── Go ────────────────────────────────────────────────────

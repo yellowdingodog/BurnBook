@@ -196,6 +196,14 @@
       }
     }
 
+    async function resetRickroll() {
+      const msg = document.getElementById('rickroll-reset-msg');
+      try {
+        await _sb.from('user_profiles').update({ rickrolled: false }).eq('id', _currentUser.id);
+        msg.className = 'alert alert-success'; msg.textContent = '🎵 Reset! You'll be welcomed again on your next visit.'; msg.style.display = 'block';
+      } catch(e) { msg.className = 'alert alert-error'; msg.textContent = e.message; msg.style.display = 'block'; }
+    }
+
     async function doSignOut() {
       await _sb.auth.signOut();
       window.location.href = 'index.html';
@@ -252,7 +260,7 @@
 
       main.innerHTML = `
         <div class="page-title">👤 ${esc(prof.display_name)}</div>
-        <p class="page-sub">${esc(_currentUser.email)} &nbsp;·&nbsp; Member since ${toTS(prof.created_at)}</p>
+        <p class="page-sub">${esc(_currentUser.email)} &nbsp;·&nbsp; Member since ${toTS(prof.created_at)} &nbsp;·&nbsp; ${prof.visit_count||1} visit${(prof.visit_count||1)!==1?'s':''}</p>
 
         <div class="stat-row">
           <div class="stat"><div class="stat-num">${myEntries.length+myNapEntries.length}</div><div class="stat-label">Entries</div></div>
@@ -374,6 +382,12 @@
               <button class="btn-danger" onclick="doSignOut()">Sign Out</button>
             </div>
             <div class="danger-zone" style="margin-top:1rem">
+              <div class="danger-title">Rickroll Reset</div>
+              <p style="font-size:.82rem;color:var(--muted);margin-bottom:0.75rem">You've already been welcomed to the burn book. Reset this so you get the full experience again on your next visit.</p>
+              <button class="btn-danger" onclick="resetRickroll()">🎵 Re-Roll Me</button>
+              <div id="rickroll-reset-msg" style="display:none;margin-top:0.5rem" class="alert"></div>
+            </div>
+            <div class="danger-zone" style="margin-top:1rem">
               <div class="danger-title">Delete Account</div>
               <p style="font-size:.82rem;color:var(--muted);margin-bottom:0.75rem">Permanently removes your account. Your entries, comments, victim statements, and nap defenses will be marked deleted and hidden. Votes are deleted outright. <strong>This cannot be undone.</strong></p>
               <button class="btn-danger" onclick="confirmDeleteAccount()">🗑 Delete My Account</button>
@@ -388,6 +402,11 @@
       const msg = document.getElementById('s-name-msg');
       if (!val) { msg.className='alert alert-error';msg.textContent='Name cannot be empty.';msg.style.display='block';return; }
       if (val.toLowerCase()==='meanwhirls') { msg.className='alert alert-error';msg.textContent='Oh honey. No. 💅';msg.style.display='block';return; }
+      // Check uniqueness (case-insensitive, excluding own current name)
+      try {
+        const taken = await sbGet('user_profiles', `display_name=ilike.${encodeURIComponent(val)}&id=neq.${_currentUser.id}&select=id&limit=1`);
+        if (taken.length) { msg.className='alert alert-error';msg.textContent='That display name is already taken.';msg.style.display='block';return; }
+      } catch(e) { /* non-fatal */ }
       try {
         await _sb.from('user_profiles').update({ display_name: val }).eq('id', _currentUser.id);
         _currentProfile.display_name = val;
