@@ -101,8 +101,9 @@
     let _currentUser = null, _currentProfile = null;
 
     const H = {'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON};
-    const sbGet   = async(t,p='')=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}?${p}`,{headers:H});if(!r.ok)throw new Error(await r.text());return r.json();};
-    const sbPatch = async(t,p,b)=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());return r.json();};
+    const sbGet    = async(t,p='')=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}?${p}`,{headers:H});if(!r.ok)throw new Error(await r.text());return r.json();};
+    const sbPatch  = async(t,p,b)=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());return r.json();};
+    const sbDelete = async(t,p)=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}?${p}`,{method:'DELETE',headers:H});if(!r.ok)throw new Error(await r.text());};
 
     const showToast = msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);};
     const esc = s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -116,29 +117,10 @@
         if (session) { _currentUser = session.user; renderPasswordReset(); return; }
       }
 
-      // DEBUG: dump ALL localStorage keys and getSession result
-      const allKeys = Object.keys(localStorage);
-      const { data: sessionData, error: sessionError } = await _sb.auth.getSession();
+      const { data: sessionData } = await _sb.auth.getSession();
       const session = sessionData?.session;
 
-      document.getElementById('main-content').innerHTML = `
-        <div style="font-family:monospace;font-size:0.75rem;background:#fff;border:2px solid #c00;padding:1.5rem;margin:2rem;border-radius:4px;white-space:pre-wrap;word-break:break-all">
-<b>DEBUG — Auth State</b>
-
-All localStorage keys (${allKeys.length} total):
-${allKeys.length ? allKeys.map(k => '  ' + k).join('\n') : '  (none)'}
-
-getSession() error: ${sessionError ? JSON.stringify(sessionError) : 'none'}
-getSession() session: ${session ? 'YES — user: '+session.user?.email : 'NULL'}
-
-onAuthStateChange events:
-        </div>
-        <div id="auth-events" style="font-family:monospace;font-size:0.75rem;background:#fff;border:2px solid #090;padding:1rem;margin:2rem;border-radius:4px;white-space:pre-wrap"></div>
-      `;
-
       _sb.auth.onAuthStateChange(async (event, session) => {
-        const el = document.getElementById('auth-events');
-        if (el) el.innerHTML += event + ': ' + (session?.user?.email || 'no user') + '\n';
         if (event === 'PASSWORD_RECOVERY') { renderPasswordReset(); return; }
         if (event === 'SIGNED_OUT') { renderNotLoggedIn(); return; }
         if (event === 'SIGNED_IN') {
@@ -165,6 +147,52 @@ onAuthStateChange events:
       if (_currentUser) {
         w.innerHTML = `<span style="font-size:0.7rem;color:rgba(255,255,255,0.7)">👤 ${esc(_currentProfile?.display_name||'')}</span>
           <button onclick="doSignOut()" style="background:none;border:1px solid rgba(255,255,255,0.25);border-radius:2px;padding:0.2rem 0.6rem;font-family:Raleway,sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);cursor:pointer">Sign Out</button>`;
+      }
+    }
+
+    async function confirmDeleteAccount() {
+      const confirmed = confirm(
+        'Are you absolutely sure?\n\n' +
+        'This will permanently delete your account. Your entries, comments, victim statements, and nap defenses will be hidden and marked deleted. Your votes will be deleted. This cannot be undone.'
+      );
+      if (!confirmed) return;
+      const double = confirm('Last chance. Really delete everything?');
+      if (!double) return;
+      await deleteAccount();
+    }
+
+    async function deleteAccount() {
+      const statusEl = document.getElementById('delete-account-status');
+      const btn = document.querySelector('[onclick="confirmDeleteAccount()"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Deleting...'; }
+      statusEl.className = 'alert'; statusEl.style.display = 'block'; statusEl.textContent = 'Deleting your account…';
+      const uid = _currentUser.id;
+      try {
+        // Soft-delete: mark entries, comments, victim statements, nap defenses as deleted/hidden
+        await Promise.all([
+          sbPatch('entries',           `user_id=eq.${uid}`, { hidden: true, status: 'deleted' }),
+          sbPatch('nap_entries',       `user_id=eq.${uid}`, { hidden: true, status: 'deleted' }),
+          sbPatch('comments',          `user_id=eq.${uid}`, { text: '[deleted]' }),
+          sbPatch('nap_comments',      `user_id=eq.${uid}`, { text: '[deleted]' }),
+          sbPatch('victim_statements', `user_id=eq.${uid}`, { status: 'deleted' }),
+          sbPatch('nap_defenses',      `user_id=eq.${uid}`, { status: 'deleted' }),
+        ]);
+        // Hard-delete votes
+        await Promise.all([
+          sbDelete('votes',     `user_id=eq.${uid}`),
+          sbDelete('nap_votes', `user_id=eq.${uid}`),
+        ]);
+        // Delete user profile row
+        await sbDelete('user_profiles', `id=eq.${uid}`);
+        // Sign out — Supabase auth user stays but is effectively orphaned (admin can clean up)
+        await _sb.auth.signOut();
+        statusEl.className = 'alert alert-success';
+        statusEl.textContent = '✅ Account deleted. Goodbye. 💔';
+        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+      } catch(err) {
+        statusEl.className = 'alert alert-error';
+        statusEl.textContent = 'Something went wrong: ' + err.message;
+        if (btn) { btn.disabled = false; btn.textContent = '🗑 Delete My Account'; }
       }
     }
 
@@ -344,6 +372,12 @@ onAuthStateChange events:
               <div class="danger-title">Sign out everywhere</div>
               <p style="font-size:.82rem;color:var(--muted);margin-bottom:0.75rem">Signs you out on all devices. You'll need to sign back in.</p>
               <button class="btn-danger" onclick="doSignOut()">Sign Out</button>
+            </div>
+            <div class="danger-zone" style="margin-top:1rem">
+              <div class="danger-title">Delete Account</div>
+              <p style="font-size:.82rem;color:var(--muted);margin-bottom:0.75rem">Permanently removes your account. Your entries, comments, victim statements, and nap defenses will be marked deleted and hidden. Votes are deleted outright. <strong>This cannot be undone.</strong></p>
+              <button class="btn-danger" onclick="confirmDeleteAccount()">🗑 Delete My Account</button>
+              <div id="delete-account-status" style="display:none;margin-top:0.6rem" class="alert"></div>
             </div>
           </div>
         </div>`;

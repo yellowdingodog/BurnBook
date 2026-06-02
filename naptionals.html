@@ -501,12 +501,12 @@
 
     // ── Supabase ──────────────────────────────────────────────
     const SB = SUPABASE_URL;
-    const H  = {'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON};
-    const sbGet    = async (t,p='')  => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{headers:H}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
-    const sbPost   = async (t,b)     => { const r=await fetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
-    const sbPatch  = async (t,p,b)   => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
-    const sbDelete = async (t,p)     => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'DELETE',headers:H}); if(!r.ok)throw new Error(await r.text()); };
-    const sbUpsert = async (t,b,oc)  => { const u=`${SB}/rest/v1/${t}`+(oc?`?on_conflict=${oc}`:''); const r=await fetch(u,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const getH = () => ({'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':'Bearer '+(window._sessionToken||SUPABASE_ANON)});
+    const sbGet    = async (t,p='')  => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{headers:getH()}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbPost   = async (t,b)     => { const r=await fetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:{...getH(),'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbPatch  = async (t,p,b)   => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...getH(),'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbDelete = async (t,p)     => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'DELETE',headers:getH()}); if(!r.ok)throw new Error(await r.text()); };
+    const sbUpsert = async (t,b,oc)  => { const u=`${SB}/rest/v1/${t}`+(oc?`?on_conflict=${oc}`:''); const r=await fetch(u,{method:'POST',headers:{...getH(),'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
 
     const uploadImage = async (file) => {
       const ext=file.name.split('.').pop().toLowerCase()||'jpg', path=`nap_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
@@ -1023,6 +1023,7 @@ const authReadyPromise = new Promise(r => _authReadyResolve = r);
 
 async function initAuth() {
   const { data: { session } } = await getSb().auth.getSession();
+  window._sessionToken = session?.access_token || null;
   if (session?.user) {
     _currentUser = session.user;
     _currentProfile = await fetchProfile(session.user.id);
@@ -1033,6 +1034,7 @@ async function initAuth() {
 
   // Listen for changes
   getSb().auth.onAuthStateChange(async (event, session) => {
+    window._sessionToken = session?.access_token || null;
     if (session?.user) {
       _currentUser = session.user;
       _currentProfile = await fetchProfile(session.user.id);

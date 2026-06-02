@@ -449,9 +449,10 @@
         </div>
         <div class="form-group">
           <label class="form-label">Posting as</label>
-          <input class="form-input" id="f-submitter" readonly style="opacity:0.7;cursor:default" />
-          <label class="form-check"><input type="checkbox" id="f-anonymous" onchange="if(this.checked){const mw=document.getElementById('f-meanwhirls');if(mw)mw.checked=false;}" /><span class="form-check-label">Post as <strong>Anonymous</strong></span></label>
-          <label class="form-check" id="f-mw-wrap" style="display:none"><input type="checkbox" id="f-meanwhirls" onchange="if(this.checked)document.getElementById('f-anonymous').checked=false;" /><span class="form-check-label">Post as <strong>MeanWhirls</strong></span></label>
+          <div id="f-author-options" style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.25rem">
+            <!-- options injected by prefillForms() -->
+          </div>
+          <input type="hidden" id="f-submitter" />
         </div>
         <div class="form-group">
           <label class="form-label">Hashtags <span class="form-label-note">(optional — e.g. #wild #classic)</span></label>
@@ -546,12 +547,13 @@
 
     // ── Supabase ──────────────────────────────────────────────
     const SB = SUPABASE_URL;
-    const H  = {'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON};
-    const sbGet    = async (t,p='')      => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{headers:H}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
-    const sbPost   = async (t,b)         => { const r=await fetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
-    const sbPatch  = async (t,p,b)       => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
-    const sbDelete = async (t,p)         => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'DELETE',headers:H}); if(!r.ok)throw new Error(await r.text()); };
-    const sbUpsert = async (t,b,oc)      => { const u=`${SB}/rest/v1/${t}`+(oc?`?on_conflict=${oc}`:''); const r=await fetch(u,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    // getH() always sends the live session token so RLS works for logged-in users
+    const getH = () => ({'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':'Bearer '+(window._sessionToken||SUPABASE_ANON)});
+    const sbGet    = async (t,p='')      => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{headers:getH()}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbPost   = async (t,b)         => { const r=await fetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:{...getH(),'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbPatch  = async (t,p,b)       => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...getH(),'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbDelete = async (t,p)         => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'DELETE',headers:getH()}); if(!r.ok)throw new Error(await r.text()); };
+    const sbUpsert = async (t,b,oc)      => { const u=`${SB}/rest/v1/${t}`+(oc?`?on_conflict=${oc}`:''); const r=await fetch(u,{method:'POST',headers:{...getH(),'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
     const uploadImage = async (file) => {
       const ext=file.name.split('.').pop().toLowerCase()||'jpg', path=`${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
       const r=await fetch(`${SB}/storage/v1/object/${BUCKET}/${path}`,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':file.type},body:file});
@@ -729,14 +731,14 @@
       const current=myVotes[entryId]; const newScore=(current===score)?null:score;
       try {
         const ip=await getIpHash();
-        const weight=_currentProfile?.vote_weight ?? (_currentProfile?.is_admin ? _adminVoteWeight : 1);
+        const weight=(_currentProfile?.vote_weight != null) ? _currentProfile.vote_weight : (_currentProfile?.is_admin ? _adminVoteWeight : 1);
         if(newScore===null){await sbDelete('votes',`entry_id=eq.${entryId}&ip_hash=eq.${ip}`);delete myVotes[entryId];}
         else{await sbUpsert('votes',{entry_id:entryId,ip_hash:ip,vote:newScore,weight,user_id:getUserId()},'entry_id,ip_hash');myVotes[entryId]=newScore;}
         await logActivity('vote', entryId, `Score: ${newScore||'cleared'}`);
         localStorage.setItem('mw_votes_heat',JSON.stringify(myVotes));
-        const votes=await sbGet('votes',`entry_id=eq.${entryId}&select=vote`);
-        const sum=votes.reduce((a,v)=>a+v.vote,0),count=votes.length;
-        allVoteData[entryId]={avg:count?+(sum/count).toFixed(1):null,count,myVote:myVotes[entryId]||null};
+        const votes=await sbGet('votes',`entry_id=eq.${entryId}&select=vote,weight`);
+        const ws=votes.reduce((a,v)=>a+(v.vote*(v.weight||1)),0),tw=votes.reduce((a,v)=>a+(v.weight||1),0);
+        allVoteData[entryId]={avg:tw?+(ws/tw).toFixed(1):null,count:votes.length,myVote:myVotes[entryId]||null};
         const w=document.querySelector(`[data-heat-compact="${entryId}"]`); if(w)updateCompactHeat(w,entryId);
         if(currentDetailEntry?.id===entryId)renderDetailHeat(currentDetailEntry);
       }catch(e){showToast('Vote failed — try again.');}
@@ -1000,19 +1002,22 @@
 
     document.getElementById('submit-btn').addEventListener('click',async()=>{
       const subject=document.getElementById('f-subject').value.trim(),text=document.getElementById('f-text').value.trim(),hashtagRaw=document.getElementById('f-hashtags').value.trim();
-      const anonymous=document.getElementById('f-anonymous').checked,postAsMW=isAdmin()&&document.getElementById('f-meanwhirls').checked;
+      const selected=document.querySelector('input[name="f-post-as"]:checked');
+      const postVal=selected?selected.value:'';
+      const isMW=postVal==='MeanWhirls',isAnon=postVal==='Anonymous';
       const submitter=getDisplayName();
+      const displayAuthor=isMW?'MeanWhirls':(isAnon?'Anonymous':submitter);
       if(!subject){showStatus('error','Who are we burning?');return;}if(!isLoggedIn()){prefillForms();return;}
       if(await isBlocked()){showStatus('error','Your access has been restricted.');return;}
       const btn=document.getElementById('submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';document.getElementById('submit-status').style.display='none';
-      const isMW=postAsMW,displayAuthor=isMW?'MeanWhirls':(anonymous?'Anonymous':submitter),hashtags=parseHashtags(hashtagRaw);
+      const hashtags=parseHashtags(hashtagRaw);
       try{let imageUrl='';if(selectedFile){const resized=await resizeImage(selectedFile);imageUrl=await uploadImage(resized);}const existing=await sbGet('entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');const nextOrder=((existing[0]?.ui_order)||0)+1;const _subIp=await getIpHash();await sbPost('entries',{subject,text,image_url:imageUrl,status:isMW?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isMW,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp,user_id:getUserId()});showStatus('success',isMW?'🔥 Mean Whirls entry posted!':'✅ Submitted! Appears after moderation. 💗');
         await logActivity('submit', null, `Submitted entry: "${subject}"`);
         resetSubmitForm();}
       catch(err){showStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='🔥 Submit to the Burn Book';
     });
-    function resetSubmitForm(){['f-subject','f-text','f-hashtags'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-anonymous').checked=false;const fmw=document.getElementById('f-meanwhirls');if(fmw)fmw.checked=false;selectedFile=null;document.getElementById('upload-text').textContent='Drag & drop or click to upload';const p=document.getElementById('upload-preview');p.style.display='none';p.src='';document.getElementById('f-image').value='';}
+    function resetSubmitForm(){['f-subject','f-text','f-hashtags'].forEach(id=>document.getElementById(id).value='');selectedFile=null;document.getElementById('upload-text').textContent='Drag & drop or click to upload';const p=document.getElementById('upload-preview');p.style.display='none';p.src='';document.getElementById('f-image').value='';prefillForms();}
 
     // ── Delete request modal ──────────────────────────────────
     const deleteModal=document.getElementById('delete-modal');
@@ -1161,6 +1166,7 @@ async function initAuth() {
   }
   const _sb = window._sb;
   const { data: { session } } = await getSb().auth.getSession();
+  window._sessionToken = session?.access_token || null;
   if (session?.user) {
     _currentUser = session.user;
     _currentProfile = await fetchProfile(session.user.id);
@@ -1171,6 +1177,7 @@ async function initAuth() {
 
   // Listen for changes
   getSb().auth.onAuthStateChange(async (event, session) => {
+    window._sessionToken = session?.access_token || null;
     if (session?.user) {
       _currentUser = session.user;
       _currentProfile = await fetchProfile(session.user.id);
@@ -1235,11 +1242,23 @@ async function sbAuthPatch(t,p,b) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...h,'Prefer':'return=representation'},body:JSON.stringify(b)});
   if(!r.ok)throw new Error(await r.text()); return r.json();
 }
+async function sbAuthUpsert(t,b,oc) {
+  const h = await authHeaders();
+  const u = `${SUPABASE_URL}/rest/v1/${t}`+(oc?`?on_conflict=${oc}`:'');
+  const r = await fetch(u,{method:'POST',headers:{...h,'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(b)});
+  if(!r.ok)throw new Error(await r.text()); return r.json();
+}
+async function sbAuthDelete(t,p) {
+  const h = await authHeaders();
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${t}?${p}`,{method:'DELETE',headers:h});
+  if(!r.ok)throw new Error(await r.text());
+}
 
 // ── Sign up ───────────────────────────────────────────
 async function signUp(email, password, displayName) {
   const { data, error } = await getSb().auth.signUp({ email, password });
   if (error) throw error;
+  if (data.session) window._sessionToken = data.session.access_token;
   if (data.user) {
     await getSb().from('user_profiles').insert({ id: data.user.id, display_name: displayName, email: email, is_admin: false, vote_weight: 1 });
     _currentProfile = await fetchProfile(data.user.id);
@@ -1251,6 +1270,7 @@ async function signUp(email, password, displayName) {
 async function signIn(email, password) {
   const { data, error } = await getSb().auth.signInWithPassword({ email, password });
   if (error) throw error;
+  if (data.session) window._sessionToken = data.session.access_token;
   return data;
 }
 
@@ -1527,16 +1547,19 @@ function prefillForms() {
   const formWrap = document.getElementById('submit-form-wrap');
   if (wall) wall.style.display = loggedIn ? 'none' : 'block';
   if (formWrap) formWrap.style.display = loggedIn ? 'block' : 'none';
-  // Submit form fields
-  const fsub = document.getElementById('f-submitter');
-  if (fsub) fsub.value = name;
-  const fmwWrap = document.getElementById('f-mw-wrap');
-  if (fmwWrap) fmwWrap.style.display = admin ? 'flex' : 'none';
-  // Default MeanWhirls checked for admins, uncheck anonymous
-  const fmw = document.getElementById('f-meanwhirls');
-  if (fmw) fmw.checked = admin;
-  const fanon = document.getElementById('f-anonymous');
-  if (fanon && admin) fanon.checked = false;
+  // Build radio options for "Posting as"
+  const authorOpts = document.getElementById('f-author-options');
+  if (authorOpts) {
+    const radioStyle = 'display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;';
+    const options = admin
+      ? [['f-post-mw','MeanWhirls','MeanWhirls'], ['f-post-name', name, name], ['f-post-anon','Anonymous','Anonymous']]
+      : [['f-post-name', name, name], ['f-post-anon','Anonymous','Anonymous']];
+    authorOpts.innerHTML = options.map((o,i) =>
+      `<label style="${radioStyle}"><input type="radio" name="f-post-as" id="${o[0]}" value="${o[2]}" ${i===0?'checked':''}
+        style="accent-color:var(--deep-pink)" /><strong>${o[1]}</strong></label>`
+    ).join('');
+  }
+  // hidden submitter field no longer needs a value — we read radios at submit time
   // Edit form
   const esub = document.getElementById('edit-submitter');
   if (esub) esub.value = name;

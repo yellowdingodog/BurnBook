@@ -200,6 +200,7 @@
         <button class="admin-tab" data-stab="burn-edits">✏️ Pending Edits <span class="badge-count" id="cnt-edits">0</span></button>
         <button class="admin-tab" data-stab="burn-victims">🎤 Victim Statements <span class="badge-count" id="cnt-victims">0</span></button>
         <button class="admin-tab" data-stab="burn-comments">💬 Comments</button>
+        <button class="admin-tab" data-stab="burn-votes">🔥 Votes</button>
         <button class="admin-tab" data-stab="burn-reorder">↕️ Reorder</button>
       </div>
     <!-- REMOVALS -->
@@ -255,6 +256,17 @@
       <div id="reorder-list" class="reorder-list"></div>
       <button class="reorder-save-btn" id="reorder-save-btn" onclick="saveReorder()">💾 Save Order</button>
       <div id="reorder-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
+    </div>
+    <div id="stab-burn-votes" class="sub-panel">
+      <div class="section-hdr"><span class="section-title">🔥 Votes</span><button class="refresh-btn" onclick="loadVotes()">↺ Refresh</button></div>
+      <div style="background:#fff9c4;border-left:3px solid #f9a825;padding:0.75rem 1rem;font-size:0.78rem;color:#5d4037;margin-bottom:1.25rem;border-radius:2px;line-height:1.7;">
+        <strong>How scoring works:</strong> Each vote is a score from 1–10. Votes are <em>weighted</em> — each vote is multiplied by the voter's weight before averaging.
+        Regular users have weight <strong>1×</strong>. Admins default to <strong id="vote-explain-admin-weight">10×</strong> (set via <code>admin_vote_weight</code> config).
+        Individual weights can be overridden per user on the Accounts tab.<br/>
+        <strong>Weighted average</strong> = sum(score × weight) ÷ sum(weights). A single admin vote of 8 outweighs ten regular votes of 3.
+        The 🌋/🔥/♨️ emoji on entries reflects this weighted average.
+      </div>
+      <div id="votes-list" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
     </div>
     </div><!-- /ttab-burn -->
 
@@ -483,7 +495,7 @@
           if(r.key==='codename')            CODENAME          = r.value;
           if(r.key==='codename_display')    CODENAME_DISPLAY  = r.value;
           if(r.key==='badgeicon')           BADGE_ICON_URL    = r.value;
-          if(r.key==='admin_vote_weight')   _adminVoteWeight  = parseFloat(r.value)||10;
+          if(r.key==='admin_vote_weight')   { _adminVoteWeight = parseFloat(r.value)||10; const el=document.getElementById('vote-explain-admin-weight'); if(el)el.textContent=_adminVoteWeight+'×'; }
         });
       } catch(e) {}
     }
@@ -587,6 +599,7 @@
         if(s==='burn-victims')  loadVictims();
         if(s==='burn-comments') loadComments();
         if(s==='burn-entries')  loadEntries();
+        if(s==='burn-votes')    loadVotes();
         if(s==='burn-reorder')  loadReorder();
         if(s==='nap-removals')  loadNapRemovals();
         if(s==='nap-edits')     loadNapEdits();
@@ -811,6 +824,119 @@
     // ── REORDER ───────────────────────────────────────────────
     let reorderData=[];
     let dragSrcIdx=null;
+
+    async function loadVotes() {
+      const container = document.getElementById('votes-list');
+      if (!container) return;
+      container.innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
+      try {
+        const [entries, votes, profiles] = await Promise.all([
+          sbGet('entries', 'status=eq.approved&hidden=eq.false&select=id,subject,ui_order,is_mean_whirls,display_author&order=ui_order.asc'),
+          sbGet('votes', 'select=entry_id,vote,weight,user_id'),
+          sbGet('user_profiles', 'select=id,display_name'),
+        ]);
+        const profileMap = {};
+        profiles.forEach(p => profileMap[p.id] = p.display_name);
+
+        // Group votes by entry
+        const byEntry = {};
+        votes.forEach(v => {
+          if (!byEntry[v.entry_id]) byEntry[v.entry_id] = [];
+          byEntry[v.entry_id].push(v);
+        });
+
+        // Compute weighted avg per entry
+        function calcAvg(evotes) {
+          if (!evotes || !evotes.length) return null;
+          const ws = evotes.reduce((a,v)=>a+(v.vote*(v.weight||1)),0);
+          const tw = evotes.reduce((a,v)=>a+(v.weight||1),0);
+          return tw ? +(ws/tw).toFixed(2) : null;
+        }
+
+        // Sort entries by weighted avg desc
+        const scored = entries.map(e => ({
+          ...e,
+          evotes: byEntry[e.id] || [],
+          avg: calcAvg(byEntry[e.id]),
+        })).sort((a,b) => (b.avg??-1) - (a.avg??-1));
+
+        container.innerHTML = '';
+        if (!scored.length) { container.innerHTML = '<div style="color:var(--muted);font-size:.85rem;padding:1rem">No approved entries yet.</div>'; return; }
+
+        scored.forEach(e => {
+          const card = document.createElement('div');
+          card.style.cssText = 'border:1.5px solid rgba(200,30,90,0.15);border-radius:3px;overflow:hidden;';
+
+          const tw = e.evotes.reduce((a,v)=>a+(v.weight||1),0);
+          const heatE = avg => !avg?'❓':avg>=9?'🌋':avg>=7?'🔥':avg>=5?'♨️':avg>=3?'🌡️':'🧊';
+
+          const header = document.createElement('div');
+          header.style.cssText = 'display:flex;align-items:center;gap:0.75rem;padding:0.65rem 1rem;background:rgba(200,30,90,0.05);cursor:pointer;user-select:none;';
+          header.innerHTML = `
+            <span style="font-size:.72rem;color:var(--muted);min-width:24px">#${e.ui_order||'?'}</span>
+            <span style="font-weight:700;flex:1">${esc(e.subject)}</span>
+            <span style="font-size:1rem">${heatE(e.avg)}</span>
+            <span style="font-size:.85rem;font-weight:700;color:var(--deep-pink)">${e.avg != null ? e.avg+'/10' : '—'}</span>
+            <span style="font-size:.72rem;color:var(--muted)">${e.evotes.length} vote${e.evotes.length!==1?'s':''}</span>
+            <span style="font-size:.72rem;color:var(--muted);min-width:80px;text-align:right">total weight: ${+tw.toFixed(1)}</span>
+            <span class="votes-chevron" style="font-size:.8rem;color:var(--muted);transition:transform 0.2s">▶</span>`;
+
+          const detail = document.createElement('div');
+          detail.style.cssText = 'display:none;padding:0 0 0.5rem 0;';
+
+          if (e.evotes.length) {
+            const tbl = document.createElement('table');
+            tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:.8rem;';
+            tbl.innerHTML = `<thead><tr style="background:rgba(0,0,0,0.03)">
+              <th style="text-align:left;padding:0.4rem 1rem;font-weight:700;color:var(--muted)">Voter</th>
+              <th style="text-align:center;padding:0.4rem 0.5rem;font-weight:700;color:var(--muted)">Score</th>
+              <th style="text-align:center;padding:0.4rem 0.5rem;font-weight:700;color:var(--muted)">Weight</th>
+              <th style="text-align:center;padding:0.4rem 1rem;font-weight:700;color:var(--muted)">Contribution</th>
+            </tr></thead>`;
+            const tbody = document.createElement('tbody');
+            // Sort by weight desc, then score desc
+            [...e.evotes].sort((a,b)=>(b.weight||1)-(a.weight||1)||(b.vote-a.vote)).forEach(v => {
+              const voter = v.user_id ? (profileMap[v.user_id] || 'Unknown') : 'Guest';
+              const w = v.weight || 1;
+              const contribution = +(v.vote * w).toFixed(1);
+              const tr = document.createElement('tr');
+              tr.style.borderTop = '1px solid rgba(0,0,0,0.06)';
+              tr.innerHTML = `
+                <td style="padding:0.4rem 1rem;color:var(--ink)">${esc(voter)}</td>
+                <td style="text-align:center;padding:0.4rem 0.5rem;font-weight:700">${v.vote}/10</td>
+                <td style="text-align:center;padding:0.4rem 0.5rem;color:var(--muted)">${w}×</td>
+                <td style="text-align:center;padding:0.4rem 1rem;color:var(--deep-pink);font-weight:600">${contribution}</td>`;
+              tbody.appendChild(tr);
+            });
+            // Total row
+            const totalW = +tw.toFixed(1);
+            const totalWS = +e.evotes.reduce((a,v)=>a+(v.vote*(v.weight||1)),0).toFixed(1);
+            const tfoot = document.createElement('tr');
+            tfoot.style.cssText = 'border-top:2px solid rgba(200,30,90,0.2);background:rgba(200,30,90,0.04);font-weight:700;';
+            tfoot.innerHTML = `
+              <td style="padding:0.4rem 1rem;font-size:.75rem;color:var(--muted)">Weighted avg = ${totalWS} ÷ ${totalW}</td>
+              <td></td>
+              <td style="text-align:center;padding:0.4rem 0.5rem">${totalW}×</td>
+              <td style="text-align:center;padding:0.4rem 1rem;color:var(--deep-pink)">${e.avg}/10</td>`;
+            tbody.appendChild(tfoot);
+            tbl.appendChild(tbody);
+            detail.appendChild(tbl);
+          } else {
+            detail.innerHTML = '<div style="padding:0.6rem 1rem;font-size:.8rem;color:var(--muted)">No votes yet.</div>';
+          }
+
+          header.addEventListener('click', () => {
+            const open = detail.style.display !== 'none';
+            detail.style.display = open ? 'none' : 'block';
+            header.querySelector('.votes-chevron').style.transform = open ? '' : 'rotate(90deg)';
+          });
+
+          card.appendChild(header);
+          card.appendChild(detail);
+          container.appendChild(card);
+        });
+      } catch(err) { container.innerHTML = `<div class="alert alert-error">Failed: ${err.message}</div>`; }
+    }
 
     async function loadReorder(){
       const list=document.getElementById('reorder-list');
