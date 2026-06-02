@@ -206,7 +206,7 @@
     <!-- REMOVALS -->
     <div id="stab-burn-removals" class="sub-panel">
       <div class="section-hdr"><span class="section-title urgent">⚠️ Removal Requests</span><button class="refresh-btn" onclick="loadRemovals()">↺ Refresh</button></div>
-      <div class="tbl-wrap"><table><thead><tr><th class="urgent">#</th><th class="urgent">Subject</th><th class="urgent">Reason</th><th class="urgent">Requested</th><th class="urgent">Actions</th></tr></thead><tbody id="tb-removals"></tbody></table></div>
+      <div class="tbl-wrap"><table><thead><tr><th class="urgent">#</th><th class="urgent">Subject</th><th class="urgent">Reason</th><th class="urgent">Requested By</th><th class="urgent">When</th><th class="urgent">Actions</th></tr></thead><tbody id="tb-removals"></tbody></table></div>
     </div>
 
     <!-- PENDING EDITS -->
@@ -634,22 +634,32 @@
     // ── REMOVALS ─────────────────────────────────────────────
     async function loadRemovals(){
       const tb=document.getElementById('tb-removals');
-      tb.innerHTML=loadingRow(5);
+      tb.innerHTML=loadingRow(6);
       try {
         const reqs=await sbGet('deletion_requests','order=created_at.desc');
         setBadge('cnt-removals',reqs.length);
-        if(!reqs.length){tb.innerHTML=emptyRow(5,'No removal requests.');return;}
+        if(!reqs.length){tb.innerHTML=emptyRow(6,'No removal requests.');return;}
         const ids=[...new Set(reqs.map(r=>r.entry_id))];
         const entries=await sbGet('entries',`id=in.(${ids.join(',')})&select=id,subject,ui_order`);
         const em={};entries.forEach(e=>em[e.id]=e);
+        // Fetch account display names for logged-in requesters
+        const userIds=[...new Set(reqs.filter(r=>r.user_id).map(r=>r.user_id))];
+        let userMap={};
+        if(userIds.length){const ups=await sbGet('user_profiles',`id=in.(${userIds.join(',')})&select=id,display_name`);ups.forEach(u=>userMap[u.id]=u.display_name);}
         tb.innerHTML='';
         reqs.forEach(req=>{
           const entry=em[req.entry_id]||{};
+          const accountName=req.user_id?userMap[req.user_id]||'Unknown account':null;
+          const requesterParts=[];
+          if(req.requester_name)requesterParts.push(esc(req.requester_name));
+          if(accountName&&accountName!==req.requester_name)requesterParts.push(`<span style="color:var(--muted);font-size:.7rem">(${esc(accountName)})</span>`);
+          if(req.ip_hash)requesterParts.push(`<span style="font-family:monospace;font-size:.68rem;color:var(--muted)">${esc(req.ip_hash)}</span>`);
+          const requesterHtml=requesterParts.length?requesterParts.join(' '):'<span style="color:var(--muted)">—</span>';
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${entry.ui_order||'?'}</td><td style="font-weight:600">${esc(entry.subject||'(deleted)')}</td><td style="max-width:220px;font-size:.8rem">${esc(req.reason)}</td><td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(req.created_at)}</td><td><button class="btn-a add" onclick="adminDeleteEntry('${req.entry_id}','${req.id}')">✕ Delete</button><button class="btn-a ars" onclick="adminRestoreEntry('${req.entry_id}','${req.id}')">↩ Restore</button></td>`;
+          tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${entry.ui_order||'?'}</td><td style="font-weight:600">${esc(entry.subject||'(deleted)')}</td><td style="max-width:180px;font-size:.8rem">${esc(req.reason)}</td><td style="font-size:.78rem">${requesterHtml}</td><td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(req.created_at)}</td><td><button class="btn-a add" onclick="adminDeleteEntry('${req.entry_id}','${req.id}')">✕ Delete</button><button class="btn-a ars" onclick="adminRestoreEntry('${req.entry_id}','${req.id}')">↩ Restore</button></td>`;
           tb.appendChild(tr);
         });
-      } catch(err){tb.innerHTML=emptyRow(5,'Failed: '+err.message);}
+      } catch(err){tb.innerHTML=emptyRow(6,'Failed: '+err.message);}
     }
     async function adminDeleteEntry(entryId,reqId){ if(!confirm('Permanently delete this entry?'))return; try{await sbDelete('entries',`id=eq.${entryId}`);await sbDelete('deletion_requests',`id=eq.${reqId}`);showToast('Entry deleted.');loadRemovals();loadEntries();}catch(err){alert('Failed: '+err.message);} }
     async function adminRestoreEntry(entryId,reqId){ try{await sbPatch('entries',`id=eq.${entryId}`,{hidden:false});await sbDelete('deletion_requests',`id=eq.${reqId}`);showToast('Entry restored.');loadRemovals();loadEntries();}catch(err){alert('Failed: '+err.message);} }
@@ -683,20 +693,25 @@
       const container=document.getElementById('victims-container');
       container.innerHTML='<div class="loading-wrap"><div class="spinner"></div></div>';
       try {
-        const stmts=await sbGet('victim_statements','status=neq.deleted&order=created_at.desc');
-        setBadge('cnt-victims',stmts.filter(s=>s.status==='pending').length);
+        const stmts=await sbGet('victim_statements','status=neq.deleted&order=created_at.desc&select=*');
+        setBadge('cnt-victims',stmts.length);
         if(!stmts.length){container.innerHTML='<p style="color:var(--muted);font-size:.85rem">No victim statements yet.</p>';return;}
         const ids=[...new Set(stmts.map(s=>s.entry_id))];
         const entries=await sbGet('entries',`id=in.(${ids.join(',')})&select=id,subject,ui_order`);
         const em={};entries.forEach(e=>em[e.id]=e);
+        // Get user display names
+        const userIds=[...new Set(stmts.filter(s=>s.user_id).map(s=>s.user_id))];
+        let userMap={};
+        if(userIds.length){const ups=await sbGet('user_profiles',`id=in.(${userIds.join(',')})&select=id,display_name`);ups.forEach(u=>userMap[u.id]=u.display_name);}
         container.innerHTML='';
         stmts.forEach(s=>{
           const entry=em[s.entry_id]||{};
           const item=document.createElement('div');item.className='vc-item';
-          const statusBadge=s.status==='approved'?`<span class="vc-badge vc-badge-approved">approved</span>`:`<span class="vc-badge vc-badge-pending">pending</span>`;
-          item.innerHTML=`<div class="vc-meta">${statusBadge} <strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${toTS(s.created_at)}</span></div><div class="vc-text">${esc(s.text)}</div>`;
+          const accountName=s.user_id?userMap[s.user_id]||'Unknown':'Guest';
+          item.innerHTML=`<div class="vc-meta"><strong>#${entry.ui_order||'?'} — ${esc(entry.subject||'?')}</strong> <span>${toTS(s.created_at)}</span></div>
+            <div style="font-size:0.72rem;color:var(--deep-pink);font-weight:700;margin:0.25rem 0">${esc(s.author_name||'—')} <span style="font-weight:400;color:var(--muted)">(account: ${esc(accountName)})</span></div>
+            <div class="vc-text">${esc(s.text)}</div>`;
           const actions=document.createElement('div');actions.style.cssText='margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;';
-          if(s.status!=='approved'){const ab=document.createElement('button');ab.className='btn-a aac';ab.textContent='✓ Approve';ab.onclick=async()=>{try{await sbPatch('victim_statements',`id=eq.${s.id}`,{status:'approved'});showToast('Statement approved.');loadVictims();}catch(e){alert(e.message);}};actions.appendChild(ab);}
           const db=document.createElement('button');db.className='btn-a ar';db.textContent='✕ Remove';db.onclick=async()=>{if(!confirm('Remove this victim statement?'))return;try{await sbPatch('victim_statements',`id=eq.${s.id}`,{status:'deleted'});showToast('Statement removed.');loadVictims();}catch(e){alert(e.message);}};actions.appendChild(db);
           const eb=document.createElement('button');eb.className='btn-a ae';eb.textContent='✏️ Edit';eb.onclick=()=>openVictimEdit(item,s);actions.appendChild(eb);
           item.appendChild(actions);container.appendChild(item);
@@ -708,7 +723,7 @@
       const form=document.createElement('div');form.className='vc-edit-form';form.style.marginTop='0.6rem';
       const ta=document.createElement('textarea');ta.className='form-textarea';ta.value=stmt.text;ta.style.minHeight='70px';
       const btn=document.createElement('button');btn.className='btn-a aac';btn.textContent='Save';btn.style.marginTop='0.4rem';
-      btn.addEventListener('click',async()=>{const text=ta.value.trim();if(!text)return;btn.disabled=true;try{await sbPatch('victim_statements',`id=eq.${stmt.id}`,{text,status:'pending'});showToast('Saved — re-submitted for approval.');loadVictims();}catch(e){alert(e.message);}btn.disabled=false;});
+      btn.addEventListener('click',async()=>{const text=ta.value.trim();if(!text)return;btn.disabled=true;try{await sbPatch('victim_statements',`id=eq.${stmt.id}`,{text});showToast('Saved.');loadVictims();}catch(e){alert(e.message);}btn.disabled=false;});
       form.appendChild(ta);form.appendChild(btn);item.appendChild(form);ta.focus();
     }
 

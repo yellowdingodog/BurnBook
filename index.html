@@ -508,6 +508,10 @@
       <div class="modal-body">
         <div class="modal-note">We take removal requests seriously. Once submitted, this entry will be immediately hidden from public view while we review your request.</div>
         <input type="hidden" id="del-entry-id" />
+        <div class="form-group" id="del-name-group" style="display:none">
+          <label class="form-label">Your Name <span class="form-label-note">(optional)</span></label>
+          <input class="form-input" id="del-name" placeholder="Optional — helps us follow up" />
+        </div>
         <div class="form-group"><label class="form-label">Reason *</label><textarea class="form-textarea" id="del-reason" placeholder="Tell us why..." style="min-height:90px"></textarea></div>
         <button class="btn btn-primary" id="del-submit-btn">🗑 Submit Removal Request</button>
         <div id="del-status" style="display:none" class="alert"></div>
@@ -762,41 +766,56 @@
     function renderDetailHeat(entry){ const vd=allVoteData[entry.id]||{}; const el=document.getElementById('detail-heat'); el.innerHTML=''; const label=document.createElement('div');label.className='heat-full-label';label.textContent='🔥 How hot is this burn?';el.appendChild(label); const scale=document.createElement('div');scale.className='heat-scale'; for(let i=1;i<=10;i++){const pip=document.createElement('div');pip.className='heat-pip';if(vd.myVote===i)pip.classList.add('selected');pip.textContent=i;pip.addEventListener('click',()=>castHeatVote(entry.id,i));scale.appendChild(pip);} el.appendChild(scale); if(vd.myVote){const clr=document.createElement('span');clr.className='heat-clear';clr.textContent='Clear my vote';clr.addEventListener('click',()=>castHeatVote(entry.id,vd.myVote));el.appendChild(clr);} if(vd.avg){const result=document.createElement('div');result.className='heat-result';result.innerHTML=`<span>${heatEmoji(vd.avg)}</span> Average: <strong>${vd.avg}/10</strong> from ${vd.count} vote${vd.count!==1?'s':''}`;el.appendChild(result);} }
 
     // ── Victim Statement ──────────────────────────────────────
+    // Multiple victims allowed; no moderation; account-based ownership; name shown per statement
     async function loadVictimStatement(entryId, ipHash) {
       const el = document.getElementById('detail-victim');
       el.innerHTML = '';
       try {
-        // Load approved statement
-        const stmts = await sbGet('victim_statements', `entry_id=eq.${entryId}&status=eq.approved`);
-        // Also check if THIS ip has a pending one
-        const pending = await sbGet('victim_statements', `entry_id=eq.${entryId}&status=eq.pending&ip_hash=eq.${ipHash}`);
+        const stmts = await sbGet('victim_statements', `entry_id=eq.${entryId}&status=neq.deleted&order=created_at.asc&select=*`);
+        const myUserId = getUserId();
 
         const section = document.createElement('div'); section.className='victim-section';
-        const title = document.createElement('div'); title.className='victim-section-title'; title.textContent='🎤 Victim\'s Statement'; section.appendChild(title);
+        const title = document.createElement('div'); title.className='victim-section-title';
+        title.textContent = stmts.length ? `🎤 Victim Statement${stmts.length>1?'s':''} (${stmts.length})` : '🎤 Victim Statements';
+        section.appendChild(title);
 
-        if (stmts.length) {
-          const stmt = stmts[0];
-          const isOwn = stmt.ip_hash === ipHash;
-          const p=document.createElement('p');p.className='victim-text';p.textContent=stmt.text;section.appendChild(p);
-          const meta=document.createElement('div');meta.className='victim-meta';
-          if(isOwn){
+        // Render each existing statement
+        stmts.forEach(stmt => {
+          const isOwn = myUserId && stmt.user_id === myUserId;
+          const wrap = document.createElement('div');
+          wrap.style.cssText = 'margin-bottom:0.85rem;padding-bottom:0.85rem;border-bottom:1px solid rgba(0,0,0,0.07);';
+          wrap.dataset.stmtId = stmt.id;
+
+          // Author name above statement
+          const author = document.createElement('div');
+          author.style.cssText = 'font-size:0.72rem;font-weight:700;color:var(--deep-pink);margin-bottom:0.3rem;letter-spacing:0.04em;';
+          author.textContent = stmt.author_name || 'Anonymous victim';
+          wrap.appendChild(author);
+
+          const p = document.createElement('p'); p.className='victim-text'; p.textContent=stmt.text; wrap.appendChild(p);
+
+          if(isOwn) {
+            const meta = document.createElement('div'); meta.className='victim-meta';
             const editBtn=document.createElement('button');editBtn.className='victim-own-btn';editBtn.textContent='✏️ Edit';
-            editBtn.addEventListener('click',()=>openVictimEditForm(section,stmt,entryId,ipHash));meta.appendChild(editBtn);
+            editBtn.addEventListener('click',()=>openVictimEditForm(wrap,stmt,entryId,ipHash));meta.appendChild(editBtn);
             const delBtn=document.createElement('button');delBtn.className='victim-own-btn';delBtn.textContent='🗑 Remove';
-            delBtn.addEventListener('click',async()=>{if(!confirm('Remove your victim statement?'))return;try{await sbPatch('victim_statements',`id=eq.${stmt.id}`,{status:'deleted'});loadVictimStatement(entryId,ipHash);}catch(e){showToast('Failed to remove.');}});meta.appendChild(delBtn);
+            delBtn.addEventListener('click',async()=>{if(!confirm('Remove your statement?'))return;try{await sbPatch('victim_statements',`id=eq.${stmt.id}`,{status:'deleted'});loadVictimStatement(entryId,ipHash);}catch(e){showToast('Failed to remove.');}});meta.appendChild(delBtn);
+            wrap.appendChild(meta);
           }
-          section.appendChild(meta);
-        } else if (pending.length) {
-          const p=document.createElement('p');p.className='victim-pending';p.textContent='⏳ Your statement is awaiting moderation.';section.appendChild(p);
-          const cancelBtn=document.createElement('button');cancelBtn.className='victim-own-btn';cancelBtn.style.marginTop='0.5rem';cancelBtn.textContent='✕ Cancel submission';
-          cancelBtn.addEventListener('click',async()=>{
-            if(!confirm('Cancel your pending statement?'))return;
-            try{await sbDelete('victim_statements',`entry_id=eq.${entryId}&ip_hash=eq.${ipHash}&status=eq.pending`);loadVictimStatement(entryId,ipHash);}
-            catch(e){showToast('Failed to cancel.');}
-          });section.appendChild(cancelBtn);
-        } else {
-          const btn=document.createElement('button');btn.className='victim-add-btn';btn.textContent='🎤 Add Your Victim Statement';
-          btn.addEventListener('click',()=>openVictimAddForm(section,entryId,ipHash));section.appendChild(btn);
+          section.appendChild(wrap);
+        });
+
+        // Show "add" button only if logged in and hasn't already added one
+        const alreadyPosted = myUserId && stmts.some(s => s.user_id === myUserId);
+        if (isLoggedIn() && !alreadyPosted) {
+          const btn=document.createElement('button');btn.className='victim-add-btn';
+          btn.textContent='🎤 Are you a victim of this burn?';
+          btn.addEventListener('click',()=>openVictimAddForm(section,entryId,ipHash));
+          section.appendChild(btn);
+        } else if (!isLoggedIn()) {
+          const note=document.createElement('div');note.style.cssText='font-size:0.75rem;color:var(--muted);margin-top:0.5rem;';
+          note.innerHTML='<a href="#" onclick="openAuthModal('Defending yourself? Bold. Sign in first.');return false;" style="color:var(--deep-pink)">Sign in</a> to add a victim statement.';
+          section.appendChild(note);
         }
 
         el.appendChild(section);
@@ -804,43 +823,54 @@
     }
 
     function openVictimAddForm(section, entryId, ipHash) {
-      // Remove any existing form
-      const existing = section.querySelector('.victim-form'); if(existing)existing.remove();
+      const existing = section.querySelector('.victim-form'); if(existing){existing.remove();return;}
       const form=document.createElement('div');form.className='victim-form';
-      const ta=document.createElement('textarea');ta.className='victim-input';ta.placeholder='Say your piece...';
+      // Name field — pre-filled from display name, editable
+      const nameRow=document.createElement('div');nameRow.style.cssText='display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;';
+      const nameLabel=document.createElement('label');nameLabel.style.cssText='font-size:0.72rem;color:var(--muted);white-space:nowrap;';nameLabel.textContent='Your name:';
+      const nameIn=document.createElement('input');nameIn.className='victim-input';nameIn.style.cssText='flex:1;padding:0.35rem 0.6rem;font-size:0.82rem;';
+      nameIn.value=getDisplayName();nameIn.placeholder='Your name (shown with statement)';
+      nameRow.appendChild(nameLabel);nameRow.appendChild(nameIn);form.appendChild(nameRow);
+      const ta=document.createElement('textarea');ta.className='victim-input';ta.placeholder='Say your piece. You have the floor.';ta.style.minHeight='80px';
       const btn=document.createElement('button');btn.className='victim-submit-btn';btn.textContent='Submit Statement';
       const msg=document.createElement('div');msg.className='victim-msg';msg.style.display='none';
       btn.addEventListener('click',async()=>{
-        const text=ta.value.trim();if(!text)return;
-        // Confirm they are actually the victim
-        const victimName=currentDetailEntry?.subject||'the burn victim';
-        const confirmed=confirm(`Are you ${victimName}?`);
-        if(!confirmed){alert('Get out of here then. 👋');return;}
-        if (!requireAuth('victim')) return;
+        const text=ta.value.trim();
+        const authorName=nameIn.value.trim()||getDisplayName();
+        if(!text){msg.className='victim-msg err';msg.textContent='Write something first.';msg.style.display='block';return;}
+        if(!requireAuth('victim'))return;
         btn.disabled=true;btn.textContent='Submitting...';
-        try{await sbPost('victim_statements',{entry_id:entryId,text,ip_hash:ipHash,status:'pending',user_id:getUserId()});
-        await logActivity('victim_statement', entryId, `Victim statement for: "${currentDetailEntry?.subject||''}"`);
-        msg.className='victim-msg ok';msg.textContent='✅ Submitted for moderation!';msg.style.display='block';setTimeout(()=>loadVictimStatement(entryId,ipHash),2000);}
-        catch(e){msg.className='victim-msg err';msg.textContent='Failed: '+e.message;msg.style.display='block';}
+        try{
+          await sbPost('victim_statements',{entry_id:entryId,text,author_name:authorName,ip_hash:ipHash,status:'approved',user_id:getUserId()});
+          await logActivity('victim_statement',entryId,`Victim statement for: "${currentDetailEntry?.subject||''}"`);
+          form.remove();loadVictimStatement(entryId,ipHash);
+        }catch(e){msg.className='victim-msg err';msg.textContent='Failed: '+e.message;msg.style.display='block';}
         btn.disabled=false;btn.textContent='Submit Statement';
       });
       form.appendChild(ta);form.appendChild(btn);form.appendChild(msg);section.appendChild(form);ta.focus();
     }
 
-    function openVictimEditForm(section, stmt, entryId, ipHash) {
-      const existing=section.querySelector('.victim-form');if(existing)existing.remove();
-      const form=document.createElement('div');form.className='victim-form';
-      const ta=document.createElement('textarea');ta.className='victim-input';ta.value=stmt.text;
+    function openVictimEditForm(wrap, stmt, entryId, ipHash) {
+      const existing=wrap.querySelector('.victim-form');if(existing){existing.remove();return;}
+      const form=document.createElement('div');form.className='victim-form';form.style.marginTop='0.4rem';
+      const nameRow=document.createElement('div');nameRow.style.cssText='display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;';
+      const nameLabel=document.createElement('label');nameLabel.style.cssText='font-size:0.72rem;color:var(--muted);white-space:nowrap;';nameLabel.textContent='Your name:';
+      const nameIn=document.createElement('input');nameIn.className='victim-input';nameIn.style.cssText='flex:1;padding:0.35rem 0.6rem;font-size:0.82rem;';
+      nameIn.value=stmt.author_name||getDisplayName();
+      nameRow.appendChild(nameLabel);nameRow.appendChild(nameIn);form.appendChild(nameRow);
+      const ta=document.createElement('textarea');ta.className='victim-input';ta.value=stmt.text;ta.style.minHeight='80px';
       const btn=document.createElement('button');btn.className='victim-submit-btn';btn.textContent='Save Changes';
       const msg=document.createElement('div');msg.className='victim-msg';msg.style.display='none';
       btn.addEventListener('click',async()=>{
-        const text=ta.value.trim();if(!text)return;
-        btn.disabled=true;
-        try{await sbPatch('victim_statements',`id=eq.${stmt.id}`,{text,status:'pending'});msg.className='victim-msg ok';msg.textContent='✅ Updated — awaiting re-moderation.';msg.style.display='block';setTimeout(()=>loadVictimStatement(entryId,ipHash),2000);}
-        catch(e){msg.className='victim-msg err';msg.textContent='Failed: '+e.message;msg.style.display='block';}
+        const text=ta.value.trim();const authorName=nameIn.value.trim()||stmt.author_name;
+        if(!text)return;btn.disabled=true;
+        try{
+          await sbPatch('victim_statements',`id=eq.${stmt.id}`,{text,author_name:authorName});
+          form.remove();loadVictimStatement(entryId,ipHash);
+        }catch(e){msg.className='victim-msg err';msg.textContent='Failed: '+e.message;msg.style.display='block';}
         btn.disabled=false;btn.textContent='Save Changes';
       });
-      form.appendChild(ta);form.appendChild(btn);form.appendChild(msg);section.appendChild(form);ta.focus();
+      form.appendChild(ta);form.appendChild(btn);form.appendChild(msg);wrap.appendChild(form);ta.focus();
     }
 
     // ── Comments ──────────────────────────────────────────────
@@ -962,12 +992,16 @@
         const [entries,votes,victimStmts,commentCounts]=await Promise.all([
           sbGet('entries','status=eq.approved&hidden=eq.false&order=ui_order.asc.nullslast,created_at.asc'),
           sbGet('votes','select=entry_id,vote,weight'),
-          sbGet('victim_statements','status=eq.approved&select=entry_id,text'),
+          sbGet('victim_statements','status=neq.deleted&select=entry_id,text,author_name&order=created_at.asc'),
           sbGet('comments','select=entry_id')
         ]);
         allVoteData=buildVoteData(votes);Object.keys(myVotes).forEach(id=>{if(allVoteData[id])allVoteData[id].myVote=myVotes[id];});
         // Build victim snippet map and comment count map
-        const victimMap={};victimStmts.forEach(s=>{victimMap[s.entry_id]=s.text;});
+        const victimMap={};
+        victimStmts.forEach(s=>{
+          if(!victimMap[s.entry_id])victimMap[s.entry_id]={text:s.text,author:s.author_name||null,count:0};
+          victimMap[s.entry_id].count++;
+        });
         const commentCountMap={};commentCounts.forEach(c=>{commentCountMap[c.entry_id]=(commentCountMap[c.entry_id]||0)+1;});
         allEntries=entries;buildFilterBar(entries);
         renderEntries(activeFilter?entries.filter(e=>(e.hashtags||[]).includes(activeFilter)):entries,victimMap,commentCountMap);
@@ -995,7 +1029,13 @@
         else{const a=document.createElement('span');a.className='entry-author';a.innerHTML=`by <strong>${esc(e.display_author)}</strong>`;meta.appendChild(a);}
         footer.appendChild(meta);card.appendChild(footer);
         // Victim statement snippet
-        if(victimMap&&victimMap[e.id]){const vs=document.createElement('div');vs.className='card-victim-strip';vs.textContent='🎤 '+victimMap[e.id];card.appendChild(vs);}
+        if(victimMap&&victimMap[e.id]){
+          const vm=victimMap[e.id];
+          const vs=document.createElement('div');vs.className='card-victim-strip';
+          const prefix=vm.author?`🎤 ${vm.author}: `:'🎤 ';
+          vs.textContent=prefix+vm.text+(vm.count>1?` (+${vm.count-1} more)`:'');
+          card.appendChild(vs);
+        }
         // Comment count
         const cc=(commentCountMap&&commentCountMap[e.id])||0;
         if(cc>0){const ccEl=document.createElement('div');ccEl.className='card-comment-count';ccEl.innerHTML=`💬 <span>${cc}</span> comment${cc!==1?'s':''}`;card.appendChild(ccEl);}
@@ -1033,7 +1073,18 @@
 
     // ── Delete request modal ──────────────────────────────────
     const deleteModal=document.getElementById('delete-modal');
-    function openDeleteRequestModal(entry){if(!entry)return;document.getElementById('del-entry-id').value=entry.id;document.getElementById('del-reason').value='';document.getElementById('del-status').style.display='none';deleteModal.classList.add('open');document.body.style.overflow='hidden';}
+    function openDeleteRequestModal(entry){
+  if(!entry)return;
+  document.getElementById('del-entry-id').value=entry.id;
+  document.getElementById('del-reason').value='';
+  document.getElementById('del-status').style.display='none';
+  // Show name field for guests; hide for logged-in (we already have their info)
+  const nameGroup=document.getElementById('del-name-group');
+  const nameInput=document.getElementById('del-name');
+  if(isLoggedIn()){nameGroup.style.display='none';if(nameInput)nameInput.value=getDisplayName();}
+  else{nameGroup.style.display='block';if(nameInput)nameInput.value='';}
+  deleteModal.classList.add('open');document.body.style.overflow='hidden';
+}
     function closeDeleteModal(){deleteModal.classList.remove('open');document.body.style.overflow='';}
     document.getElementById('delete-modal-close').addEventListener('click',closeDeleteModal);
     deleteModal.addEventListener('click',e=>{if(e.target===deleteModal)closeDeleteModal();});
@@ -1041,7 +1092,9 @@
       const entryId=document.getElementById('del-entry-id').value,reason=document.getElementById('del-reason').value.trim();
       if(!reason){showDelStatus('error','Please provide a reason.');return;}
       const btn=document.getElementById('del-submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
-      try{await sbPatch('entries',`id=eq.${entryId}`,{hidden:true});if(isAdmin()){const _delE=allEntries.find(e=>e.id===entryId);if(_delE?.image_url)await deleteStorageFile(_delE.image_url);await sbDelete('entries',`id=eq.${entryId}`);showDelStatus('success','✅ Entry removed immediately.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500);}else{await sbPost('deletion_requests',{entry_id:entryId,reason});await logActivity('removal_request',entryId,`Removal requested: "${currentDetailEntry?.subject||''}"`);showDelStatus('success','✅ Request submitted. Entry hidden while we review. Thank you.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},2500);}}
+      const _delName=isLoggedIn()?getDisplayName():(document.getElementById('del-name')?.value.trim()||null);
+      const _delIp=await getIpHash();
+      try{await sbPatch('entries',`id=eq.${entryId}`,{hidden:true});if(isAdmin()){const _delE=allEntries.find(e=>e.id===entryId);if(_delE?.image_url)await deleteStorageFile(_delE.image_url);await sbDelete('entries',`id=eq.${entryId}`);showDelStatus('success','✅ Entry removed immediately.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500);}else{await sbPost('deletion_requests',{entry_id:entryId,reason,requester_name:_delName,ip_hash:_delIp,user_id:getUserId()});await logActivity('removal_request',entryId,`Removal requested: "${currentDetailEntry?.subject||''}"`);showDelStatus('success','✅ Request submitted. Entry hidden while we review. Thank you.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},2500);}}
       catch(err){showDelStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='🗑 Submit Removal Request';
     });
