@@ -1669,7 +1669,7 @@
     }
 
     async function adminResetRickroll(userId) {
-      try { await sbPatch('user_profiles', `id=eq.${userId}`, { rickrolled: false }); showToast('🎵 They'll be welcomed again on next visit.'); loadAccounts(); }
+      try { await sbPatch('user_profiles', `id=eq.${userId}`, { rickrolled: false }); showToast('🎵 They’ll be welcomed again on next visit.'); loadAccounts(); }
       catch(err) { alert('Failed: ' + err.message); }
     }
 
