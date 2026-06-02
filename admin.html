@@ -1217,22 +1217,7 @@
       btn.disabled=false;btn.textContent='💾 Save Order';
     }
 
-    // ── Vote weight per user ─────────────────────────────────
-    async function applyVoteWeight(ipHash, rawVal) {
-      const weight = parseFloat(rawVal);
-      if (isNaN(weight) || weight <= 0) { alert('Enter a valid positive number.'); return; }
-      try {
-        // Save to ip_profiles
-        await sbPatch('ip_profiles', `ip_hash=eq.${ipHash}`, { vote_weight: weight });
-        // Apply to all existing votes by this IP in both tables
-        await Promise.all([
-          sbPatch('votes',     `ip_hash=eq.${ipHash}`, { weight }),
-          sbPatch('nap_votes', `ip_hash=eq.${ipHash}`, { weight }),
-        ]);
-        showToast(`✅ Vote weight set to ${weight}x for ${ipHash} — all their votes updated.`);
-        loadIpProfiles();
-      } catch(err) { alert('Failed: ' + err.message); }
-    }
+
 
     // ── Contact Messages ──────────────────────────────────────
     async function loadContactMessages() {
@@ -1321,14 +1306,14 @@
           const isLegacy = p.id === '00000000-0000-0000-0000-000000000001';
           const adminBadge = p.is_admin ? '<span class="badge-admin">Admin</span>' : '';
           const statusBadge = p.is_blocked ? '<span class="badge-blocked">Blocked</span>' : '<span class="badge-ok">OK</span>';
-          const effectiveWeight = p.vote_weight != null ? p.vote_weight : (p.is_admin ? _adminVoteWeight : 1);
+          const effectiveWeight = p.vote_weight ?? (p.is_admin ? _adminVoteWeight : 1);
           const safeId = p.id.replace(/-/g,'_');
           const weightInput = isLegacy ? '—' : `<input type="number" min="0.1" max="100" step="0.1" value="${effectiveWeight}" style="width:60px;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.2rem 0.4rem;font-size:0.8rem" id="awt-${safeId}" /><button class="btn-a ae" style="padding:0.25rem 0.5rem;font-size:0.65rem" onclick="applyAccountWeight('${p.id}',document.getElementById('awt-${safeId}').value)">Apply</button>`;
           const noteInput = `<input type="text" value="${esc(p.admin_note||'')}" placeholder="Who is this?" style="width:120px;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.28rem 0.5rem;font-size:0.75rem;background:var(--cream)" onblur="saveAccountNote('${p.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" />`;
           const blockBtn = isLegacy ? '' : (p.is_blocked ? `<button class="btn-a ars" onclick="toggleAccountBlock('${p.id}',false)">↩ Unblock</button>` : `<button class="btn-a add" onclick="toggleAccountBlock('${p.id}',true)">⛔ Block</button>`);
           const adminBtn = isLegacy ? '' : (p.is_admin ? `<button class="btn-a au" onclick="toggleAccountAdmin('${p.id}',false)">Revoke Admin</button>` : `<button class="btn-a aa" onclick="toggleAccountAdmin('${p.id}',true)">Grant Admin</button>`);
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td style="font-weight:600">${esc(p.display_name)}${isLegacy?'<br><span style="font-size:.65rem;color:var(--muted)">(legacy)</span>':''}</td><td style="font-size:.75rem;color:var(--muted)">${isLegacy?'—':'<em style="font-size:.7rem">see auth dashboard</em>'}</td><td>${adminBadge}</td><td style="min-width:130px">${weightInput}</td><td>${statusBadge}</td><td>${noteInput}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(p.created_at)}</td><td style="min-width:180px">${blockBtn} ${adminBtn}</td>`;
+          tr.innerHTML = `<td style="font-weight:600">${esc(p.display_name)}${isLegacy?'<br><span style="font-size:.65rem;color:var(--muted)">(legacy)</span>':''}</td><td style="font-size:.75rem;color:var(--muted)">${isLegacy?'—':esc(p.email||'—')}</td><td>${adminBadge}</td><td style="min-width:130px">${weightInput}</td><td>${statusBadge}</td><td>${noteInput}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(p.created_at)}</td><td style="min-width:180px">${blockBtn} ${adminBtn}</td>`;
           tb.appendChild(tr);
         });
       } catch(err) { tb.innerHTML = emptyRow(8, 'Failed: '+err.message); }

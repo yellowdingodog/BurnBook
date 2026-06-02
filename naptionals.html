@@ -401,9 +401,10 @@
           <textarea class="form-textarea" id="f-text" placeholder="Where, when, how deeply asleep..."></textarea>
         </div>
         <div class="form-group">
-          <label class="form-label">Your Name *</label>
-          <input class="form-input" id="f-submitter" placeholder="The heroic photographer" />
+          <label class="form-label">Your Name</label>
+          <input class="form-input" id="f-submitter" readonly style="opacity:0.7;cursor:default" />
           <label class="form-check"><input type="checkbox" id="f-anonymous" /><span class="form-check-label">Post as <strong>Anonymous</strong></span></label>
+          <label class="form-check" id="f-mw-wrap" style="display:none"><input type="checkbox" id="f-meanwhirls" /><span class="form-check-label">Post as <strong>MeanWhirls</strong></span></label>
         </div>
         <div class="form-group">
           <label class="form-label">Hashtags <span class="form-label-note">(optional — e.g. #deepnap #snoring)</span></label>
@@ -441,7 +442,7 @@
         <div class="form-group"><label class="form-label">Sleeper's Name *</label><input class="form-input" id="edit-subject" /></div>
         <div class="form-group"><label class="form-label">The Scene <span class="form-label-note">(optional)</span></label><textarea class="form-textarea" id="edit-text"></textarea></div>
         <div class="form-group"><label class="form-label">Hashtags</label><input class="form-input" id="edit-hashtags" placeholder="#deepnap #snoring" /></div>
-        <div class="form-group" id="edit-submitter-group"><label class="form-label">Your Name *</label><input class="form-input" id="edit-submitter" placeholder="Required" /><label class="form-check"><input type="checkbox" id="edit-anonymous" /><span class="form-check-label">Post as <strong>Anonymous</strong></span></label></div>
+        <div class="form-group" id="edit-submitter-group"><label class="form-label">Your Name</label><input class="form-input" id="edit-submitter" readonly style="opacity:0.7;cursor:default" /><label class="form-check"><input type="checkbox" id="edit-anonymous" /><span class="form-check-label">Post as <strong>Anonymous</strong></span></label><label class="form-check" id="edit-mw-wrap" style="display:none"><input type="checkbox" id="edit-meanwhirls" /><span class="form-check-label">Post as <strong>MeanWhirls</strong></span></label></div>
         <div class="form-group"><label class="form-label">Photo <span class="form-label-note">(upload to replace)</span></label>
           <img id="edit-current-img" class="current-img" src="" alt="" style="display:none" />
           <div class="upload-zone" id="edit-upload-zone"><input type="file" id="edit-image" accept="image/*" /><div class="upload-zone-icon">📷</div><div class="upload-zone-text" id="edit-upload-text">Drag &amp; drop or click to replace</div><img id="edit-upload-preview" class="upload-preview" alt="" /></div>
@@ -477,7 +478,7 @@
         <div class="modal-note">Send a message to the Mean Whirls crew about this entry — whether you want to challenge something, correct the record, or flag a concern. We'll review it privately.</div>
         <input type="hidden" id="contact-entry-id" />
         <input type="hidden" id="contact-entry-type" value="nap" />
-        <div class="form-group"><label class="form-label">Your Name *</label><input class="form-input" id="contact-name" placeholder="Your name" /></div>
+        <div class="form-group"><label class="form-label">Your Name</label><input class="form-input" id="contact-name" readonly style="opacity:0.7;cursor:default" /></div>
         <div class="form-group"><label class="form-label">Subject *</label><input class="form-input" id="contact-subject" placeholder="e.g. I was NOT asleep" /></div>
         <div class="form-group"><label class="form-label">Message *</label><textarea class="form-textarea" id="contact-message" placeholder="Tell us what's on your mind..." style="min-height:100px"></textarea></div>
         <button class="btn btn-primary" id="contact-submit-btn">✉️ Send Message</button>
@@ -493,7 +494,7 @@
     const BUCKET = 'burnbook-images';
     const getSb = () => window._sb;
 
-    let CODENAME = 'BananaDuck', BADGE_ICON_URL = '';
+    let BADGE_ICON_URL = '';
     let PLACEHOLDER_EMOJI = '😴', PLACEHOLDER_IMAGE_URL = '';
     let activeFilter = null, allEntries = [], currentDetailEntry = null;
     let myVotes = JSON.parse(localStorage.getItem('mw_nap_votes') || '{}');
@@ -575,22 +576,12 @@
       catch(e){_ipProfile={ip_hash:ip,is_blocked:false};}
       return _ipProfile;
     }
-    async function recordName(name){ if(!name||name==='Anonymous'||name==='MeanWhirls')return; try{const ip=await getIpHash();const prof=await getIpProfile();const names=prof.names||[];if(!names.map(n=>n.toLowerCase()).includes(name.toLowerCase())){const updated=[...names,name];await sbPatch('ip_profiles',`ip_hash=eq.${ip}`,{names:updated});_ipProfile={..._ipProfile,names:updated};}}catch(e){} }
     // isBlocked: now handled by auth module
     async function logActivity(action,entryId,detail){ try{const ip=await getIpHash();await sbPost('ip_activity',{ip_hash:ip,action,entry_id:entryId||null,detail:detail||''});await sbPatch('ip_profiles',`ip_hash=eq.${ip}`,{last_seen:new Date().toISOString()});}catch(e){} }
-    async function makeNameInput(inputId){
-      const input=document.getElementById(inputId);if(!input)return;
-      if(isLoggedIn()){input.value=getDisplayName();return;}
-      const prof=await getIpProfile();const names=prof.names||[];
-      const oldDl=document.getElementById(inputId+'-dl');if(oldDl)oldDl.remove();
-      if(names.length===1){input.value=names[0];}
-      else if(names.length>1){input.value=names[0];const dl=document.createElement('datalist');dl.id=inputId+'-dl';names.forEach(n=>{const opt=document.createElement('option');opt.value=n;dl.appendChild(opt);});input.setAttribute('list',inputId+'-dl');input.insertAdjacentElement('afterend',dl);}
-    }
 
     // ── Utils ─────────────────────────────────────────────────
     const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
-    const normalizeCode = s => s.toLowerCase().replace(/\s+/g,' ').trim();
     const arraysEqual = (a,b) => a.length===b.length&&[...a].sort().join()===([...b]).sort().join();
     const showToast = msg => { const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); };
 
@@ -615,7 +606,6 @@
       try {
         const cfg=await sbGet('config');
         cfg.forEach(r=>{
-          if(r.key==='codename')         CODENAME              =r.value;
           if(r.key==='badgeicon')        BADGE_ICON_URL        =r.value;
           if(r.key==='placeholderemoji') PLACEHOLDER_EMOJI     =r.value;
           if(r.key==='placeholderimage') PLACEHOLDER_IMAGE_URL =r.value;
@@ -624,7 +614,6 @@
       const hash=window.location.hash;
       if(hash.startsWith('#nap-')){await loadEntries();const e=allEntries.find(e=>e.id===hash.slice(5));if(e)openDetail(e);}
       else loadEntries();
-      makeNameInput('f-submitter');
     }
 
     // ── Tabs ──────────────────────────────────────────────────
@@ -819,31 +808,29 @@
         });
         const form=document.createElement('div');form.className='add-comment-form';
         form.innerHTML=`<div class="add-comment-title">Leave a Comment</div>`;
-        const nameInput=document.createElement('input');nameInput.className='comment-input';nameInput.placeholder='Your name *';
-        getIpProfile().then(prof=>{
-          const names=prof.names||[];
-          if(names.length>=1)nameInput.value=names[0];
-          if(names.length>1){
-            const dl=document.createElement('datalist');dl.id='cmt-name-dl-'+entryId;
-            names.forEach(n=>{const o=document.createElement('option');o.value=n;dl.appendChild(o);});
-            nameInput.setAttribute('list','cmt-name-dl-'+entryId);
-            nameInput.insertAdjacentElement('afterend',dl);
-          }
-        });
+        const nameRow=document.createElement('div');nameRow.style.cssText='display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;flex-wrap:wrap;';
+        const nameInput=document.createElement('input');nameInput.className='comment-input';nameInput.style.cssText='flex:1;min-width:120px;opacity:0.7;cursor:default;';nameInput.readOnly=true;nameInput.value=getDisplayName();
+        const anonLabel=document.createElement('label');anonLabel.style.cssText='display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;cursor:pointer;white-space:nowrap;';
+        const anonCb=document.createElement('input');anonCb.type='checkbox';anonLabel.appendChild(anonCb);anonLabel.appendChild(document.createTextNode('Anonymous'));
+        nameRow.appendChild(nameInput);nameRow.appendChild(anonLabel);
+        let mwCb=null;
+        if(isAdmin()){const mwLabel=document.createElement('label');mwLabel.style.cssText='display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;cursor:pointer;white-space:nowrap;';mwCb=document.createElement('input');mwCb.type='checkbox';mwLabel.appendChild(mwCb);mwLabel.appendChild(document.createTextNode('MeanWhirls'));nameRow.appendChild(mwLabel);}
+        form.appendChild(nameRow);
         const textInput=document.createElement('textarea');textInput.className='comment-textarea';textInput.placeholder='Say something...';
         const submitBtn=document.createElement('button');submitBtn.className='comment-submit-btn';submitBtn.textContent='💬 Post Comment';
         const msgEl=document.createElement('div');msgEl.className='comment-msg';msgEl.style.display='none';
         submitBtn.addEventListener('click',async()=>{
-          const name=nameInput.value.trim(),text=textInput.value.trim();
-          if(!name){msgEl.className='comment-msg err';msgEl.textContent='Name is required.';msgEl.style.display='block';return;}
+          const postAsMW=mwCb&&mwCb.checked,isAnon=anonCb.checked;
+          const author=postAsMW?'MeanWhirls':(isAnon?'Anonymous':getDisplayName());
+          const text=textInput.value.trim();
           if(!text){msgEl.className='comment-msg err';msgEl.textContent='Comment cannot be empty.';msgEl.style.display='block';return;}
           if (!requireAuth('comment')) return;
           submitBtn.disabled=true;submitBtn.textContent='Posting...';
-          try{await sbPost('nap_comments',{entry_id:entryId,author:name,text,ip_hash:ipHash,user_id:getUserId()});await recordName(name);await logActivity('comment',entryId,`Comment by ${name} on: "${currentDetailEntry?.subject||''}"`);nameInput.value='';textInput.value='';loadComments(entryId,ipHash);}
+          try{await sbPost('nap_comments',{entry_id:entryId,author,text,ip_hash:ipHash,user_id:getUserId()});await logActivity('comment',entryId,`Comment by ${author} on: "${currentDetailEntry?.subject||''}"`);textInput.value='';anonCb.checked=false;if(mwCb)mwCb.checked=false;loadComments(entryId,ipHash);}
           catch(e){msgEl.className='comment-msg err';msgEl.textContent='Failed: '+e.message;msgEl.style.display='block';}
           submitBtn.disabled=false;submitBtn.textContent='💬 Post Comment';
         });
-        form.appendChild(nameInput);form.appendChild(textInput);form.appendChild(submitBtn);form.appendChild(msgEl);
+        form.appendChild(textInput);form.appendChild(submitBtn);form.appendChild(msgEl);
         el.appendChild(form);
       }catch(e){console.error(e);}
     }
@@ -895,41 +882,41 @@
     function showStatus(type,msg){const el=document.getElementById('submit-status');el.className='alert alert-'+type;el.textContent=msg;el.style.display='block';}
 
     document.getElementById('submit-btn').addEventListener('click',async()=>{
-      const subject=document.getElementById('f-subject').value.trim(),text=document.getElementById('f-text').value.trim(),submitter=document.getElementById('f-submitter').value.trim(),anonymous=document.getElementById('f-anonymous').checked,hashtagRaw=document.getElementById('f-hashtags').value.trim();
+      const subject=document.getElementById('f-subject').value.trim(),text=document.getElementById('f-text').value.trim(),hashtagRaw=document.getElementById('f-hashtags').value.trim();
+      const anonymous=document.getElementById('f-anonymous').checked,postAsMW=isAdmin()&&document.getElementById('f-meanwhirls').checked;
+      const submitter=getDisplayName();
       if(!subject){showStatus('error','Who got caught sleeping?');return;}
-      if(!submitter){showStatus('error','Your name is required.');return;}
-      if(submitter.trim().toLowerCase()==='meanwhirls'&&normalizeCode(submitter)!==normalizeCode(CODENAME)){showStatus('error','Oh honey. You are NOT a real MeanWhirl. You definitely cannot whirl with us now. 💅');return;}
+      if(!isLoggedIn()){showStatus('error','Sign in to submit.');return;}
       if(await isBlocked()){showStatus('error','Your access has been restricted.');return;}
       const btn=document.getElementById('submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';document.getElementById('submit-status').style.display='none';
-      const isCode=normalizeCode(submitter)===normalizeCode(CODENAME),displayAuthor=isCode?'MeanWhirls':(anonymous?'Anonymous':submitter),hashtags=parseHashtags(hashtagRaw);
+      const isMW=postAsMW,displayAuthor=isMW?'MeanWhirls':(anonymous?'Anonymous':submitter),hashtags=parseHashtags(hashtagRaw);
       try{
         let imageUrl='';if(selectedFile){const resized=await resizeImage(selectedFile);imageUrl=await uploadImage(resized);}
         const existing=await sbGet('nap_entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');
         const nextOrder=((existing[0]?.ui_order)||0)+1;
-        const _subIp=await getIpHash();await sbPost('nap_entries',{subject,text,image_url:imageUrl,status:isCode?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isCode,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp,user_id:getUserId()});
-        await recordName(submitter);await logActivity('submit',null,`Submitted nap entry: "${subject}"`);
-        showStatus('success',isCode?'😴 Mean Whirls nap posted!':'✅ Submitted! Appears after moderation.');
+        const _subIp=await getIpHash();await sbPost('nap_entries',{subject,text,image_url:imageUrl,status:isMW?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isMW,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp,user_id:getUserId()});
+        await logActivity('submit',null,`Submitted nap entry: "${subject}"`);
+        showStatus('success',isMW?'😴 Mean Whirls nap posted!':'✅ Submitted! Appears after moderation.');
         resetSubmitForm();
       }catch(err){showStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='😴 Submit to the Nap Wall';
     });
 
-    function resetSubmitForm(){['f-subject','f-text','f-submitter','f-hashtags'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-anonymous').checked=false;selectedFile=null;document.getElementById('upload-text').textContent='Drag & drop or click to upload';const p=document.getElementById('upload-preview');p.style.display='none';p.src='';document.getElementById('f-image').value='';}
+    function resetSubmitForm(){['f-subject','f-text','f-hashtags'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-anonymous').checked=false;const fmw=document.getElementById('f-meanwhirls');if(fmw)fmw.checked=false;selectedFile=null;document.getElementById('upload-text').textContent='Drag & drop or click to upload';const p=document.getElementById('upload-preview');p.style.display='none';p.src='';document.getElementById('f-image').value='';}
 
     // ── Delete request ────────────────────────────────────────
     const deleteModal=document.getElementById('delete-modal');
-    function openDeleteRequestModal(entry){if(!entry)return;document.getElementById('del-entry-id').value=entry.id;['del-name','del-reason'].forEach(id=>document.getElementById(id).value='');document.getElementById('del-status').style.display='none';deleteModal.classList.add('open');document.body.style.overflow='hidden';}
+    function openDeleteRequestModal(entry){if(!entry)return;document.getElementById('del-entry-id').value=entry.id;document.getElementById('del-reason').value='';document.getElementById('del-status').style.display='none';deleteModal.classList.add('open');document.body.style.overflow='hidden';}
     function closeDeleteModal(){deleteModal.classList.remove('open');document.body.style.overflow='';}
     document.getElementById('delete-modal-close').addEventListener('click',closeDeleteModal);
     deleteModal.addEventListener('click',e=>{if(e.target===deleteModal)closeDeleteModal();});
     document.getElementById('del-submit-btn').addEventListener('click',async()=>{
-      const entryId=document.getElementById('del-entry-id').value,name=document.getElementById('del-name').value.trim(),reason=document.getElementById('del-reason').value.trim();
-      if(!name){showDelStatus('error','Your name is required.');return;}if(!reason){showDelStatus('error','Please provide a reason.');return;}
+      const entryId=document.getElementById('del-entry-id').value,reason=document.getElementById('del-reason').value.trim();
+      if(!reason){showDelStatus('error','Please provide a reason.');return;}
       const btn=document.getElementById('del-submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
-      const isCode=normalizeCode(name)===normalizeCode(CODENAME);
       try{
         await sbPatch('nap_entries',`id=eq.${entryId}`,{hidden:true});
-        if(isCode){const _delNap=allEntries.find(e=>e.id===entryId);if(_delNap?.image_url)await deleteStorageFile(_delNap.image_url);await sbDelete('nap_entries',`id=eq.${entryId}`);showDelStatus('success','✅ Entry removed immediately.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500);}
+        if(isAdmin()){const _delNap=allEntries.find(e=>e.id===entryId);if(_delNap?.image_url)await deleteStorageFile(_delNap.image_url);await sbDelete('nap_entries',`id=eq.${entryId}`);showDelStatus('success','✅ Entry removed immediately.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},1500);}
         else{await sbPost('nap_deletion_requests',{entry_id:entryId,reason});await logActivity('removal_request',entryId,`Removal requested: "${currentDetailEntry?.subject||''}"`);showDelStatus('success','✅ Request submitted. Entry hidden while we review. Thank you.');setTimeout(()=>{closeDeleteModal();closeDetail();loadEntries();},2500);}
       }catch(err){showDelStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='Submit Removal Request';
@@ -940,12 +927,11 @@
     const editModal=document.getElementById('edit-modal');
     let editImageFile=null;
     function openEditModal(entry){
-      document.getElementById('edit-entry-id').value=entry.id;document.getElementById('edit-subject').value=entry.subject;document.getElementById('edit-text').value=entry.text||'';document.getElementById('edit-hashtags').value=(entry.hashtags||[]).join(' ');document.getElementById('edit-submitter').value='';document.getElementById('edit-anonymous').checked=entry.display_author==='Anonymous';document.getElementById('edit-existing-image').value=entry.image_url||'';document.getElementById('edit-orig-subject').value=entry.subject;document.getElementById('edit-orig-text').value=entry.text||'';document.getElementById('edit-orig-hashtags').value=(entry.hashtags||[]).sort().join(' ');document.getElementById('edit-status').style.display='none';editImageFile=null;document.getElementById('edit-upload-text').textContent='Drag & drop or click to replace';document.getElementById('edit-upload-preview').style.display='none';document.getElementById('edit-image').value='';
+      document.getElementById('edit-entry-id').value=entry.id;document.getElementById('edit-subject').value=entry.subject;document.getElementById('edit-text').value=entry.text||'';document.getElementById('edit-hashtags').value=(entry.hashtags||[]).join(' ');document.getElementById('edit-submitter').value=getDisplayName();document.getElementById('edit-anonymous').checked=entry.display_author==='Anonymous';const _emwEl=document.getElementById('edit-meanwhirls');if(_emwEl)_emwEl.checked=entry.is_mean_whirls||false;document.getElementById('edit-existing-image').value=entry.image_url||'';document.getElementById('edit-orig-subject').value=entry.subject;document.getElementById('edit-orig-text').value=entry.text||'';document.getElementById('edit-orig-hashtags').value=(entry.hashtags||[]).sort().join(' ');document.getElementById('edit-status').style.display='none';editImageFile=null;document.getElementById('edit-upload-text').textContent='Drag & drop or click to replace';document.getElementById('edit-upload-preview').style.display='none';document.getElementById('edit-image').value='';
       document.getElementById('edit-modal-note').textContent='✏️ Only edit your own entry. Changes go through moderation. Hashtag-only changes apply immediately.';
       document.getElementById('edit-submitter-group').style.display='block';document.getElementById('edit-submit-btn').innerHTML='Submit Edit for Review';
       const curImg=document.getElementById('edit-current-img');if(entry.image_url){curImg.src=entry.image_url;curImg.style.display='block';}else{curImg.style.display='none';}
       editModal.classList.add('open');document.body.style.overflow='hidden';
-      makeNameInput('edit-submitter');
     }
     function closeEditModal(){editModal.classList.remove('open');document.body.style.overflow='';}
     document.getElementById('edit-modal-close').addEventListener('click',closeEditModal);
@@ -957,47 +943,34 @@
     function showEditStatus(type,msg){const el=document.getElementById('edit-status');el.className='alert alert-'+type;el.textContent=msg;el.style.display='block';}
 
     document.getElementById('edit-submit-btn').addEventListener('click',async()=>{
-      const entryId=document.getElementById('edit-entry-id').value,subject=document.getElementById('edit-subject').value.trim(),text=document.getElementById('edit-text').value.trim(),submitter=document.getElementById('edit-submitter').value.trim(),anonymous=document.getElementById('edit-anonymous').checked,hashtagRaw=document.getElementById('edit-hashtags').value.trim(),existingImg=document.getElementById('edit-existing-image').value,origSubject=document.getElementById('edit-orig-subject').value,origText=document.getElementById('edit-orig-text').value,origTagsStr=document.getElementById('edit-orig-hashtags').value;
-      if(!subject){showEditStatus('error','Sleeper name required.');return;}if(!submitter){showEditStatus('error','Your name is required.');return;}
-      if(submitter.trim().toLowerCase()==='meanwhirls'&&normalizeCode(submitter)!==normalizeCode(CODENAME)){showEditStatus('error','Nice try. You are NOT a real MeanWhirl. You definitely cannot whirl with us now. 💅');return;}
+      const entryId=document.getElementById('edit-entry-id').value,subject=document.getElementById('edit-subject').value.trim(),text=document.getElementById('edit-text').value.trim(),hashtagRaw=document.getElementById('edit-hashtags').value.trim(),existingImg=document.getElementById('edit-existing-image').value,origSubject=document.getElementById('edit-orig-subject').value,origText=document.getElementById('edit-orig-text').value,origTagsStr=document.getElementById('edit-orig-hashtags').value;
+      const anonymous=document.getElementById('edit-anonymous').checked,postAsMW=isAdmin()&&document.getElementById('edit-meanwhirls').checked;
+      const submitter=getDisplayName();
+      if(!subject){showEditStatus('error','Sleeper name required.');return;}
       if(await isBlocked()){showEditStatus('error','Your access has been restricted.');return;}
       const btn=document.getElementById('edit-submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';
-      const hashtags=parseHashtags(hashtagRaw),origTags=origTagsStr?origTagsStr.split(' ').filter(Boolean):[],displayAuthor=anonymous?'Anonymous':submitter;
+      const isMW=postAsMW,hashtags=parseHashtags(hashtagRaw),origTags=origTagsStr?origTagsStr.split(' ').filter(Boolean):[],displayAuthor=isMW?'MeanWhirls':(anonymous?'Anonymous':submitter);
       const onlyTagsChanged=!editImageFile&&subject===origSubject&&text===origText&&!arraysEqual(hashtags,origTags);
       const nothingChanged=!editImageFile&&subject===origSubject&&text===origText&&arraysEqual(hashtags,origTags);
       if(nothingChanged){showEditStatus('error','No changes detected.');btn.disabled=false;btn.innerHTML='Submit Edit for Review';return;}
       try{
         let imageUrl=existingImg;if(editImageFile){const resized=await resizeImage(editImageFile);imageUrl=await uploadImage(resized);}
-        const isCode=normalizeCode(submitter)===normalizeCode(CODENAME);
-        if(isCode||onlyTagsChanged){const patch={hashtags};if(!onlyTagsChanged){patch.subject=subject;patch.text=text;patch.image_url=imageUrl;if(editImageFile&&existingImg)await deleteStorageFile(existingImg);}if(isCode){patch.display_author='MeanWhirls';patch.is_mean_whirls=true;}await sbPatch('nap_entries',`id=eq.${entryId}`,patch);await logActivity('edit',entryId,onlyTagsChanged?`Updated hashtags on: "${subject}"`:`Direct edit applied: "${subject}"`);showEditStatus('success',onlyTagsChanged?'✅ Hashtags updated!':'😴 Mean Whirls edit applied!');setTimeout(()=>{closeEditModal();loadEntries();},1500);}
-        else{await sbPost('nap_pending_edits',{entry_id:entryId,subject,text,image_url:imageUrl,submitter,display_author:displayAuthor,hashtags});await recordName(submitter);await logActivity('edit',entryId,`Proposed nap edit: "${subject}"`);showEditStatus('success','✅ Edit submitted for review!');setTimeout(closeEditModal,3000);}
+        if(isMW||onlyTagsChanged){const patch={hashtags};if(!onlyTagsChanged){patch.subject=subject;patch.text=text;patch.image_url=imageUrl;if(editImageFile&&existingImg)await deleteStorageFile(existingImg);}if(isMW){patch.display_author='MeanWhirls';patch.is_mean_whirls=true;}await sbPatch('nap_entries',`id=eq.${entryId}`,patch);await logActivity('edit',entryId,onlyTagsChanged?`Updated hashtags on: "${subject}"`:`Direct edit applied: "${subject}"`);showEditStatus('success',onlyTagsChanged?'✅ Hashtags updated!':'😴 Mean Whirls edit applied!');setTimeout(()=>{closeEditModal();loadEntries();},1500);}
+        else{await sbPost('nap_pending_edits',{entry_id:entryId,subject,text,image_url:imageUrl,submitter,display_author:displayAuthor,hashtags});await logActivity('edit',entryId,`Proposed nap edit: "${subject}"`);showEditStatus('success','✅ Edit submitted for review!');setTimeout(closeEditModal,3000);}
       }catch(err){showEditStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='Submit Edit for Review';
     });
 
     // ── Contact Admins modal ──────────────────────────────────
     const contactModal = document.getElementById('contact-modal');
-    async function openContactModal(entryId, entryType) {
+    function openContactModal(entryId, entryType) {
       document.getElementById('contact-entry-id').value = entryId || '';
       document.getElementById('contact-entry-type').value = entryType || 'nap';
       document.getElementById('contact-subject').value = '';
       document.getElementById('contact-message').value = '';
       document.getElementById('contact-status').style.display = 'none';
-      // Pre-populate name from IP profile
-      const _cProf = await getIpProfile();
-      const _cNames = _cProf.names || [];
       const _cNameEl = document.getElementById('contact-name');
-      if (_cNameEl) {
-        _cNameEl.value = _cNames.length ? _cNames[0] : '';
-        const oldDl = document.getElementById('contact-name-dl');
-        if (oldDl) oldDl.remove();
-        if (_cNames.length > 1) {
-          const dl = document.createElement('datalist'); dl.id = 'contact-name-dl';
-          _cNames.forEach(n => { const o = document.createElement('option'); o.value = n; dl.appendChild(o); });
-          _cNameEl.setAttribute('list', 'contact-name-dl');
-          _cNameEl.insertAdjacentElement('afterend', dl);
-        }
-      }
+      if (_cNameEl) _cNameEl.value = getDisplayName();
       contactModal.classList.add('open');
       document.body.style.overflow = 'hidden';
     }
@@ -1006,12 +979,10 @@
     contactModal.addEventListener('click', e => { if (e.target === contactModal) closeContactModal(); });
 
     document.getElementById('contact-submit-btn').addEventListener('click', async () => {
-      const contactName = document.getElementById('contact-name').value.trim();
       const subject   = document.getElementById('contact-subject').value.trim();
       const message   = document.getElementById('contact-message').value.trim();
       const entryId   = document.getElementById('contact-entry-id').value || null;
       const entryType = document.getElementById('contact-entry-type').value;
-      if (!contactName) { showContactStatus('error', 'Your name is required.'); return; }
       if (!subject) { showContactStatus('error', 'Subject is required.'); return; }
       if (!message) { showContactStatus('error', 'Message is required.'); return; }
       const btn = document.getElementById('contact-submit-btn');
@@ -1019,7 +990,6 @@
       try {
         const ip = await getIpHash();
         await sbPost('contact_messages', { ip_hash: ip, entry_id: entryId, entry_type: entryType, subject, message });
-        await recordName(contactName);
         showContactStatus('success', '✅ Message sent! The Mean Whirls crew will review it.');
         setTimeout(closeContactModal, 2500);
       } catch(err) { showContactStatus('error', 'Failed to send: ' + err.message); }
@@ -1133,7 +1103,7 @@ async function signUp(email, password, displayName) {
   const { data, error } = await getSb().auth.signUp({ email, password });
   if (error) throw error;
   if (data.user) {
-    await getSb().from('user_profiles').insert({ id: data.user.id, display_name: displayName, is_admin: false });
+    await getSb().from('user_profiles').insert({ id: data.user.id, display_name: displayName, email: email, is_admin: false, vote_weight: 1 });
     _currentProfile = await fetchProfile(data.user.id);
   }
   return data;
@@ -1406,6 +1376,22 @@ function updateAuthUI() {
   } else {
     widget.innerHTML = `<button onclick="openAuthModal()" style="background:none;border:1px solid rgba(255,255,255,0.35);border-radius:2px;padding:0.3rem 0.85rem;font-family:Raleway,sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.8);cursor:pointer;transition:all 0.2s" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.8)';this.style.borderColor='rgba(255,255,255,0.35)'">Sign In / Join</button>`;
   }
+  prefillForms();
+}
+
+function prefillForms() {
+  const name = isLoggedIn() ? getDisplayName() : '';
+  const admin = isAdmin();
+  const fsub = document.getElementById('f-submitter');
+  if (fsub) fsub.value = name;
+  const fmwWrap = document.getElementById('f-mw-wrap');
+  if (fmwWrap) fmwWrap.style.display = admin ? 'flex' : 'none';
+  const esub = document.getElementById('edit-submitter');
+  if (esub) esub.value = name;
+  const emwWrap = document.getElementById('edit-mw-wrap');
+  if (emwWrap) emwWrap.style.display = admin ? 'flex' : 'none';
+  const cname = document.getElementById('contact-name');
+  if (cname) { cname.value = name; }
 }
 
 // ── Gate check — require login for interactive actions ──
