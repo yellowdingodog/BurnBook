@@ -513,10 +513,11 @@
     // ── Supabase ──────────────────────────────────────────────
     const SB = SUPABASE_URL;
     const H  = {'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON};
-    const sbGet    = async (t,p='')  => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{headers:H}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
-    const sbPost   = async (t,b)     => { const r=await fetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
-    const sbPatch  = async (t,p,b)   => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
-    const sbDelete = async (t,p)     => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'DELETE',headers:H}); if(!r.ok)throw new Error(await r.text()); };
+    const getH = () => ({'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':'Bearer '+(window._sessionToken||SUPABASE_ANON)});
+    const sbGet    = async (t,p='')      => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{headers:getH()}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbPost   = async (t,b)         => { const r=await fetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:{...getH(),'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbPatch  = async (t,p,b)       => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...getH(),'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbDelete = async (t,p)         => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'DELETE',headers:getH()}); if(!r.ok)throw new Error(await r.text()); };
     const sbUpsert = async (t,b,oc)  => { const u=`${SB}/rest/v1/${t}`+(oc?`?on_conflict=${oc}`:''); const r=await fetch(u,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
     const getIpHash = async () => {
       try { const c=sessionStorage.getItem('mw_iphash'); if(c)return c; const {ip}=await (await fetch('https://api.ipify.org?format=json')).json(); let h=0; for(let i=0;i<ip.length;i++){h=((h<<5)-h)+ip.charCodeAt(i);h|=0;} const s='v'+Math.abs(h).toString(36); sessionStorage.setItem('mw_iphash',s); return s; }
@@ -645,6 +646,7 @@
         const { data: prof } = await _sb.from('user_profiles').select('*').eq('id', session.user.id).single();
         if (prof?.is_admin) {
           _adminUser = session.user; _adminProfile = prof;
+          window._sessionToken = session.access_token;
           document.getElementById('login-wrap').style.display = 'none';
           document.getElementById('admin-main').style.display = 'block';
           document.getElementById('admin-user-info').textContent = '👤 ' + (prof.display_name || session.user.email);
@@ -664,6 +666,7 @@
         const { data: prof } = await _sb.from('user_profiles').select('*').eq('id', data.user.id).single();
         if (!prof?.is_admin) { await _sb.auth.signOut(); showLoginErr('You are not an admin. Sit down.'); return; }
         _adminUser = data.user; _adminProfile = prof;
+        window._sessionToken = data.session?.access_token || null;
         unlockAdmin();
       } catch(e) { showLoginErr(e.message); }
     });
@@ -2035,35 +2038,32 @@
           const resized = await resizeImage(origFile, px, q);
 
           if (statusEl) statusEl.textContent = '⬆ Uploading…';
-          const prefix = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
-          const path = item.image_url.split('?')[0].replace(prefix, '');
-          const _authToken = await getAuthToken();
-          const authHeaders = {
-            'apikey': SUPABASE_ANON,
-            'Authorization': 'Bearer ' + _authToken,
-          };
-          // Delete old file first, then re-upload — avoids RLS update restrictions
-          await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}`, {
-            method: 'DELETE',
-            headers: { ...authHeaders, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prefixes: [path] }),
-          });
-          const putResp = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+          // Upload to new path using same anon INSERT as regular uploads (avoids RLS update restriction)
+          const ext = (resized.name||'img').split('.').pop().toLowerCase() || 'jpg';
+          const newPath = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+          const postResp = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${newPath}`, {
             method: 'POST',
-            headers: { ...authHeaders, 'Content-Type': resized.type || 'image/jpeg', 'x-upsert': 'true' },
+            headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + (window._sessionToken||SUPABASE_ANON), 'Content-Type': resized.type || 'image/jpeg' },
             body: resized,
           });
-          if (!putResp.ok) throw new Error('Upload failed: ' + await putResp.text());
-
-          // Write image_quality back to DB
+          if (!postResp.ok) throw new Error('Upload failed: ' + await postResp.text());
+          const newUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${newPath}`;
+          // Update DB: new URL + quality
           const tbl = item.type === 'burn' ? 'entries' : 'nap_entries';
-          await sbPatch(tbl, `id=eq.${item.id}`, { image_quality: tier });
+          await sbPatch(tbl, `id=eq.${item.id}`, { image_url: newUrl, image_quality: tier });
+          // Delete old file (best effort — don't fail if this errors)
+          try {
+            const oldPrefix = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
+            const oldPath = item.image_url.split('?')[0].replace(oldPrefix, '');
+            await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}`, {
+              method: 'DELETE',
+              headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prefixes: [oldPath] }),
+            });
+          } catch(_) {}
+          // Update local item
+          item.image_url = newUrl;
           item.image_quality = tier;
-          const qEl = document.getElementById(`pf-qual-${idx}`);
-          const qc = tier==='H'?'#2e7d32':tier==='M'?'#e65100':'#c62828';
-          if (qEl) { qEl.textContent = tier; qEl.style.color = qc; }
-          if (sizeEl) sizeEl.textContent = formatBytes(resized.size);
-          if (statusEl) { statusEl.textContent = `✅ ${label.split(' ')[0]}`; statusEl.style.color = '#2e7d32'; }
           done++;
         } catch(err) {
           if (statusEl) { statusEl.textContent = '❌ ' + err.message; statusEl.style.color = '#c62828'; }
