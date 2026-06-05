@@ -101,7 +101,7 @@
     @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 
     .entry-img-wrap{position:relative;width:100%;border-bottom:1.5px solid rgba(44,74,110,0.1);background:linear-gradient(135deg,#060d14,#1b2d3f);display:flex;align-items:center;justify-content:center;min-height:180px;overflow:hidden;border-radius:1px 1px 0 0;}
-    .entry-img{max-width:100%;max-height:420px;display:block;}
+    .entry-img{width:100%;max-height:420px;display:block;object-fit:contain;}
     .entry-img-num{position:absolute;top:8px;left:8px;z-index:2;background:rgba(0,0,0,0.55);color:#fff;font-size:0.65rem;font-weight:700;letter-spacing:0.08em;padding:0.2rem 0.55rem;border-radius:20px;}
     .entry-img-placeholder{width:100%;min-height:180px;aspect-ratio:4/3;background:linear-gradient(135deg,var(--blush),#d0e4f4);display:flex;align-items:center;justify-content:center;font-size:3.5rem;border-bottom:1.5px solid rgba(44,74,110,0.1);position:relative;}
 
@@ -421,6 +421,14 @@
           <label class="form-label">Hashtags <span class="form-label-note">(optional — e.g. #deepnap #snoring)</span></label>
           <input class="form-input" id="f-hashtags" placeholder="#deepnap #snoring #legendary" />
         </div>
+        <div class="form-group" id="f-quality-group">
+            <label class="form-label">Photo Quality <span class="form-label-note">(only applies if you upload a photo)</span></label>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.25rem;">
+              <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer;"><input type="radio" name="f-quality" value="H" style="accent-color:var(--sky)" /><strong>High</strong> <span style="color:var(--muted);font-size:0.78rem">1920px</span></label>
+              <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer;"><input type="radio" name="f-quality" value="M" checked style="accent-color:var(--sky)" /><strong>Medium</strong> <span style="color:var(--muted);font-size:0.78rem">1200px</span></label>
+              <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer;"><input type="radio" name="f-quality" value="L" style="accent-color:var(--sky)" /><strong>Low</strong> <span style="color:var(--muted);font-size:0.78rem">900px</span></label>
+            </div>
+          </div>
         <div class="form-group">
           <label class="form-label">Photo Evidence <span class="form-label-note">(optional but highly encouraged)</span></label>
           <div class="upload-zone" id="upload-zone">
@@ -457,6 +465,14 @@
           <label class="form-label">Posting As</label>
           <div id="edit-post-as-options" style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.25rem;"></div>
         </div>
+        <div class="form-group" id="edit-quality-group" style="display:none">
+            <label class="form-label">Photo Quality <span class="form-label-note">(only if replacing photo)</span></label>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.25rem;">
+              <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer;"><input type="radio" name="edit-quality" value="H" style="accent-color:var(--sky)" /><strong>High</strong> <span style="color:var(--muted);font-size:0.78rem">1920px</span></label>
+              <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer;"><input type="radio" name="edit-quality" value="M" checked style="accent-color:var(--sky)" /><strong>Medium</strong> <span style="color:var(--muted);font-size:0.78rem">1200px</span></label>
+              <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer;"><input type="radio" name="edit-quality" value="L" style="accent-color:var(--sky)" /><strong>Low</strong> <span style="color:var(--muted);font-size:0.78rem">900px</span></label>
+            </div>
+          </div>
         <div class="form-group"><label class="form-label">Photo <span class="form-label-note">(upload to replace)</span></label>
           <img id="edit-current-img" class="current-img" src="" alt="" style="display:none" />
           <div class="upload-zone" id="edit-upload-zone"><input type="file" id="edit-image" accept="image/*" /><div class="upload-zone-icon">📷</div><div class="upload-zone-text" id="edit-upload-text">Drag &amp; drop or click to replace</div><img id="edit-upload-preview" class="upload-preview" alt="" /></div>
@@ -509,7 +525,6 @@
     const getSb = () => window._sb;
 
     let BADGE_ICON_URL = '', ANON_MOUSE_IMAGE = '', NAP_PLACEHOLDER_IMAGE_URL = '';
-    let _uploadMaxPx = 1920, _uploadQuality = 0.82;
     let PLACEHOLDER_EMOJI = '😴', PLACEHOLDER_IMAGE_URL = '';
     let activeFilter = null, allEntries = [], currentDetailEntry = null;
     let myVotes = JSON.parse(localStorage.getItem('mw_nap_votes') || '{}');
@@ -551,7 +566,7 @@
       } catch(e) {} // non-fatal
     }
     // ── Image resize before upload ────────────────────────────
-    async function resizeImage(file, maxDim=_uploadMaxPx, quality=_uploadQuality) {
+    async function resizeImage(file, maxDim=1920, quality=0.82) {
       return new Promise((resolve) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
@@ -596,17 +611,22 @@
 
     // ── Utils ─────────────────────────────────────────────────
     const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+    // ── Image quality tiers ───────────────────────────────────
+    const IMG_TIERS = {
+      H: { px:1920, q:0.82, label:'High',   desc:'1920px / 0.82 — full quality' },
+      M: { px:1200, q:0.78, label:'Medium', desc:'1200px / 0.78 — good for most photos' },
+      L: { px:900,  q:0.70, label:'Low',    desc:'900px / 0.70 — smallest file size' },
+    };
+    function tierFromRadio(name) { return document.querySelector(`input[name="${name}"]:checked`)?.value || 'M'; }
+    function tierParams(t) { return IMG_TIERS[t] || IMG_TIERS.M; }
+
     // Image URL helper — applies Supabase transform params for display tiers
     // tier: 'thumb' (card grid), 'detail' (detail sheet), raw otherwise (download)
     const imgUrl = (url, tier) => {
-      if (!url || !url.includes('supabase.co/storage')) return url;
-      // Supabase image transform only works reliably on JPEG/JPG
-      const ext = url.split('?')[0].split('.').pop().toLowerCase();
-      if (!['jpg','jpeg'].includes(ext)) return url;
-      const base = url.split('?')[0].replace('/object/', '/render/image/');
-      if (tier === 'thumb')  return base + '?width=600&quality=75';
-      if (tier === 'detail') return base + '?width=900&quality=82';
-      return url;
+      // Returns url unchanged — image transformations cause rendering issues
+      // with mixed JPEG/PNG content. Display original uploaded images directly.
+      return url || '';
     };
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
     const arraysEqual = (a,b) => a.length===b.length&&[...a].sort().join()===([...b]).sort().join();
@@ -654,8 +674,6 @@
           if(r.key==='placeholderemoji')       PLACEHOLDER_EMOJI         =r.value;
           if(r.key==='placeholderimage')       PLACEHOLDER_IMAGE_URL     =r.value;
           if(r.key==='nap_placeholder_image')  NAP_PLACEHOLDER_IMAGE_URL =r.value;
-          if(r.key==='upload_max_px')          _uploadMaxPx              =parseInt(r.value)||1920;
-          if(r.key==='upload_quality')         _uploadQuality            =parseFloat(r.value)||0.82;
         });
       }catch(e){}
       const hash=window.location.hash;
@@ -973,11 +991,12 @@
       if(await isBlocked()){showStatus('error','Your access has been restricted.');return;}
       const btn=document.getElementById('submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';document.getElementById('submit-status').style.display='none';
       const isMW=postAsMW,displayAuthor=isMW?'MeanWhirls':(anonymous?'Anonymous':submitter),hashtags=parseHashtags(hashtagRaw);
+      const _sqTier=tierFromRadio('f-quality');const _sqP=tierParams(_sqTier);
       try{
-        let imageUrl='';if(selectedFile){const resized=await resizeImage(selectedFile);imageUrl=await uploadImage(resized);}
+        let imageUrl='',imageQuality=null;if(selectedFile){const resized=await resizeImage(selectedFile,_sqP.px,_sqP.q);imageUrl=await uploadImage(resized);imageQuality=_sqTier;}
         const existing=await sbGet('nap_entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');
         const nextOrder=((existing[0]?.ui_order)||0)+1;
-        const _subIp=await getIpHash();await sbPost('nap_entries',{subject,text,image_url:imageUrl,status:isMW?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isMW,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp,user_id:getUserId()});
+        const _subIp=await getIpHash();const _subPayload={subject,text,image_url:imageUrl,status:isMW?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isMW,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp,user_id:getUserId()};if(imageQuality)_subPayload.image_quality=imageQuality;await sbPost('nap_entries',_subPayload);
         await logActivity('submit',null,`Submitted nap entry: "${subject}"`);
         showStatus('success',isMW?'😴 Mean Whirls nap posted!':'✅ Submitted! Appears after moderation.');
         resetSubmitForm();
@@ -985,7 +1004,7 @@
       btn.disabled=false;btn.innerHTML='😴 Submit to the Nap Wall';
     });
 
-    function resetSubmitForm(){['f-subject','f-text','f-hashtags'].forEach(id=>document.getElementById(id).value='');const firstRadio=document.querySelector('input[name="f-post-as"]');if(firstRadio)firstRadio.checked=true;selectedFile=null;document.getElementById('upload-text').textContent='Drag & drop or click to upload';const p=document.getElementById('upload-preview');p.style.display='none';p.src='';document.getElementById('f-image').value='';}
+    function resetSubmitForm(){['f-subject','f-text','f-hashtags'].forEach(id=>document.getElementById(id).value='');const firstRadio=document.querySelector('input[name="f-post-as"]');if(firstRadio)firstRadio.checked=true;const mRadio=document.querySelector('input[name="f-quality"][value="M"]');if(mRadio)mRadio.checked=true;selectedFile=null;document.getElementById('upload-text').textContent='Drag & drop or click to upload';const p=document.getElementById('upload-preview');p.style.display='none';p.src='';document.getElementById('f-image').value='';}
 
     // ── Delete request ────────────────────────────────────────
     const deleteModal=document.getElementById('delete-modal');
@@ -1030,6 +1049,7 @@
       document.getElementById('edit-orig-hashtags').value=(entry.hashtags||[]).sort().join(' ');
       document.getElementById('edit-status').style.display='none';
       editImageFile=null;
+      const _eqg=document.getElementById('edit-quality-group');if(_eqg)_eqg.style.display='none';
       document.getElementById('edit-upload-text').textContent='Drag & drop or click to replace';
       document.getElementById('edit-upload-preview').style.display='none';
       document.getElementById('edit-image').value='';
@@ -1052,7 +1072,7 @@
     document.getElementById('edit-image').addEventListener('change',function(){if(this.files[0])handleEditImage(this.files[0]);});
     document.getElementById('edit-upload-zone').addEventListener('dragover',e=>e.preventDefault());
     document.getElementById('edit-upload-zone').addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])handleEditImage(e.dataTransfer.files[0]);});
-    function handleEditImage(file){editImageFile=file;document.getElementById('edit-upload-text').textContent=file.name;const r=new FileReader();r.onload=ev=>{const p=document.getElementById('edit-upload-preview');p.src=ev.target.result;p.style.display='block';document.getElementById('edit-current-img').style.display='none';};r.readAsDataURL(file);}
+    function handleEditImage(file){editImageFile=file;const qg=document.getElementById('edit-quality-group');if(qg)qg.style.display='block';document.getElementById('edit-upload-text').textContent=file.name;const r=new FileReader();r.onload=ev=>{const p=document.getElementById('edit-upload-preview');p.src=ev.target.result;p.style.display='block';document.getElementById('edit-current-img').style.display='none';};r.readAsDataURL(file);}
     function showEditStatus(type,msg){const el=document.getElementById('edit-status');el.className='alert alert-'+type;el.textContent=msg;el.style.display='block';}
 
     document.getElementById('edit-submit-btn').addEventListener('click',async()=>{

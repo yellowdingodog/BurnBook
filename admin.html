@@ -447,9 +447,25 @@
         <button class="refresh-btn" onclick="loadPictureFix()">↺ Refresh</button>
       </div>
       <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
-        Re-compress images using the current upload settings. Downloads the original, resizes it, and overwrites in place — the URL in the database stays unchanged.
-        Current settings: <strong id="pf-settings-display">loading…</strong>
-        &nbsp;·&nbsp; <a href="#" onclick="document.querySelector('[data-ttab=burn]').click();return false;" style="color:var(--deep-pink);font-size:0.78rem">Edit in config table</a>
+        Download, re-compress, and overwrite selected images in place. URL in the database stays unchanged.
+        Global upload setting: <strong id="pf-settings-display">loading…</strong>
+      </div>
+      <div style="background:var(--blush);border:1.5px solid rgba(200,30,90,0.12);border-radius:2px;padding:0.85rem 1rem;margin-bottom:1rem;">
+        <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--deep-pink);margin-bottom:0.6rem">Compress Selected To</div>
+        <div style="display:flex;flex-wrap:wrap;gap:1rem;">
+          <label style="display:flex;align-items:flex-start;gap:0.5rem;cursor:pointer;font-size:0.82rem;">
+            <input type="radio" name="pf-quality" value="high" style="margin-top:2px;accent-color:var(--deep-pink)" />
+            <div><strong>High</strong> <span style="color:var(--muted)">— 1920px / 0.82 quality (current upload default)</span></div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:0.5rem;cursor:pointer;font-size:0.82rem;">
+            <input type="radio" name="pf-quality" value="medium" checked style="margin-top:2px;accent-color:var(--deep-pink)" />
+            <div><strong>Medium</strong> <span style="color:var(--muted)">— 1200px / 0.78 quality (good for most photos)</span></div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:0.5rem;cursor:pointer;font-size:0.82rem;">
+            <input type="radio" name="pf-quality" value="low" style="margin-top:2px;accent-color:var(--deep-pink)" />
+            <div><strong>Low</strong> <span style="color:var(--muted)">— 900px / 0.70 quality (smallest size, fine for thumbnails)</span></div>
+          </label>
+        </div>
       </div>
       <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
         <button class="btn btn-primary" id="pf-fix-btn" onclick="runPictureFix()" disabled>🔧 Fix Selected</button>
@@ -464,8 +480,9 @@
             <th class="cb"><input type="checkbox" onchange="pfSelectAll(this.checked)" id="pf-select-all" /></th>
             <th style="width:60px">Photo</th>
             <th>Entry</th>
-            <th style="width:60px">Type</th>
-            <th style="width:100px;text-align:right">File Size</th>
+            <th style="width:50px">Type</th>
+            <th style="width:55px">Quality</th>
+            <th style="width:90px;text-align:right">File Size</th>
             <th style="width:100px">Status</th>
           </tr></thead>
           <tbody id="pf-tbody"><tr class="empty-row"><td colspan="6">Click Refresh to load images.</td></tr></tbody>
@@ -508,6 +525,16 @@
       return `${SB}/storage/v1/object/public/${BUCKET}/${path}`;
     };
 
+
+    // ── Image quality tiers ───────────────────────────────────
+    const IMG_TIERS = {
+      H: { px:1920, q:0.82, label:'High',   desc:'1920px / 0.82 — full quality' },
+      M: { px:1200, q:0.78, label:'Medium', desc:'1200px / 0.78 — good for most photos' },
+      L: { px:900,  q:0.70, label:'Low',    desc:'900px / 0.70 — smallest file size' },
+    };
+    function tierFromRadio(name) { return document.querySelector(`input[name="${name}"]:checked`)?.value || 'M'; }
+    function tierParams(t) { return IMG_TIERS[t] || IMG_TIERS.M; }
+
     // ── Utils ─────────────────────────────────────────────────
 
 
@@ -530,7 +557,7 @@
       } catch(e) {} // non-fatal
     }
     // ── Image resize before upload ────────────────────────────
-    async function resizeImage(file, maxDim=_uploadMaxPx, quality=_uploadQuality) {
+    async function resizeImage(file, maxDim=1920, quality=0.82) {
       return new Promise((resolve) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
@@ -558,11 +585,9 @@
     }
     const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     const imgUrl = (url, tier) => {
-      if (!url || !url.includes('supabase.co/storage')) return url;
-      const base = url.split('?')[0].replace('/object/', '/render/image/');
-      if (tier === 'thumb')  return base + '?width=600&quality=75';
-      if (tier === 'detail') return base + '?width=900&quality=82';
-      return url;
+      // Returns url unchanged — image transformations cause rendering issues
+      // with mixed JPEG/PNG content. Display original uploaded images directly.
+      return url || '';
     };
     const toTS = d => d ? new Date(d).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
@@ -579,7 +604,6 @@
 
     // ── Login ─────────────────────────────────────────────────
     let _adminVoteWeight = 10;
-    let _uploadMaxPx = 1920, _uploadQuality = 0.82;
 
     async function init() {
       try {
@@ -590,8 +614,6 @@
           if(r.key==='badgeicon')           BADGE_ICON_URL    = r.value;
           if(r.key==='anon_mouse_image')    ANON_MOUSE_IMAGE  = r.value;
           if(r.key==='admin_vote_weight')   { _adminVoteWeight = parseFloat(r.value)||10; const el=document.getElementById('vote-explain-admin-weight'); if(el)el.textContent=_adminVoteWeight+'×'; }
-          if(r.key==='upload_max_px')        _uploadMaxPx   = parseInt(r.value)||1920;
-          if(r.key==='upload_quality')       _uploadQuality = parseFloat(r.value)||0.82;
         });
       } catch(e) {}
     }
@@ -1853,31 +1875,32 @@
 
     async function loadPictureFix() {
       const tbody = document.getElementById('pf-tbody');
-      const settingsEl = document.getElementById('pf-settings-display');
-      if (settingsEl) settingsEl.textContent = `${_uploadMaxPx}px / quality ${_uploadQuality}`;
-      tbody.innerHTML = loadingRow(6);
+      tbody.innerHTML = loadingRow(7);
       document.getElementById('pf-fix-btn').disabled = true;
       document.getElementById('pf-sel-count').textContent = '0 selected';
       document.getElementById('pf-progress').style.display = 'none';
       try {
         const [burnEntries, napEntries] = await Promise.all([
-          sbGet('entries',     'image_url=not.is.null&select=id,subject,image_url,ui_order&order=ui_order.asc.nullslast'),
-          sbGet('nap_entries', 'image_url=not.is.null&select=id,subject,image_url,ui_order&order=ui_order.asc.nullslast'),
+          sbGet('entries',     'image_url=not.is.null&select=id,subject,image_url,ui_order,image_quality&order=ui_order.asc.nullslast'),
+          sbGet('nap_entries', 'image_url=not.is.null&select=id,subject,image_url,ui_order,image_quality&order=ui_order.asc.nullslast'),
         ]);
         _pfItems = [
           ...burnEntries.map(e => ({...e, type:'burn'})),
           ...napEntries.map(e => ({...e, type:'nap'})),
         ];
-        if (!_pfItems.length) { tbody.innerHTML = emptyRow(6, 'No images found.'); return; }
+        if (!_pfItems.length) { tbody.innerHTML = emptyRow(7, 'No images found.'); return; }
         tbody.innerHTML = '';
         _pfItems.forEach((item, idx) => {
           const tr = document.createElement('tr');
           tr.id = `pf-row-${idx}`;
+          const ql = item.image_quality || '?';
+          const qColor = ql==='H'?'#2e7d32':ql==='M'?'#e65100':ql==='L'?'#c62828':'var(--muted)';
           tr.innerHTML = `
             <td><input type="checkbox" class="pf-cb" data-idx="${idx}" onchange="pfUpdateCount()" /></td>
             <td><img src="${esc(imgUrl(item.image_url,'thumb'))}" style="width:50px;height:38px;object-fit:contain;border-radius:1px;background:#f0e0e8" /></td>
             <td class="cell-trunc-td" title="${esc(item.subject)}" style="font-size:0.82rem;font-weight:600">${esc(item.subject)}</td>
             <td><span class="badge ${item.type==='burn'?'badge-approved':'badge-pending'}">${item.type}</span></td>
+            <td style="font-size:0.78rem;font-weight:700;color:${qColor}" id="pf-qual-${idx}">${ql}</td>
             <td style="text-align:right;font-size:0.78rem;color:var(--muted)" id="pf-size-${idx}">…</td>
             <td style="font-size:0.75rem;color:var(--muted)" id="pf-status-${idx}">—</td>`;
           tbody.appendChild(tr);
@@ -1918,9 +1941,19 @@
     async function runPictureFix() {
       const checked = [...document.querySelectorAll('.pf-cb:checked')].map(cb => parseInt(cb.dataset.idx));
       if (!checked.length) return;
+
+      // Resolve quality tier
+      const tier = document.querySelector('input[name="pf-quality"]:checked')?.value || 'medium';
+      const tierSettings = {
+        high:   { px: 1920, q: 0.82, label: 'High (1920px / 0.82)' },
+        medium: { px: 1200, q: 0.78, label: 'Medium (1200px / 0.78)' },
+        low:    { px: 900,  q: 0.70, label: 'Low (900px / 0.70)' },
+      };
+      const { px, q, label } = tierSettings[tier];
+
       const prog = document.getElementById('pf-progress');
       prog.style.display = 'block';
-      prog.innerHTML = `<strong>Starting… 0 / ${checked.length}</strong>`;
+      prog.innerHTML = `<strong>Starting… 0 / ${checked.length}</strong> &nbsp;·&nbsp; Compressing to <em>${label}</em>`;
       document.getElementById('pf-fix-btn').disabled = true;
 
       let done = 0, failed = 0;
@@ -1929,18 +1962,15 @@
         const statusEl = document.getElementById(`pf-status-${idx}`);
         const sizeEl   = document.getElementById(`pf-size-${idx}`);
         try {
-          // 1. Download original
           if (statusEl) { statusEl.textContent = '⬇ Downloading…'; statusEl.style.color = 'var(--muted)'; }
           const origResp = await fetch(item.image_url);
           if (!origResp.ok) throw new Error('Download failed');
           const blob = await origResp.blob();
           const origFile = new File([blob], 'image.jpg', {type: blob.type || 'image/jpeg'});
 
-          // 2. Resize using current config settings
           if (statusEl) statusEl.textContent = '⚙ Resizing…';
-          const resized = await resizeImage(origFile, _uploadMaxPx, _uploadQuality);
+          const resized = await resizeImage(origFile, px, q);
 
-          // 3. Overwrite in place via PUT with upsert
           if (statusEl) statusEl.textContent = '⬆ Uploading…';
           const prefix = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
           const path = item.image_url.split('?')[0].replace(prefix, '');
@@ -1956,15 +1986,21 @@
           });
           if (!putResp.ok) throw new Error('Upload failed: ' + await putResp.text());
 
-          // 4. Update size display
+          // Write image_quality back to DB
+          const tbl = item.type === 'burn' ? 'entries' : 'nap_entries';
+          await sbPatch(tbl, `id=eq.${item.id}`, { image_quality: tier });
+          item.image_quality = tier;
+          const qEl = document.getElementById(`pf-qual-${idx}`);
+          const qc = tier==='H'?'#2e7d32':tier==='M'?'#e65100':'#c62828';
+          if (qEl) { qEl.textContent = tier; qEl.style.color = qc; }
           if (sizeEl) sizeEl.textContent = formatBytes(resized.size);
-          if (statusEl) { statusEl.textContent = '✅ Done'; statusEl.style.color = '#2e7d32'; }
+          if (statusEl) { statusEl.textContent = `✅ ${label.split(' ')[0]}`; statusEl.style.color = '#2e7d32'; }
           done++;
         } catch(err) {
           if (statusEl) { statusEl.textContent = '❌ ' + err.message; statusEl.style.color = '#c62828'; }
           failed++;
         }
-        prog.innerHTML = `<strong>Progress: ${done + failed} / ${checked.length}</strong> — ✅ ${done} fixed, ❌ ${failed} failed`;
+        prog.innerHTML = `<strong>Progress: ${done + failed} / ${checked.length}</strong> &nbsp;·&nbsp; Compressing to <em>${label}</em><br>✅ ${done} fixed &nbsp; ❌ ${failed} failed`;
       }
       prog.innerHTML += `<br/><strong style="color:${failed?'#c62828':'#2e7d32'}">${failed ? `${done} fixed, ${failed} failed.` : `All ${done} images fixed!`}</strong>`;
       document.getElementById('pf-fix-btn').disabled = false;
