@@ -445,7 +445,7 @@
     const BUCKET = 'burnbook-images';
     const ADMIN_PASSWORD_FALLBACK = 'meanwhirls2026';
 
-    let CODENAME = 'BananaDuck', CODENAME_DISPLAY = 'B******D***', BADGE_ICON_URL = '';
+    let CODENAME = 'BananaDuck', CODENAME_DISPLAY = 'B******D***', BADGE_ICON_URL = '', ANON_MOUSE_IMAGE = '';
     let adminAuthed = false;
     const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
     let _adminUser = null, _adminProfile = null;
@@ -541,6 +541,7 @@
           if(r.key==='codename')            CODENAME          = r.value;
           if(r.key==='codename_display')    CODENAME_DISPLAY  = r.value;
           if(r.key==='badgeicon')           BADGE_ICON_URL    = r.value;
+          if(r.key==='anon_mouse_image')    ANON_MOUSE_IMAGE  = r.value;
           if(r.key==='admin_vote_weight')   { _adminVoteWeight = parseFloat(r.value)||10; const el=document.getElementById('vote-explain-admin-weight'); if(el)el.textContent=_adminVoteWeight+'×'; }
         });
       } catch(e) {}
@@ -806,7 +807,8 @@
           const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modEntry('${e.id}','approve')">✓</button>`:'';
           const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="btn-a au" onclick="modEntry('${e.id}','unapprove')">⏸</button>`:'';
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td><input type="checkbox" class="row-cb" data-id="${e.id}" onchange="updateBulkCount()" /></td><td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(e.created_at)}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:180px">${approveBtn}${unapproveBtn}<button class="btn-a ae" onclick='openEntryEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modEntry('${e.id}','reject')">✕</button></td>`;
+          const mwBtn=`<button class=\"btn-a ${e.is_mean_whirls?'aa':'au'}\" title=\"${e.is_mean_whirls?'Unset MeanWhirls':'Set as MeanWhirls'}\" onclick=\"toggleMeanWhirls('${e.id}',${!e.is_mean_whirls})\">${e.is_mean_whirls?'⚑ MW':'⚐ MW'}</button>`;
+          tr.innerHTML=`<td><input type="checkbox" class="row-cb" data-id="${e.id}" onchange="updateBulkCount()" /></td><td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(e.created_at)}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:220px">${approveBtn}${unapproveBtn}${mwBtn}<button class="btn-a ae" onclick='openEntryEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modEntry('${e.id}','reject')">✕</button></td>`;
           tb.appendChild(tr);
         });
       } catch(err){tb.innerHTML=emptyRow(10,'Failed: '+err.message);}
@@ -870,6 +872,17 @@
       btn.disabled=false;btn.innerHTML='💾 Save Changes';
     }
     function showEpMsg(type,msg){const el=document.getElementById('ep-msg');el.className='alert alert-'+type;el.textContent=msg;el.style.display='block';}
+
+    async function toggleMeanWhirls(id, setMW) {
+      try {
+        const patch = setMW
+          ? { is_mean_whirls: true,  display_author: 'MeanWhirls', status: 'approved' }
+          : { is_mean_whirls: false };
+        await sbPatch('entries', `id=eq.${id}`, patch);
+        showToast(setMW ? '⚑ Set as MeanWhirls.' : '⚐ MeanWhirls flag removed.');
+        loadEntries();
+      } catch(err) { alert('Failed: '+err.message); }
+    }
 
     // Multi-select
     function updateBulkCount(){document.getElementById('bulk-count').textContent=getSelectedIds().length+' selected';}
@@ -1506,10 +1519,22 @@
       catch(err) { alert('Failed: '+err.message); }
     }
     async function toggleAccountAdmin(userId, grant) {
-      if (grant  && !confirm('Grant admin access?')) return;
+      if (grant  && !confirm('Grant admin access? This will also set their vote weight to 100 and apply it to all past votes.')) return;
       if (!grant && !confirm('Revoke admin access? Are you sure?')) return;
-      try { await sbPatch('user_profiles', `id=eq.${userId}`, { is_admin: grant }); showToast(grant?'✅ Admin granted.':'Admin revoked.'); loadAccounts(); }
-      catch(err) { alert('Failed: '+err.message); }
+      try {
+        if (grant) {
+          await sbPatch('user_profiles', `id=eq.${userId}`, { is_admin: true, vote_weight: 100 });
+          await Promise.all([
+            sbPatch('votes',     `user_id=eq.${userId}`, { weight: 100 }),
+            sbPatch('nap_votes', `user_id=eq.${userId}`, { weight: 100 }),
+          ]);
+          showToast('✅ Admin granted. Vote weight set to 100×.');
+        } else {
+          await sbPatch('user_profiles', `id=eq.${userId}`, { is_admin: false });
+          showToast('Admin revoked.');
+        }
+        loadAccounts();
+      } catch(err) { alert('Failed: '+err.message); }
     }
     async function saveAccountNote(userId, note) {
       try { await sbPatch('user_profiles', `id=eq.${userId}`, { admin_note: note }); showToast('Note saved.'); } catch(err) {}

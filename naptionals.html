@@ -296,7 +296,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <div id="auth-top-bar" style="background:#0d2137;display:flex;justify-content:flex-end;align-items:center;padding:0.35rem 1rem;gap:0.5rem;border-bottom:1px solid rgba(255,255,255,0.08);min-height:34px;">
+  <div id="auth-top-bar" style="background:#0d1b2a;display:flex;justify-content:flex-end;align-items:center;padding:0.35rem 1rem;gap:0.5rem;border-bottom:1px solid rgba(255,255,255,0.08);min-height:34px;">
     <div id="auth-widget" style="display:flex;align-items:center;gap:0.5rem;"></div>
   </div>
 
@@ -497,7 +497,7 @@
     const BUCKET = 'burnbook-images';
     const getSb = () => window._sb;
 
-    let BADGE_ICON_URL = '';
+    let BADGE_ICON_URL = '', ANON_MOUSE_IMAGE = '';
     let PLACEHOLDER_EMOJI = '😴', PLACEHOLDER_IMAGE_URL = '';
     let activeFilter = null, allEntries = [], currentDetailEntry = null;
     let myVotes = JSON.parse(localStorage.getItem('mw_nap_votes') || '{}');
@@ -596,6 +596,21 @@
       return s;
     }
 
+    function makeAnonDisplay() {
+      const s = document.createElement('span');
+      s.style.cssText = 'display:inline-flex;align-items:center;gap:0.3rem;';
+      if (ANON_MOUSE_IMAGE) {
+        const img = document.createElement('img');
+        img.src = ANON_MOUSE_IMAGE; img.alt = '🐭';
+        img.style.cssText = 'width:1em;height:1em;object-fit:contain;vertical-align:middle;';
+        s.appendChild(img);
+      } else {
+        s.appendChild(document.createTextNode('🐭'));
+      }
+      s.appendChild(document.createTextNode('Anonymous'));
+      return s;
+    }
+
     function makePlaceholder(num){
       const div=document.createElement('div');div.className='entry-img-placeholder';
       if(num){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+num;div.appendChild(n);}
@@ -610,6 +625,7 @@
         const cfg=await sbGet('config');
         cfg.forEach(r=>{
           if(r.key==='badgeicon')        BADGE_ICON_URL        =r.value;
+          if(r.key==='anon_mouse_image') ANON_MOUSE_IMAGE      =r.value;
           if(r.key==='placeholderemoji') PLACEHOLDER_EMOJI     =r.value;
           if(r.key==='placeholderimage') PLACEHOLDER_IMAGE_URL =r.value;
         });
@@ -676,7 +692,7 @@
         const footer=document.createElement('div');footer.className='entry-footer';footer.addEventListener('click',ev=>ev.stopPropagation());
         const meta=document.createElement('div');meta.className='entry-meta';
         if(e.is_mean_whirls)meta.appendChild(makeBadgeMW());
-        else{const a=document.createElement('span');a.className='entry-author';a.innerHTML=`by <strong>${esc(e.display_author)}</strong>`;meta.appendChild(a);}
+        else{const a=document.createElement('span');a.className='entry-author';const byNode=document.createTextNode('by ');const strong=document.createElement('strong');if(e.display_author==='Anonymous'){strong.appendChild(makeAnonDisplay());}else{strong.textContent=e.display_author;}a.appendChild(byNode);a.appendChild(strong);meta.appendChild(a);}
         footer.appendChild(meta);card.appendChild(footer);
         if(defMap&&defMap[e.id]){const ds=document.createElement('div');ds.className='card-defense-strip';ds.textContent='😤 '+defMap[e.id];card.appendChild(ds);}
         const cc=(ccMap&&ccMap[e.id])||0;
@@ -703,7 +719,7 @@
       (entry.hashtags||[]).forEach(tag=>{const t=document.createElement('span');t.className='detail-hashtag';t.textContent=tag;t.addEventListener('click',()=>{closeDetail();setTimeout(()=>setFilter(tag),100);});hEl.appendChild(t);});
       const metaEl=document.getElementById('detail-meta-row');metaEl.innerHTML='';
       if(entry.is_mean_whirls)metaEl.appendChild(makeBadgeMW());
-      else{const a=document.createElement('span');a.className='entry-author';a.innerHTML=`by <strong>${esc(entry.display_author)}</strong>`;metaEl.appendChild(a);}
+      else{const a=document.createElement('span');a.className='entry-author';const byNode=document.createTextNode('by ');const strong=document.createElement('strong');if(entry.display_author==='Anonymous'){strong.appendChild(makeAnonDisplay());}else{strong.textContent=entry.display_author;}a.appendChild(byNode);a.appendChild(strong);metaEl.appendChild(a);}
       const _napProf = await getIpProfile();
       const _napIp   = await getIpHash();
       const _napIsOwner = (entry.user_id && entry.user_id === getUserId()) || (entry.ip_hash && entry.ip_hash === _napIp);
@@ -813,9 +829,6 @@
         form.innerHTML=`<div class="add-comment-title">Leave a Comment</div>`;
         const nameRow=document.createElement('div');nameRow.style.cssText='display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;flex-wrap:wrap;';
         const nameInput=document.createElement('input');nameInput.className='comment-input';nameInput.style.cssText='flex:1;min-width:120px;opacity:0.7;cursor:default;';nameInput.readOnly=true;nameInput.value=getDisplayName();
-        const anonLabel=document.createElement('label');anonLabel.style.cssText='display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;cursor:pointer;white-space:nowrap;';
-        const anonCb=document.createElement('input');anonCb.type='checkbox';anonLabel.appendChild(anonCb);anonLabel.appendChild(document.createTextNode('Anonymous'));
-        nameRow.appendChild(nameInput);nameRow.appendChild(anonLabel);
         let mwCb=null;
         if(isAdmin()){const mwLabel=document.createElement('label');mwLabel.style.cssText='display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;cursor:pointer;white-space:nowrap;';mwCb=document.createElement('input');mwCb.type='checkbox';mwLabel.appendChild(mwCb);mwLabel.appendChild(document.createTextNode('MeanWhirls'));nameRow.appendChild(mwLabel);}
         form.appendChild(nameRow);
@@ -823,13 +836,13 @@
         const submitBtn=document.createElement('button');submitBtn.className='comment-submit-btn';submitBtn.textContent='💬 Post Comment';
         const msgEl=document.createElement('div');msgEl.className='comment-msg';msgEl.style.display='none';
         submitBtn.addEventListener('click',async()=>{
-          const postAsMW=mwCb&&mwCb.checked,isAnon=anonCb.checked;
-          const author=postAsMW?'MeanWhirls':(isAnon?'Anonymous':getDisplayName());
+           const postAsMW=mwCb&&mwCb.checked;
+           const author=postAsMW?'MeanWhirls':getDisplayName();
           const text=textInput.value.trim();
           if(!text){msgEl.className='comment-msg err';msgEl.textContent='Comment cannot be empty.';msgEl.style.display='block';return;}
           if (!requireAuth('comment')) return;
           submitBtn.disabled=true;submitBtn.textContent='Posting...';
-          try{await sbPost('nap_comments',{entry_id:entryId,author,text,ip_hash:ipHash,user_id:getUserId()});await logActivity('comment',entryId,`Comment by ${author} on: "${currentDetailEntry?.subject||''}"`);textInput.value='';anonCb.checked=false;if(mwCb)mwCb.checked=false;loadComments(entryId,ipHash);}
+          try{await sbPost('nap_comments',{entry_id:entryId,author,text,ip_hash:ipHash,user_id:getUserId()});await logActivity('comment',entryId,`Comment by ${author} on: "${currentDetailEntry?.subject||''}"`);textInput.value='';if(mwCb)mwCb.checked=false;loadComments(entryId,ipHash);}
           catch(e){msgEl.className='comment-msg err';msgEl.textContent='Failed: '+e.message;msgEl.style.display='block';}
           submitBtn.disabled=false;submitBtn.textContent='💬 Post Comment';
         });

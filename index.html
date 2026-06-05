@@ -327,7 +327,7 @@
   </script>
 </head>
 <body>
-  <div id="auth-top-bar" style="background:#4b1a2a;display:flex;justify-content:flex-end;align-items:center;padding:0.35rem 1rem;gap:0.5rem;border-bottom:1px solid rgba(255,255,255,0.08);min-height:34px;">
+  <div id="auth-top-bar" style="background:#7a3050;display:flex;justify-content:flex-end;align-items:center;padding:0.35rem 1rem;gap:0.5rem;border-bottom:1px solid rgba(255,255,255,0.08);min-height:34px;">
     <div id="auth-widget" style="display:flex;align-items:center;gap:0.5rem;"></div>
   </div>
 
@@ -548,7 +548,7 @@
     const BUCKET = 'burnbook-images';
     const getSb = () => window._sb;
 
-    let PLACEHOLDER_EMOJI = '🔥', PLACEHOLDER_IMAGE_URL = '', BADGE_ICON_URL = '';
+    let PLACEHOLDER_EMOJI = '🔥', PLACEHOLDER_IMAGE_URL = '', BADGE_ICON_URL = '', ANON_MOUSE_IMAGE = '';
     let activeFilter = null, allEntries = [], allVoteData = {}, currentDetailEntry = null;
     let myVotes = JSON.parse(localStorage.getItem('mw_votes_heat') || '{}');
 
@@ -674,6 +674,21 @@
       return s;
     }
 
+    function makeAnonDisplay() {
+      const s = document.createElement('span');
+      s.style.cssText = 'display:inline-flex;align-items:center;gap:0.3rem;';
+      if (ANON_MOUSE_IMAGE) {
+        const img = document.createElement('img');
+        img.src = ANON_MOUSE_IMAGE; img.alt = '🐭';
+        img.style.cssText = 'width:1em;height:1em;object-fit:contain;vertical-align:middle;';
+        s.appendChild(img);
+      } else {
+        s.appendChild(document.createTextNode('🐭'));
+      }
+      s.appendChild(document.createTextNode('Anonymous'));
+      return s;
+    }
+
     // ── Vote data ─────────────────────────────────────────────
     function buildVoteData(votes) {
       const d={};
@@ -697,6 +712,7 @@
           if(r.key==='placeholderemoji')    PLACEHOLDER_EMOJI     =r.value;
           if(r.key==='placeholderimage')    PLACEHOLDER_IMAGE_URL =r.value;
           if(r.key==='badgeicon')           BADGE_ICON_URL        =r.value;
+          if(r.key==='anon_mouse_image')    ANON_MOUSE_IMAGE      =r.value;
           if(r.key==='admin_vote_weight')   _adminVoteWeight      =parseFloat(r.value)||10;
         });
       } catch(e){}
@@ -904,12 +920,10 @@
         // Add comment form
         const form=document.createElement('div');form.className='add-comment-form';
         form.innerHTML=`<div class="add-comment-title">Leave a Comment</div>`;
-        // Name row: read-only pre-fill + anonymous + admin MeanWhirls option
+        // Name row: read-only display name + admin MeanWhirls option
         const nameRow=document.createElement('div');nameRow.style.cssText='display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;flex-wrap:wrap;';
         const nameInput=document.createElement('input');nameInput.className='comment-input';nameInput.style.cssText='flex:1;min-width:120px;opacity:0.7;cursor:default;';nameInput.readOnly=true;nameInput.value=getDisplayName();
-        const anonLabel=document.createElement('label');anonLabel.style.cssText='display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;cursor:pointer;white-space:nowrap;';
-        const anonCb=document.createElement('input');anonCb.type='checkbox';anonLabel.appendChild(anonCb);anonLabel.appendChild(document.createTextNode('Anonymous'));
-        nameRow.appendChild(nameInput);nameRow.appendChild(anonLabel);
+        nameRow.appendChild(nameInput);
         let mwCb=null;
         if(isAdmin()){const mwLabel=document.createElement('label');mwLabel.style.cssText='display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;cursor:pointer;white-space:nowrap;';mwCb=document.createElement('input');mwCb.type='checkbox';mwLabel.appendChild(mwCb);mwLabel.appendChild(document.createTextNode('MeanWhirls'));nameRow.appendChild(mwLabel);}
         form.appendChild(nameRow);
@@ -917,15 +931,15 @@
         const submitBtn=document.createElement('button');submitBtn.className='comment-submit-btn';submitBtn.textContent='💬 Post Comment';
         const msgEl=document.createElement('div');msgEl.className='comment-msg';msgEl.style.display='none';
         submitBtn.addEventListener('click',async()=>{
-          const postAsMW=mwCb&&mwCb.checked,isAnon=anonCb.checked;
-          const author=postAsMW?'MeanWhirls':(isAnon?'Anonymous':getDisplayName());
+          const postAsMW=mwCb&&mwCb.checked;
+          const author=postAsMW?'MeanWhirls':getDisplayName();
           const text=textInput.value.trim();
           if(!text){msgEl.className='comment-msg err';msgEl.textContent='Comment cannot be empty.';msgEl.style.display='block';return;}
           if (!requireAuth('comment')) return;
           submitBtn.disabled=true;submitBtn.textContent='Posting...';
           try{await sbPost('comments',{entry_id:entryId,author,text,ip_hash:ipHash,user_id:getUserId()});
             await logActivity('comment', entryId, `Comment by ${author} on: "${currentDetailEntry?.subject||''}"`);
-            textInput.value='';anonCb.checked=false;if(mwCb)mwCb.checked=false;loadComments(entryId,ipHash);}
+            textInput.value='';if(mwCb)mwCb.checked=false;loadComments(entryId,ipHash);}
           catch(e){msgEl.className='comment-msg err';msgEl.textContent='Failed: '+e.message;msgEl.style.display='block';}
           submitBtn.disabled=false;submitBtn.textContent='💬 Post Comment';
         });
@@ -966,7 +980,7 @@
       (entry.hashtags||[]).forEach(tag=>{const t=document.createElement('span');t.className='detail-hashtag';t.textContent=tag;t.addEventListener('click',()=>{closeDetail();setTimeout(()=>setFilter(tag),100);});hEl.appendChild(t);});
       const metaEl=document.getElementById('detail-meta-row');metaEl.innerHTML='';
       if(entry.is_mean_whirls)metaEl.appendChild(makeBadgeMW());
-      else{const a=document.createElement('span');a.className='entry-author';a.innerHTML=`by <strong>${esc(entry.display_author)}</strong>`;metaEl.appendChild(a);}
+      else{const a=document.createElement('span');a.className='entry-author';const byNode=document.createTextNode('by ');const strong=document.createElement('strong');if(entry.display_author==='Anonymous'){strong.appendChild(makeAnonDisplay());}else{strong.textContent=entry.display_author;}a.appendChild(byNode);a.appendChild(strong);metaEl.appendChild(a);}
       // Show Edit only to entry owner or admin
       const _prof = await getIpProfile();
       const _ip   = await getIpHash();
@@ -1031,7 +1045,7 @@
         footer.appendChild(makeCompactHeat(e));
         const meta=document.createElement('div');meta.className='entry-meta';
         if(e.is_mean_whirls)meta.appendChild(makeBadgeMW());
-        else{const a=document.createElement('span');a.className='entry-author';a.innerHTML=`by <strong>${esc(e.display_author)}</strong>`;meta.appendChild(a);}
+        else{const a=document.createElement('span');a.className='entry-author';const byNode=document.createTextNode('by ');const strong=document.createElement('strong');if(e.display_author==='Anonymous'){strong.appendChild(makeAnonDisplay());}else{strong.textContent=e.display_author;}a.appendChild(byNode);a.appendChild(strong);meta.appendChild(a);}
         footer.appendChild(meta);card.appendChild(footer);
         // Victim statement snippet
         if(victimMap&&victimMap[e.id]){
