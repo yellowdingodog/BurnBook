@@ -131,54 +131,46 @@
      #detail-overlay.open{opacity:1;pointer-events:all;}
      #detail-page{position:fixed;bottom:0;left:0;right:0;z-index:201;background:var(--white);border-radius:18px 18px 0 0;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.32,0.72,0,1);box-shadow:0 -4px 40px rgba(0,0,0,0.22);}
      #detail-page.open{transform:translateY(0);}
-     .detail-sheet-handle{width:40px;height:4px;background:rgba(0,0,0,0.15);border-radius:2px;margin:10px auto 0;flex-shrink:0;}
+     .detail-sheet-handle{width:40px;height:4px;background:rgba(0,0,0,0.15);border-radius:2px;margin:10px auto 0;}
      .detail-sheet-header{display:flex;align-items:center;justify-content:space-between;padding:0.65rem 1rem 0.5rem;position:sticky;top:0;background:var(--white);z-index:2;border-bottom:1px solid rgba(44,74,110,0.1);}
      .detail-close-btn{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;border:1.5px solid rgba(44,74,110,0.2);border-radius:2px;padding:0.35rem 0.85rem;background:none;transition:all 0.2s;}
      .detail-close-btn:hover{border-color:var(--sky);color:var(--steel);background:var(--blush);}
-     .detail-sheet-body{padding:1rem 1rem 2rem;}
-     .detail-wrap{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;align-items:start;}
-     @media(max-width:700px){.detail-wrap{grid-template-columns:1fr;}}
-     .detail-img-panel{background:linear-gradient(135deg,#060d14,#1b2d3f);border-radius:2px;overflow:hidden;box-shadow:4px 6px 32px var(--shadow);display:flex;align-items:center;justify-content:center;min-height:280px;position:relative;}
-     .detail-img{max-width:100%;max-height:520px;object-fit:contain;display:block;}
-     .detail-img-num{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;padding:0.25rem 0.7rem;border-radius:20px;}
-     .detail-placeholder{width:100%;min-height:280px;display:flex;align-items:center;justify-content:center;font-size:5rem;background:linear-gradient(135deg,var(--blush),#d0e4f4);}
-     .detail-img-actions{display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap;align-items:stretch;}
-     .detail-action-btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.6rem 1.25rem;border:1.5px solid rgba(44,74,110,0.3);border-radius:2px;background:var(--white);color:var(--steel);font-family:'Raleway',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:all 0.2s;}
-     .detail-action-btn:hover{background:var(--steel);color:#fff;border-color:var(--steel);}
-     .detail-action-btn.danger{color:#c62828;border-color:#ef9a9a;}
-     .detail-action-btn.danger:hover{background:#c62828;color:#fff;border-color:#c62828;}
-     .detail-info{display:flex;flex-direction:column;gap:1.25rem;}
-     .detail-num-badge{font-size:0.68rem;font-weight:700;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;}
-     .detail-subject{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--steel);line-height:1.1;}
-     .detail-text{font-size:1rem;line-height:1.75;color:var(--ink);font-style:italic;quotes:'\201C' '\201D';}
-     .detail-text::before{content:open-quote;color:var(--sky);font-size:1.5em;line-height:0;vertical-align:-0.4em;margin-right:3px;}
-     .detail-text::after{content:close-quote;color:var(--sky);font-size:1.5em;line-height:0;vertical-align:-0.4em;margin-left:3px;}
-     .detail-text:empty::before,.detail-text:empty::after{content:none;}
-     .detail-hashtags{display:flex;flex-wrap:wrap;gap:0.4rem;}
-     .detail-hashtag{font-size:0.72rem;font-weight:600;color:var(--steel);background:var(--blush);padding:0.2rem 0.65rem;border-radius:20px;cursor:pointer;transition:all 0.2s;}
+     .detail-sheet-body{padding:1rem 1rem 2.5rem;display:flex;flex-direction:column;gap:1rem;}
+     .detail-subject{font-family:'Playfair Display',serif;font-size:1.65rem;font-weight:900;color:var(--steel);line-height:1.15;margin:0;}
+     .detail-text{font-size:0.97rem;line-height:1.75;color:var(--ink);font-style:italic;quotes:'\201C' '\201D';margin:0;}
+     .detail-text::before{content:open-quote;color:var(--sky);font-size:1.4em;line-height:0;vertical-align:-0.4em;margin-right:3px;}
+     .detail-text::after{content:close-quote;color:var(--sky);font-size:1.4em;line-height:0;vertical-align:-0.4em;margin-left:3px;}
+     .detail-text:empty{display:none;}
+     .detail-img-panel{background:linear-gradient(135deg,#060d14,#1b2d3f);border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;max-height:55vh;position:relative;}
+     .detail-img-panel:empty{display:none;}
+     .detail-img{max-width:100%;max-height:55vh;object-fit:contain;display:block;}
+     .detail-img-num{position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;padding:0.2rem 0.6rem;border-radius:20px;}
+     .detail-placeholder{width:100%;min-height:180px;display:flex;align-items:center;justify-content:center;font-size:4rem;}
+     .detail-meta-row{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;font-size:0.8rem;}
+     .detail-hashtags{display:flex;flex-wrap:wrap;gap:0.35rem;}
+     .detail-hashtag{font-size:0.68rem;font-weight:600;color:var(--steel);background:var(--blush);padding:0.18rem 0.55rem;border-radius:20px;cursor:pointer;transition:all 0.2s;}
      .detail-hashtag:hover{background:var(--steel);color:#fff;}
-     .detail-meta-row{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;}
-     .detail-edit-btn{background:none;border:1.5px solid rgba(44,74,110,0.25);border-radius:2px;padding:0.35rem 0.85rem;font-family:'Raleway',sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;}
+     .detail-edit-btn{background:none;border:1.5px solid rgba(44,74,110,0.25);border-radius:2px;padding:0.3rem 0.7rem;font-family:'Raleway',sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;}
      .detail-edit-btn:hover{border-color:var(--sky);color:var(--steel);background:var(--blush);}
+     .detail-actions{display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;position:relative;}
+     .detail-share-btn{display:inline-flex;align-items:center;gap:0.35rem;padding:0.55rem 1.1rem;background:var(--steel);color:#fff;border:none;border-radius:3px;font-family:'Raleway',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
+     .detail-share-btn:hover{background:var(--sky);}
+     .detail-sec-btn{display:inline-flex;align-items:center;gap:0.3rem;padding:0.4rem 0.85rem;background:none;color:var(--muted);border:1.5px solid rgba(44,74,110,0.2);border-radius:3px;font-family:'Raleway',sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:all 0.2s;white-space:nowrap;}
+     .detail-sec-btn:hover{border-color:var(--sky);color:var(--steel);background:var(--blush);}
+     .detail-sec-btn.danger{border-color:rgba(198,40,40,0.25);color:#c62828;}
+     .detail-sec-btn.danger:hover{background:#fde8e8;border-color:#c62828;}
+     .detail-share-popup{position:absolute;top:calc(100% + 6px);left:0;background:var(--white);border:1.5px solid rgba(44,74,110,0.18);border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,0.12);z-index:10;min-width:200px;padding:0.5rem;}
+     .detail-share-popup-row{display:flex;flex-direction:column;gap:0.3rem;}
+     .detail-share-opt{display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.85rem;border-radius:4px;font-family:'Raleway',sans-serif;font-size:0.72rem;font-weight:600;color:var(--ink);text-decoration:none;cursor:pointer;border:none;background:none;transition:background 0.15s;text-align:left;}
+     .detail-share-opt:hover{background:var(--blush);}
+     #detail-action-btns{display:contents;}
      .contact-btn{background:none;border:1.5px solid rgba(44,74,110,0.25);border-radius:2px;padding:0.35rem 0.85rem;font-family:'Raleway',sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;}
      .contact-btn:hover{border-color:var(--gold);color:#7a5c00;background:rgba(212,168,67,0.06);}
-
-     /* Share box */
-     .share-box{background:var(--blush);border:1.5px solid rgba(44,74,110,0.15);border-radius:2px;padding:1rem;flex:1;min-width:200px;}
-     .share-box-title{font-size:0.68rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--steel);margin-bottom:0.6rem;}
-     .share-url-row{display:flex;gap:0.5rem;}
-     .share-url{flex:1;background:var(--white);border:1.5px solid rgba(44,74,110,0.2);border-radius:2px;padding:0.5rem 0.75rem;font-size:0.75rem;color:var(--muted);font-family:'Raleway',sans-serif;outline:none;}
-     .share-copy-btn{background:var(--steel);border:none;border-radius:2px;padding:0.5rem 1rem;color:#fff;font-family:'Raleway',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all 0.2s;}
-     .share-copy-btn:hover{background:var(--sky);}
-     .share-platforms{display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap;}
-     .share-platform{display:inline-flex;align-items:center;gap:0.35rem;padding:0.35rem 0.85rem;border-radius:2px;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:all 0.2s;border:none;color:#fff;}
-     .share-fb{background:#1877f2;} .share-fb:hover{background:#1660c5;}
-     .share-tw{background:#1da1f2;} .share-tw:hover{background:#0c85d0;}
-
      /* Sleeper's Defense */
      .defense-section{background:linear-gradient(135deg,#060d14,#0d1b2a);border-radius:2px;padding:1.25rem 1.5rem;margin-top:1.25rem;}
      .defense-section-title{font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;color:var(--gold);margin-bottom:0.85rem;letter-spacing:0.04em;}
      .defense-text{font-size:0.92rem;line-height:1.7;color:rgba(255,255,255,0.85);font-style:italic;quotes:'\201C' '\201D';}
+
 
     .defense-text::before{content:open-quote;color:var(--sky);font-size:1.3em;line-height:0;vertical-align:-0.4em;margin-right:2px;}
     .defense-text::after{content:close-quote;color:var(--sky);font-size:1.3em;line-height:0;vertical-align:-0.4em;margin-left:2px;}
@@ -349,39 +341,43 @@
           <span id="detail-header-title" style="font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:700;color:var(--steel);max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:0;transition:opacity 0.2s"></span>
         </div>
         <div class="detail-sheet-body">
-        <div class="detail-wrap">
-          <div>
-            <div class="detail-img-panel">
-              <div class="detail-placeholder" id="detail-placeholder" style="display:none"></div>
-              <img id="detail-img" class="detail-img" src="" alt="" style="display:none" />
-              <div class="detail-img-num" id="detail-img-num"></div>
-            </div>
-            <div class="detail-img-actions">
-              <a class="detail-action-btn" id="detail-download" href="" download target="_blank" style="display:none">⬇ Download</a>
-              <div class="share-box">
-                <div class="share-box-title">Share this nap</div>
-                <div class="share-url-row">
-                  <input class="share-url" id="share-url" readonly />
-                  <button class="share-copy-btn" onclick="copyShareUrl()">Copy</button>
-                </div>
-                <div class="share-platforms">
-                  <a class="share-platform share-fb" id="share-fb" href="" target="_blank">📘 Facebook</a>
-                  <a class="share-platform share-tw" id="share-tw" href="" target="_blank">🐦 Twitter/X</a>
-                </div>
+
+          <!-- 1. Title + burn -->
+          <div class="detail-subject" id="detail-subject"></div>
+          <p class="detail-text" id="detail-text"></p>
+
+          <!-- 2. Photo -->
+          <div class="detail-img-panel" id="detail-img-panel">
+            <div class="detail-placeholder" id="detail-placeholder" style="display:none"></div>
+            <img id="detail-img" class="detail-img" src="" alt="" style="display:none" />
+            <div class="detail-img-num" id="detail-img-num"></div>
+          </div>
+
+          <!-- 3. Author + hashtags -->
+          <div class="detail-meta-row" id="detail-meta-row"></div>
+          <div class="detail-hashtags" id="detail-hashtags"></div>
+
+          <!-- 4. Actions -->
+          <div class="detail-actions">
+            <button class="detail-share-btn" id="detail-share-btn" onclick="toggleSharePopup()">↗ Share</button>
+            <div class="detail-share-popup" id="detail-share-popup" style="display:none">
+              <div class="detail-share-popup-row">
+                <button class="detail-share-opt" onclick="copyShareUrl()">🔗 Copy Link</button>
+                <a class="detail-share-opt" id="share-fb" href="" target="_blank">📘 Facebook</a>
+                <a class="detail-share-opt" id="share-tw" href="" target="_blank">🐦 Twitter/X</a>
               </div>
             </div>
+            <a class="detail-sec-btn" id="detail-download" href="" download target="_blank" style="display:none">⬇ Download</a>
+            <div id="detail-action-btns"></div>
+          </div>
+          <input id="share-url" style="position:absolute;opacity:0;pointer-events:none" readonly />
 
-          </div>
-          <div class="detail-info">
-            <div class="detail-num-badge" id="detail-num-badge"></div>
-            <div class="detail-subject" id="detail-subject"></div>
-            <p class="detail-text" id="detail-text"></p>
-            <div class="detail-hashtags" id="detail-hashtags"></div>
-            <div class="detail-meta-row" id="detail-meta-row"></div>
-            <div id="detail-defense"></div>
-            <div id="detail-comments" class="comments-section"></div>
-          </div>
-        </div>
+          <!-- 5. Defense -->
+          <div id="detail-defense"></div>
+
+          <!-- 6. Comments -->
+          <div id="detail-comments" class="comments-section"></div>
+
         </div>
       </div>
     </div>
@@ -723,10 +719,48 @@
       const overlay=document.getElementById('detail-overlay');
       window.location.hash='nap-'+entry.id;
       document.getElementById('detail-header-title').textContent=entry.subject;
+      // Photo
       const imgEl=document.getElementById('detail-img'),phEl=document.getElementById('detail-placeholder'),dlBtn=document.getElementById('detail-download'),numBadge=document.getElementById('detail-img-num');
       if(entry.image_url){imgEl.src=entry.image_url;imgEl.style.display='block';phEl.style.display='none';dlBtn.href=entry.image_url;dlBtn.style.display='inline-flex';}
       else{imgEl.style.display='none';phEl.textContent=PLACEHOLDER_IMAGE_URL?'':PLACEHOLDER_EMOJI||'😴';phEl.style.display='flex';dlBtn.style.display='none';}
       numBadge.textContent=entry.ui_order?'#'+entry.ui_order:'';
+      // Title + text
+      document.getElementById('detail-subject').textContent=entry.subject;
+      document.getElementById('detail-text').textContent=entry.text||'';
+      // Hashtags
+      const hEl=document.getElementById('detail-hashtags');hEl.innerHTML='';
+      (entry.hashtags||[]).forEach(tag=>{const t=document.createElement('span');t.className='detail-hashtag';t.textContent=tag;t.addEventListener('click',()=>{closeDetail();setTimeout(()=>setFilter(tag),100);});hEl.appendChild(t);});
+      // Author row
+      const metaEl=document.getElementById('detail-meta-row');metaEl.innerHTML='';
+      if(entry.is_mean_whirls)metaEl.appendChild(makeBadgeMW());
+      else{const a=document.createElement('span');a.className='entry-author';const byNode=document.createTextNode('by ');const strong=document.createElement('strong');if(entry.display_author==='Anonymous'){strong.appendChild(makeAnonDisplay());}else{strong.textContent=entry.display_author;}a.appendChild(byNode);a.appendChild(strong);metaEl.appendChild(a);}
+      // Action buttons
+      const _napProf=await getIpProfile();
+      const _napIp=await getIpHash();
+      const _napIsOwner=(entry.user_id&&entry.user_id===getUserId())||(entry.ip_hash&&entry.ip_hash===_napIp);
+      const actEl=document.getElementById('detail-action-btns');actEl.innerHTML='';
+      if(_napIsOwner||_napProf.is_admin){const eb=document.createElement('button');eb.className='detail-sec-btn';eb.textContent='✏️ Edit';eb.addEventListener('click',()=>openEditModal(entry));actEl.appendChild(eb);}
+      const rb=document.createElement('button');rb.className='detail-sec-btn danger';rb.textContent='🗑 Remove';rb.addEventListener('click',()=>openDeleteRequestModal(currentDetailEntry));actEl.appendChild(rb);
+      const cb=document.createElement('button');cb.className='detail-sec-btn';cb.textContent='✉️ Contact';cb.addEventListener('click',()=>openContactModal(entry.id,'nap'));actEl.appendChild(cb);
+      // Share URLs
+      const shareUrl=window.location.origin+window.location.pathname+'#nap-'+entry.id;
+      const enc=encodeURIComponent(shareUrl),txt=encodeURIComponent('Check out this Naptionals entry: '+entry.subject+' got caught sleeping!');
+      document.getElementById('share-url').value=shareUrl;
+      document.getElementById('share-fb').href=`https://www.facebook.com/sharer/sharer.php?u=${enc}`;
+      document.getElementById('share-tw').href=`https://twitter.com/intent/tweet?url=${enc}&text=${txt}`;
+      document.getElementById('detail-share-popup').style.display='none';
+      sheet.scrollTop=0;
+      overlay.classList.add('open');
+      sheet.classList.add('open');
+      document.body.style.overflow='hidden';
+      const onSheetScroll=()=>{const titleEl=document.getElementById('detail-header-title');if(titleEl)titleEl.style.opacity=sheet.scrollTop>60?'1':'0';};
+      sheet.removeEventListener('scroll',sheet._scrollHandler);
+      sheet._scrollHandler=onSheetScroll;
+      sheet.addEventListener('scroll',onSheetScroll);
+      const ipHash=await getIpHash();
+      loadDefense(entry.id,ipHash);
+      loadComments(entry.id,ipHash);
+    }
     function closeDetail(){
       const sheet=document.getElementById('detail-page');
       const overlay=document.getElementById('detail-overlay');
@@ -736,23 +770,17 @@
       currentDetailEntry=null;
       history.replaceState(null,'',window.location.pathname);
     }
-      const _napIp   = await getIpHash();
-      const _napIsOwner = (entry.user_id && entry.user_id === getUserId()) || (entry.ip_hash && entry.ip_hash === _napIp);
-      if (_napIsOwner || _napProf.is_admin) {
-        const eb=document.createElement('button');eb.className='detail-edit-btn';eb.textContent='✏️ Edit';eb.addEventListener('click',()=>openEditModal(entry));metaEl.appendChild(eb);
-      }
-      const rb=document.createElement('button');rb.className='detail-edit-btn';rb.style.cssText='border-color:#ef9a9a;color:#c62828;';rb.textContent='🗑 Request Removal';rb.addEventListener('click',()=>openDeleteRequestModal(currentDetailEntry));metaEl.appendChild(rb);
-      const cb=document.createElement('button');cb.className='contact-btn';cb.textContent='✉️ Contact Admins';cb.addEventListener('click',()=>openContactModal(entry.id,'nap'));metaEl.appendChild(cb);
-      const shareUrl=window.location.origin+window.location.pathname+'#nap-'+entry.id;
-      const enc=encodeURIComponent(shareUrl),txt=encodeURIComponent('Check out this Naptionals entry: '+entry.subject+' got caught sleeping!');
-      document.getElementById('share-url').value=shareUrl;
-      document.getElementById('share-fb').href=`https://www.facebook.com/sharer/sharer.php?u=${enc}`;
-      document.getElementById('share-tw').href=`https://twitter.com/intent/tweet?url=${enc}&text=${txt}`;
-      const ipHash=await getIpHash();
-      loadDefense(entry.id,ipHash);
-      loadComments(entry.id,ipHash);
+    function toggleSharePopup(){
+      const p=document.getElementById('detail-share-popup');
+      p.style.display=p.style.display==='none'?'block':'none';
     }
-    function copyShareUrl(){navigator.clipboard.writeText(document.getElementById('share-url').value).then(()=>showToast('Link copied! 😴'));}
+    function copyShareUrl(){
+      navigator.clipboard.writeText(document.getElementById('share-url').value).then(()=>{
+        document.getElementById('detail-share-popup').style.display='none';
+        showToast('Link copied! 😴');
+      });
+    }
+
 
     // ── Sleeper's Defense ─────────────────────────────────────
     async function loadDefense(entryId,ipHash){
