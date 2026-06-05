@@ -59,7 +59,7 @@
     .cell-trunc{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-size:.8rem;}
     .cell-trunc-td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0;}
     tr:hover td{background:var(--blush);}
-    td img{width:60px;height:45px;object-fit:contain;border-radius:1px;background:#f0e0e8;cursor:zoom-in;}
+    td img{width:60px;height:45px;object-fit:cover;border-radius:1px;background:#f0e0e8;cursor:zoom-in;}
     .badge{display:inline-block;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
     .badge-pending  {background:#fff9c4;color:#f57f17;}
     .badge-approved {background:#e8f5e9;color:#2e7d32;}
@@ -560,7 +560,7 @@
     const imgUrl = (url, tier) => {
       if (!url || !url.includes('supabase.co/storage')) return url;
       const base = url.split('?')[0].replace('/object/', '/render/image/');
-      if (tier === 'thumb')  return base + '?width=200&quality=70';
+      if (tier === 'thumb')  return base + '?width=600&quality=75';
       if (tier === 'detail') return base + '?width=900&quality=82';
       return url;
     };
