@@ -828,19 +828,39 @@
     function openEntryEdit(jsonStr){
       const e=JSON.parse(jsonStr);
       const panel=document.getElementById('entry-edit-panel');
-      // Toggle off if same entry
       if(panel.dataset.open===e.id){panel.innerHTML='';delete panel.dataset.open;return;}
       panel.dataset.open=e.id;
       editImageFile=null;
+      const isAnon = e.display_author==='Anonymous';
       panel.innerHTML=`
         <div class="edit-panel">
           <div class="edit-panel-title">✏️ Editing: #${e.ui_order||'?'} — ${esc(e.subject)}</div>
           <div class="form-group"><label class="form-label">Burn Victim Name *</label><input class="form-input" id="ep-subject" value="${esc(e.subject)}" /></div>
           <div class="form-group"><label class="form-label">The Burn <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional)</span></label><textarea class="form-textarea" id="ep-text" style="min-height:80px">${esc(e.text||'')}</textarea></div>
           <div class="form-group"><label class="form-label">Hashtags</label><input class="form-input" id="ep-hashtags" value="${esc((e.hashtags||[]).join(' '))}" placeholder="#wild #classic" /></div>
-          <div class="form-group"><label class="form-label">Displays As</label><input class="form-input" id="ep-display-author" value="${esc(e.display_author)}" /></div>
+          <div class="form-group"><label class="form-label">Displays As</label><input class="form-input" id="ep-display-author" value="${esc(e.display_author)}" ${isAnon?'disabled':''} /><label style="display:inline-flex;align-items:center;gap:0.4rem;margin-top:0.4rem;font-size:0.8rem;cursor:pointer;"><input type="checkbox" id="ep-anonymous" ${isAnon?'checked':''} onchange="const da=document.getElementById('ep-display-author');da.disabled=this.checked;if(this.checked){da.dataset.prev=da.value;da.value='Anonymous';}else{da.value=da.dataset.prev||document.getElementById('ep-submitter').value||'';}" /> Post as Anonymous</label></div>
+          <div class="form-group"><label class="form-label">Submitter Name</label><input class="form-input" id="ep-submitter" value="${esc(e.submitter||'')}" /></div>
+          <div class="form-group"><label class="form-label">Owner (user account)</label><select class="form-input" id="ep-owner"><option value="">— loading users —</option></select><span style="font-size:0.72rem;color:var(--muted);display:block;margin-top:0.3rem">Current user_id: ${esc(e.user_id||'none')}</span></div>
           <div class="form-group"><label class="form-label">Photo <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(upload to replace)</span></label>
             ${e.image_url?`<img class="current-img" src="${esc(e.image_url)}" id="ep-cur-img" />`:''}
+            <div class="upload-zone" id="ep-upload"><input type="file" id="ep-image" accept="image/*" /><div class="upload-zone-text">📷 Drag &amp; drop or click to replace</div><img id="ep-preview" class="upload-preview" alt="" /></div>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="saveEntryEdit('${e.id}','${esc(e.image_url||'')}')">💾 Save Changes</button>
+            <button class="btn-a ar" onclick="document.getElementById('entry-edit-panel').innerHTML=''">Cancel</button>
+          </div>
+          <div id="ep-msg" style="display:none" class="alert"></div>
+        </div>`;
+      document.getElementById('ep-image').addEventListener('change',function(){if(this.files[0])handleEditImg(this.files[0]);});
+      document.getElementById('ep-upload').addEventListener('dragover',e=>e.preventDefault());
+      document.getElementById('ep-upload').addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])handleEditImg(e.dataTransfer.files[0]);});
+      // Load users into owner dropdown
+      sbGet('user_profiles','select=id,display_name&order=display_name.asc').then(users=>{
+        const sel=document.getElementById('ep-owner');if(!sel)return;
+        sel.innerHTML='<option value="">— unassigned —</option>'+users.map(u=>`<option value="${u.id}"${u.id===e.user_id?' selected':''}>${esc(u.display_name)} (${u.id.slice(0,8)}…)</option>`).join('');
+      }).catch(()=>{});
+      panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
             <div class="upload-zone" id="ep-upload"><input type="file" id="ep-image" accept="image/*" /><div class="upload-zone-text">📷 Drag &amp; drop or click to replace</div><img id="ep-preview" class="upload-preview" alt="" /></div>
           </div>
           <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
@@ -860,12 +880,18 @@
       const text=document.getElementById('ep-text').value.trim();
       const hashtags=parseHashtags(document.getElementById('ep-hashtags').value);
       const displayAuthor=document.getElementById('ep-display-author').value.trim();
+      const submitter=document.getElementById('ep-submitter').value.trim();
+      const ownerSel=document.getElementById('ep-owner');
+      const userId=ownerSel?ownerSel.value||null:undefined;
       if(!subject){showEpMsg('error','Name required.');return;}
       const btn=document.querySelector('#entry-edit-panel .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
       try{
         let imageUrl=existingImg;
         if(editImageFile){const resized=await resizeImage(editImageFile);imageUrl=await uploadImage(resized);if(existingImg)await deleteStorageFile(existingImg);}
-        await sbPatch('entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});
+        const patch={subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl};
+        if(submitter)patch.submitter=submitter;
+        if(userId!==undefined)patch.user_id=userId||null;
+        await sbPatch('entries',`id=eq.${id}`,patch);
         showEpMsg('success','✅ Saved!');
         setTimeout(()=>{document.getElementById('entry-edit-panel').innerHTML='';loadEntries();},1200);
       }catch(err){showEpMsg('error','Failed: '+err.message);}

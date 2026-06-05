@@ -867,6 +867,12 @@
           }
           item.appendChild(meta);el.appendChild(item);
         });
+        if (!isLoggedIn()) {
+          const msg=document.createElement('div');
+          msg.style.cssText='background:var(--blush);border:1.5px solid rgba(44,74,110,0.12);border-radius:2px;padding:0.9rem 1rem;margin-top:0.5rem;font-size:0.82rem;color:var(--muted);text-align:center;';
+          msg.innerHTML=`<span style="font-weight:600;color:var(--steel)">Sign in to leave a comment.</span> <button onclick="openAuthModal()" style="background:none;border:none;color:var(--steel);font-family:inherit;font-size:inherit;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;">Sign in →</button>`;
+          el.appendChild(msg);
+        } else {
         const form=document.createElement('div');form.className='add-comment-form';
         form.innerHTML=`<div class="add-comment-title">Leave a Comment</div>`;
         const nameRow=document.createElement('div');nameRow.style.cssText='display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;flex-wrap:wrap;';
@@ -878,18 +884,18 @@
         const submitBtn=document.createElement('button');submitBtn.className='comment-submit-btn';submitBtn.textContent='💬 Post Comment';
         const msgEl=document.createElement('div');msgEl.className='comment-msg';msgEl.style.display='none';
         submitBtn.addEventListener('click',async()=>{
-           const postAsMW=mwCb&&mwCb.checked;
-           const author=postAsMW?'MeanWhirls':getDisplayName();
+          const postAsMW=mwCb&&mwCb.checked;
+          const author=postAsMW?'MeanWhirls':getDisplayName();
           const text=textInput.value.trim();
           if(!text){msgEl.className='comment-msg err';msgEl.textContent='Comment cannot be empty.';msgEl.style.display='block';return;}
-          if (!requireAuth('comment')) return;
           submitBtn.disabled=true;submitBtn.textContent='Posting...';
-          try{await sbPost('nap_comments',{entry_id:entryId,author,text,ip_hash:ipHash,user_id:getUserId()});await logActivity('comment',entryId,`Comment by ${author} on: "${currentDetailEntry?.subject||''}"`);textInput.value='';if(mwCb)mwCb.checked=false;loadComments(entryId,ipHash);}
+          try{await sbPost('nap_comments',{entry_id:entryId,author,text,ip_hash:ipHash,user_id:getUserId()});await logActivity('comment',entryId,`Comment by ${author} on: "${currentDetailEntry?.subject||''}"`);;textInput.value='';if(mwCb)mwCb.checked=false;loadComments(entryId,ipHash);}
           catch(e){msgEl.className='comment-msg err';msgEl.textContent='Failed: '+e.message;msgEl.style.display='block';}
           submitBtn.disabled=false;submitBtn.textContent='💬 Post Comment';
         });
         form.appendChild(textInput);form.appendChild(submitBtn);form.appendChild(msgEl);
         el.appendChild(form);
+        }
       }catch(e){console.error(e);}
     }
 

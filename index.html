@@ -931,6 +931,12 @@
         });
 
         // Add comment form
+        if (!isLoggedIn()) {
+          const msg=document.createElement('div');
+          msg.style.cssText='background:var(--blush);border:1.5px solid rgba(200,30,90,0.12);border-radius:2px;padding:0.9rem 1rem;margin-top:0.5rem;font-size:0.82rem;color:var(--muted);text-align:center;';
+          msg.innerHTML=`<span style="font-weight:600;color:var(--deep-pink)">Sign in to leave a comment.</span> <button onclick="openAuthModal()" style="background:none;border:none;color:var(--deep-pink);font-family:inherit;font-size:inherit;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;">Sign in →</button>`;
+          el.appendChild(msg);
+        } else {
         const form=document.createElement('div');form.className='add-comment-form';
         form.innerHTML=`<div class="add-comment-title">Leave a Comment</div>`;
         // Name row: read-only display name + admin MeanWhirls option
@@ -948,7 +954,6 @@
           const author=postAsMW?'MeanWhirls':getDisplayName();
           const text=textInput.value.trim();
           if(!text){msgEl.className='comment-msg err';msgEl.textContent='Comment cannot be empty.';msgEl.style.display='block';return;}
-          if (!requireAuth('comment')) return;
           submitBtn.disabled=true;submitBtn.textContent='Posting...';
           try{await sbPost('comments',{entry_id:entryId,author,text,ip_hash:ipHash,user_id:getUserId()});
             await logActivity('comment', entryId, `Comment by ${author} on: "${currentDetailEntry?.subject||''}"`);
@@ -958,6 +963,7 @@
         });
         form.appendChild(textInput);form.appendChild(submitBtn);form.appendChild(msgEl);
         el.appendChild(form);
+        }
       } catch(e){ console.error(e); }
     }
 
