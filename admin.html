@@ -1875,6 +1875,11 @@
     };
 
     // ── PictureFix ────────────────────────────────────────────
+    function formatBytes(b) {
+      if (b >= 1048576) return (b/1048576).toFixed(1) + ' MB';
+      if (b >= 1024)    return Math.round(b/1024) + ' KB';
+      return b + ' B';
+    }
     let _pfItems = [];
     let _pfSort = { col: 'num', dir: 1 }; // dir: 1=asc, -1=desc
 
@@ -1942,20 +1947,16 @@
         try {
           const urlPrefix = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
           const { data: fileList, error: listErr } = await _sb.storage.from(BUCKET).list('', { limit: 1000 });
-          console.log('PictureFix storage list:', fileList, listErr);
           if (fileList && fileList.length) {
-            console.log('Sample file entry:', fileList[0]);
-            const sizeMap = {};
+              const sizeMap = {};
             fileList.forEach(f => {
               const sz = f.metadata?.size ?? f.metadata?.contentLength ?? null;
               if (sz != null) sizeMap[f.name] = sz;
             });
-            console.log('Size map entries:', Object.keys(sizeMap).length, sizeMap);
-            _pfItems.forEach((item, idx) => {
+              _pfItems.forEach((item, idx) => {
               const fname = item.image_url.split('?')[0].replace(urlPrefix, '').split('/').pop();
               const bytes = sizeMap[fname];
-              console.log(`Item ${idx}: fname=${fname}, bytes=${bytes}`);
-              if (bytes != null) {
+                  if (bytes != null) {
                 item._bytes = bytes;
                 const el = document.getElementById(`pf-size-${idx}`);
                 if (el) el.textContent = formatBytes(bytes);
@@ -1963,29 +1964,25 @@
             });
           } else {
             // Try fetching individual file info via storage API
-            console.log('List empty or failed, trying individual info fetch');
-            _pfItems.forEach(async (item, idx) => {
+              _pfItems.forEach(async (item, idx) => {
               try {
                 const fname = item.image_url.split('?')[0].replace(urlPrefix, '');
                 const r = await fetch(`${SUPABASE_URL}/storage/v1/object/info/public/${BUCKET}/${fname}`, {
                   headers: { 'apikey': SUPABASE_ANON }
                 });
-                console.log(`Info fetch ${idx} status:`, r.status);
-                if (r.ok) {
+                      if (r.ok) {
                   const info = await r.json();
-                  console.log(`Info ${idx}:`, info);
-                  const bytes = info.size ?? info.metadata?.size ?? null;
+                          const bytes = info.size ?? info.metadata?.size ?? null;
                   if (bytes != null) {
                     item._bytes = bytes;
                     const el = document.getElementById(`pf-size-${idx}`);
                     if (el) el.textContent = formatBytes(bytes);
                   }
                 }
-              } catch(e) { console.log(`Info fetch ${idx} error:`, e); }
+              } catch(e) {}
             });
           }
         } catch(sizeErr) {
-          console.error('Size fetch error:', sizeErr);
         }
       } catch(err) { tbody.innerHTML = emptyRow(7, 'Failed: ' + err.message); }
     }
