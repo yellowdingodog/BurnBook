@@ -479,10 +479,10 @@
           <thead><tr>
             <th class="cb"><input type="checkbox" onchange="pfSelectAll(this.checked)" id="pf-select-all" /></th>
             <th style="width:60px">Photo</th>
-            <th>Entry</th>
+            <th style="cursor:pointer;user-select:none" onclick="pfSort('num')" title="Sort by entry number"># <span id="pf-sort-num">↕</span></th>
             <th style="width:50px">Type</th>
             <th style="width:55px">Quality</th>
-            <th style="width:90px;text-align:right">File Size</th>
+            <th style="width:90px;text-align:right;cursor:pointer;user-select:none" onclick="pfSort('size')" title="Sort by file size">Size <span id="pf-sort-size">↕</span></th>
             <th style="width:100px">Status</th>
           </tr></thead>
           <tbody id="pf-tbody"><tr class="empty-row"><td colspan="6">Click Refresh to load images.</td></tr></tbody>
@@ -505,6 +505,10 @@
     let adminAuthed = false;
     const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
     let _adminUser = null, _adminProfile = null;
+    const getAuthToken = async () => {
+      const { data: { session } } = await _sb.auth.getSession();
+      return session?.access_token || SUPABASE_ANON;
+    };
 
     // ── Supabase ──────────────────────────────────────────────
     const SB = SUPABASE_URL;
@@ -1872,6 +1876,46 @@
 
     // ── PictureFix ────────────────────────────────────────────
     let _pfItems = [];
+    let _pfSort = { col: 'num', dir: 1 }; // dir: 1=asc, -1=desc
+
+    function pfSort(col) {
+      if (_pfSort.col === col) { _pfSort.dir *= -1; }
+      else { _pfSort.col = col; _pfSort.dir = col === 'size' ? -1 : 1; }
+      // Update header indicators
+      document.getElementById('pf-sort-num').textContent  = _pfSort.col==='num'  ? (_pfSort.dir===1?'↑':'↓') : '↕';
+      document.getElementById('pf-sort-size').textContent = _pfSort.col==='size' ? (_pfSort.dir===1?'↑':'↓') : '↕';
+      pfRenderTable();
+    }
+
+    function pfRenderTable() {
+      const tbody = document.getElementById('pf-tbody');
+      // Sort _pfItems by current sort, keeping original idx
+      const indexed = _pfItems.map((item, idx) => ({item, idx}));
+      indexed.sort((a, b) => {
+        if (_pfSort.col === 'size') {
+          return _pfSort.dir * ((a.item._bytes||0) - (b.item._bytes||0));
+        } else {
+          return _pfSort.dir * ((a.item.ui_order||9999) - (b.item.ui_order||9999));
+        }
+      });
+      tbody.innerHTML = '';
+      indexed.forEach(({item, idx}) => {
+        const tr = document.createElement('tr');
+        tr.id = `pf-row-${idx}`;
+        const ql = item.image_quality || '?';
+        const qColor = ql==='H'?'#2e7d32':ql==='M'?'#e65100':ql==='L'?'#c62828':'var(--muted)';
+        const sizeText = item._bytes ? formatBytes(item._bytes) : '…';
+        tr.innerHTML = `
+          <td><input type="checkbox" class="pf-cb" data-idx="${idx}" onchange="pfUpdateCount()" /></td>
+          <td><img src="${esc(imgUrl(item.image_url,'thumb'))}" style="width:50px;height:38px;object-fit:contain;border-radius:1px;background:#f0e0e8" /></td>
+          <td class="cell-trunc-td" title="${esc(item.subject)}" style="font-size:0.82rem;font-weight:600">${esc(item.subject)}</td>
+          <td><span class="badge ${item.type==='burn'?'badge-approved':'badge-pending'}">${item.type}</span></td>
+          <td style="font-size:0.78rem;font-weight:700;color:${qColor}" id="pf-qual-${idx}">${ql}</td>
+          <td style="text-align:right;font-size:0.78rem;color:var(--muted)" id="pf-size-${idx}">${sizeText}</td>
+          <td style="font-size:0.75rem;color:var(--muted)" id="pf-status-${idx}">—</td>`;
+        tbody.appendChild(tr);
+      });
+    }
 
     async function loadPictureFix() {
       const tbody = document.getElementById('pf-tbody');
@@ -1879,36 +1923,25 @@
       document.getElementById('pf-fix-btn').disabled = true;
       document.getElementById('pf-sel-count').textContent = '0 selected';
       document.getElementById('pf-progress').style.display = 'none';
+      _pfSort = { col: 'num', dir: 1 };
+      const snEl=document.getElementById('pf-sort-num'); if(snEl) snEl.textContent='↑';
+      const ssEl=document.getElementById('pf-sort-size'); if(ssEl) ssEl.textContent='↕';
       try {
         const [burnEntries, napEntries] = await Promise.all([
           sbGet('entries',     'image_url=not.is.null&select=id,subject,image_url,ui_order,image_quality&order=ui_order.asc.nullslast'),
           sbGet('nap_entries', 'image_url=not.is.null&select=id,subject,image_url,ui_order,image_quality&order=ui_order.asc.nullslast'),
         ]);
         _pfItems = [
-          ...burnEntries.map(e => ({...e, type:'burn'})),
-          ...napEntries.map(e => ({...e, type:'nap'})),
+          ...burnEntries.map(e => ({...e, type:'burn', _bytes:0})),
+          ...napEntries.map(e =>  ({...e, type:'nap',  _bytes:0})),
         ];
         if (!_pfItems.length) { tbody.innerHTML = emptyRow(7, 'No images found.'); return; }
-        tbody.innerHTML = '';
-        _pfItems.forEach((item, idx) => {
-          const tr = document.createElement('tr');
-          tr.id = `pf-row-${idx}`;
-          const ql = item.image_quality || '?';
-          const qColor = ql==='H'?'#2e7d32':ql==='M'?'#e65100':ql==='L'?'#c62828':'var(--muted)';
-          tr.innerHTML = `
-            <td><input type="checkbox" class="pf-cb" data-idx="${idx}" onchange="pfUpdateCount()" /></td>
-            <td><img src="${esc(imgUrl(item.image_url,'thumb'))}" style="width:50px;height:38px;object-fit:contain;border-radius:1px;background:#f0e0e8" /></td>
-            <td class="cell-trunc-td" title="${esc(item.subject)}" style="font-size:0.82rem;font-weight:600">${esc(item.subject)}</td>
-            <td><span class="badge ${item.type==='burn'?'badge-approved':'badge-pending'}">${item.type}</span></td>
-            <td style="font-size:0.78rem;font-weight:700;color:${qColor}" id="pf-qual-${idx}">${ql}</td>
-            <td style="text-align:right;font-size:0.78rem;color:var(--muted)" id="pf-size-${idx}">…</td>
-            <td style="font-size:0.75rem;color:var(--muted)" id="pf-status-${idx}">—</td>`;
-          tbody.appendChild(tr);
-        });
-        // Fetch file sizes in background
+        pfRenderTable();
+        // Fetch file sizes in background — store on item and update cell
         _pfItems.forEach((item, idx) => {
           fetch(item.image_url, {method:'HEAD'}).then(r => {
             const bytes = parseInt(r.headers.get('content-length')||'0');
+            item._bytes = bytes;
             const el = document.getElementById(`pf-size-${idx}`);
             if (el) el.textContent = bytes ? formatBytes(bytes) : '?';
           }).catch(() => {
@@ -1916,14 +1949,9 @@
             if (el) el.textContent = '?';
           });
         });
-      } catch(err) { tbody.innerHTML = emptyRow(6, 'Failed: ' + err.message); }
+      } catch(err) { tbody.innerHTML = emptyRow(7, 'Failed: ' + err.message); }
     }
 
-    function formatBytes(b) {
-      if (b >= 1048576) return (b/1048576).toFixed(1) + ' MB';
-      if (b >= 1024)    return (b/1024).toFixed(0) + ' KB';
-      return b + ' B';
-    }
 
     function pfSelectAll(checked) {
       document.querySelectorAll('.pf-cb').forEach(cb => cb.checked = checked);
@@ -1974,11 +2002,12 @@
           if (statusEl) statusEl.textContent = '⬆ Uploading…';
           const prefix = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
           const path = item.image_url.split('?')[0].replace(prefix, '');
+          const _authToken = await getAuthToken();
           const putResp = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
             method: 'PUT',
             headers: {
               'apikey': SUPABASE_ANON,
-              'Authorization': 'Bearer ' + SUPABASE_ANON,
+              'Authorization': 'Bearer ' + _authToken,
               'Content-Type': resized.type || 'image/jpeg',
               'x-upsert': 'true',
             },
