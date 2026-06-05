@@ -524,9 +524,9 @@
       <div class="modal-body">
         <div class="modal-note">We take removal requests seriously. Once submitted, this entry will be immediately hidden from public view while we review your request.</div>
         <input type="hidden" id="del-entry-id" />
-        <div class="form-group" id="del-name-group" style="display:none">
-          <label class="form-label">Your Name <span class="form-label-note">(optional)</span></label>
-          <input class="form-input" id="del-name" placeholder="Optional — helps us follow up" />
+        <div class="form-group" id="del-name-group">
+          <label class="form-label">Your Name</label>
+          <input class="form-input" id="del-name" placeholder="Your name" />
         </div>
         <div class="form-group"><label class="form-label">Reason *</label><textarea class="form-textarea" id="del-reason" placeholder="Tell us why..." style="min-height:90px"></textarea></div>
         <button class="btn btn-primary" id="del-submit-btn">🗑 Submit Removal Request</button>
@@ -540,7 +540,7 @@
   <!-- Contact Admin Modal -->
   <div class="modal-overlay" id="contact-modal">
     <div class="modal">
-      <div class="modal-header"><span class="modal-title">✉️ Contact the Admins</span><button class="modal-close" id="contact-modal-close">✕</button></div>
+      <div class="modal-header"><span class="modal-title">✉️ Contact MeanWhirls</span><button class="modal-close" id="contact-modal-close">✕</button></div>
       <div class="modal-body">
         <div class="modal-note">Send a message to the Mean Whirls crew about this entry — whether you want to challenge something, correct the record, or flag a concern. We'll review it privately.</div>
         <input type="hidden" id="contact-entry-id" />
@@ -1005,8 +1005,8 @@
       if (_isOwner || _prof.is_admin) {
         const eb=document.createElement('button');eb.className='detail-sec-btn';eb.textContent='✏️ Edit';eb.addEventListener('click',()=>openEditModal(entry,false));actEl.appendChild(eb);
       }
-      const rb=document.createElement('button');rb.className='detail-sec-btn danger';rb.textContent='🗑 Remove';rb.addEventListener('click',()=>openDeleteRequestModal(currentDetailEntry));actEl.appendChild(rb);
-      const cb=document.createElement('button');cb.className='detail-sec-btn';cb.textContent='✉️ Contact';cb.addEventListener('click',()=>openContactModal(entry.id,'burn'));actEl.appendChild(cb);
+      const rb=document.createElement('button');rb.className='detail-sec-btn danger';rb.textContent='🗑 Request Removal';rb.addEventListener('click',()=>openDeleteRequestModal(currentDetailEntry));actEl.appendChild(rb);
+      const cb=document.createElement('button');cb.className='detail-sec-btn';cb.textContent='✉️ Contact MeanWhirls';cb.addEventListener('click',()=>openContactModal(entry.id,'burn'));actEl.appendChild(cb);
       // Share URLs
       const shareUrl=window.location.origin+window.location.pathname+'#entry-'+entry.id;
       const enc=encodeURIComponent(shareUrl),txt=encodeURIComponent('Check out this Mean Whirls Burn Book entry: '+entry.subject);
@@ -1146,8 +1146,8 @@
   // Show name field for guests; hide for logged-in (we already have their info)
   const nameGroup=document.getElementById('del-name-group');
   const nameInput=document.getElementById('del-name');
-  if(isLoggedIn()){nameGroup.style.display='none';if(nameInput)nameInput.value=getDisplayName();}
-  else{nameGroup.style.display='block';if(nameInput)nameInput.value='';}
+  nameGroup.style.display='block';
+  if(nameInput)nameInput.value=isLoggedIn()?getDisplayName():'';
   deleteModal.classList.add('open');document.body.style.overflow='hidden';
 }
     function closeDeleteModal(){deleteModal.classList.remove('open');document.body.style.overflow='';}
