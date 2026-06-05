@@ -1893,7 +1893,8 @@
       const indexed = _pfItems.map((item, idx) => ({item, idx}));
       indexed.sort((a, b) => {
         if (_pfSort.col === 'size') {
-          return _pfSort.dir * ((a.item._bytes||0) - (b.item._bytes||0));
+          const ab=a.item._bytes??-1, bb=b.item._bytes??-1;
+          return _pfSort.dir * (ab - bb);
         } else {
           return _pfSort.dir * ((a.item.ui_order||9999) - (b.item.ui_order||9999));
         }
@@ -1904,7 +1905,7 @@
         tr.id = `pf-row-${idx}`;
         const ql = item.image_quality || '?';
         const qColor = ql==='H'?'#2e7d32':ql==='M'?'#e65100':ql==='L'?'#c62828':'var(--muted)';
-        const sizeText = item._bytes ? formatBytes(item._bytes) : '…';
+        const sizeText = item._bytes != null ? formatBytes(item._bytes) : '…';
         tr.innerHTML = `
           <td><input type="checkbox" class="pf-cb" data-idx="${idx}" onchange="pfUpdateCount()" /></td>
           <td><img src="${esc(imgUrl(item.image_url,'thumb'))}" style="width:50px;height:38px;object-fit:contain;border-radius:1px;background:#f0e0e8" /></td>
@@ -1932,8 +1933,8 @@
           sbGet('nap_entries', 'image_url=not.is.null&select=id,subject,image_url,ui_order,image_quality&order=ui_order.asc.nullslast'),
         ]);
         _pfItems = [
-          ...burnEntries.map(e => ({...e, type:'burn', _bytes:0})),
-          ...napEntries.map(e =>  ({...e, type:'nap',  _bytes:0})),
+          ...burnEntries.map(e => ({...e, type:'burn', _bytes:null})),
+          ...napEntries.map(e =>  ({...e, type:'nap',  _bytes:null})),
         ];
         if (!_pfItems.length) { tbody.innerHTML = emptyRow(7, 'No images found.'); return; }
         pfRenderTable();
@@ -2003,14 +2004,19 @@
           const prefix = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
           const path = item.image_url.split('?')[0].replace(prefix, '');
           const _authToken = await getAuthToken();
+          const authHeaders = {
+            'apikey': SUPABASE_ANON,
+            'Authorization': 'Bearer ' + _authToken,
+          };
+          // Delete old file first, then re-upload — avoids RLS update restrictions
+          await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}`, {
+            method: 'DELETE',
+            headers: { ...authHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prefixes: [path] }),
+          });
           const putResp = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
-            method: 'PUT',
-            headers: {
-              'apikey': SUPABASE_ANON,
-              'Authorization': 'Bearer ' + _authToken,
-              'Content-Type': resized.type || 'image/jpeg',
-              'x-upsert': 'true',
-            },
+            method: 'POST',
+            headers: { ...authHeaders, 'Content-Type': resized.type || 'image/jpeg', 'x-upsert': 'true' },
             body: resized,
           });
           if (!putResp.ok) throw new Error('Upload failed: ' + await putResp.text());
