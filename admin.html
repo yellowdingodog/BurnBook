@@ -48,11 +48,16 @@
 
     /* Table */
     .tbl-wrap{overflow-x:auto;margin-bottom:1.5rem;}
-    table{width:100%;border-collapse:collapse;font-size:0.82rem;}
-    th{background:var(--deep-pink);color:#fff;padding:0.65rem 0.85rem;text-align:left;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;white-space:nowrap;}
+    table{width:100%;border-collapse:collapse;font-size:0.82rem;table-layout:fixed;}
+    th{background:var(--deep-pink);color:#fff;padding:0.65rem 0.55rem;text-align:left;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;white-space:nowrap;position:relative;overflow:hidden;}
     th.urgent{background:#c62828;}
     th.cb{width:36px;}
-    td{padding:0.65rem 0.85rem;border-bottom:1px solid var(--blush);vertical-align:top;}
+    th.resizable{min-width:40px;}
+    .col-resize-handle{position:absolute;right:0;top:0;bottom:0;width:6px;cursor:col-resize;background:rgba(255,255,255,0.15);transition:background 0.15s;}
+    .col-resize-handle:hover,.col-resize-handle.dragging{background:rgba(255,255,255,0.5);}
+    td{padding:0.55rem 0.55rem;border-bottom:1px solid var(--blush);vertical-align:top;overflow:hidden;}
+    .cell-trunc{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-size:.8rem;}
+    .cell-trunc-td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0;}
     tr:hover td{background:var(--blush);}
     td img{width:60px;height:45px;object-fit:contain;border-radius:1px;background:#f0e0e8;cursor:zoom-in;}
     .badge{display:inline-block;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
@@ -266,8 +271,8 @@
         <table>
           <thead><tr>
             <th class="cb"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)" /></th>
-            <th>#</th><th>Photo</th><th>Subject</th><th>Burn</th><th>Tags</th>
-            <th>Submitter</th><th>Displays As</th><th>Submitted</th><th>Status</th><th>Actions</th>
+            <th class="resizable" style="width:36px">#</th><th class="resizable" style="width:70px">Photo</th><th class="resizable" style="width:130px">Subject</th><th class="resizable" style="width:150px">Burn</th><th class="resizable" style="width:90px">Tags</th>
+            <th class="resizable" style="width:110px">Submitter</th><th class="resizable" style="width:110px">Account</th><th class="resizable" style="width:110px">Displays As</th><th class="resizable" style="width:80px">Status</th><th class="resizable" style="width:200px">Actions</th>
           </tr></thead>
           <tbody id="tb-entries"></tbody>
         </table>
@@ -788,18 +793,25 @@
     // ── ALL ENTRIES ───────────────────────────────────────────
     async function loadEntries(){
       const tb=document.getElementById('tb-entries');
-      tb.innerHTML=loadingRow(10);
+      tb.innerHTML=loadingRow(11);
       document.getElementById('select-all').checked=false;
       document.getElementById('bulk-count').textContent='0 selected';
       document.getElementById('entry-edit-panel').innerHTML='';
       try {
         const entries=await sbGet('entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
         setBadge('cnt-entries', entries.filter(e=>e.status==='pending'&&!e.hidden).length);
-        if(!entries.length){tb.innerHTML=emptyRow(10,'No entries yet.');return;}
+        if(!entries.length){tb.innerHTML=emptyRow(11,'No entries yet.');return;}
+        // Build account display name map
+        const userIds=[...new Set(entries.filter(e=>e.user_id).map(e=>e.user_id))];
+        let userMap={};
+        if(userIds.length){const ups=await sbGet('user_profiles',`id=in.(${userIds.join(',')})&select=id,display_name`);ups.forEach(u=>userMap[u.id]=u.display_name);}
         tb.innerHTML='';
         entries.forEach(e=>{
           const isCodeSub=e.submitter&&e.submitter.toLowerCase()===CODENAME.toLowerCase();
-          const subCell=isCodeSub?`<span style="font-size:.82rem;font-style:italic;color:var(--muted)">${esc(CODENAME_DISPLAY)}</span>`:`<span style="font-size:.8rem">${esc(e.submitter)}</span>`;
+          const subVal=isCodeSub?CODENAME_DISPLAY:(e.submitter||'—');
+          const subCell=`<span class="cell-trunc" title="${esc(subVal)}" style="${isCodeSub?'font-style:italic;color:var(--muted)':''}">${esc(subVal)}</span>`;
+          const acctVal=e.user_id?(userMap[e.user_id]||'(unknown)'):'—';
+          const acctCell=`<span class="cell-trunc" title="${esc(acctVal)}">${esc(acctVal)}</span>`;
           const displayCell=e.is_mean_whirls?makeBadgeMWHtml():`<span style="font-size:.82rem">${esc(e.display_author)}</span>`;
           const imgCell=e.image_url?`<img src="${esc(e.image_url)}" />`:'—';
           const tags=(e.hashtags||[]).join(' ')||'—';
@@ -808,10 +820,10 @@
           const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="btn-a au" onclick="modEntry('${e.id}','unapprove')">⏸</button>`:'';
           const tr=document.createElement('tr');
           const mwBtn=`<button class=\"btn-a ${e.is_mean_whirls?'aa':'au'}\" title=\"${e.is_mean_whirls?'Unset MeanWhirls':'Set as MeanWhirls'}\" onclick=\"toggleMeanWhirls('${e.id}',${!e.is_mean_whirls})\">${e.is_mean_whirls?'⚑ MW':'⚐ MW'}</button>`;
-          tr.innerHTML=`<td><input type="checkbox" class="row-cb" data-id="${e.id}" onchange="updateBulkCount()" /></td><td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(e.created_at)}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:220px">${approveBtn}${unapproveBtn}${mwBtn}<button class="btn-a ae" onclick='openEntryEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modEntry('${e.id}','reject')">✕</button></td>`;
+          tr.innerHTML=`<td><input type="checkbox" class="row-cb" data-id="${e.id}" onchange="updateBulkCount()" /></td><td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td class="cell-trunc-td" title="${esc(e.subject)}" style="font-weight:600">${esc(e.subject)}</td><td class="cell-trunc-td" title="${esc(e.text||'')}" style="font-size:.78rem;font-style:italic">${esc(e.text||'')}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td class="cell-trunc-td">${subCell}</td><td class="cell-trunc-td">${acctCell}</td><td>${displayCell}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="min-width:200px">${approveBtn}${unapproveBtn}${mwBtn}<button class="btn-a ae" onclick='openEntryEdit(${JSON.stringify(JSON.stringify(e))})'>✏️</button><button class="btn-a ar" onclick="modEntry('${e.id}','reject')">✕</button></td>`;
           tb.appendChild(tr);
         });
-      } catch(err){tb.innerHTML=emptyRow(10,'Failed: '+err.message);}
+      } catch(err){tb.innerHTML=emptyRow(11,'Failed: '+err.message);}
     }
 
     async function modEntry(id,decision){
@@ -835,6 +847,7 @@
       panel.innerHTML=`
         <div class="edit-panel">
           <div class="edit-panel-title">✏️ Editing: #${e.ui_order||'?'} — ${esc(e.subject)}</div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.75rem">Submitted: ${toTS(e.created_at)} &nbsp;·&nbsp; ID: <span style="font-family:monospace">${e.id}</span></div>
           <div class="form-group"><label class="form-label">Burn Victim Name *</label><input class="form-input" id="ep-subject" value="${esc(e.subject)}" /></div>
           <div class="form-group"><label class="form-label">The Burn <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional)</span></label><textarea class="form-textarea" id="ep-text" style="min-height:80px">${esc(e.text||'')}</textarea></div>
           <div class="form-group"><label class="form-label">Hashtags</label><input class="form-input" id="ep-hashtags" value="${esc((e.hashtags||[]).join(' '))}" placeholder="#wild #classic" /></div>
@@ -1741,6 +1754,44 @@
       await _sb.auth.signOut();
       window.location.reload();
     }
+
+    // ── Resizable columns ─────────────────────────────────────
+    function initResizableCols(table) {
+      const ths = table.querySelectorAll('th.resizable');
+      ths.forEach(th => {
+        // Set initial width from rendered width
+        th.style.width = th.offsetWidth + 'px';
+        const handle = document.createElement('div');
+        handle.className = 'col-resize-handle';
+        th.appendChild(handle);
+        let startX, startW;
+        handle.addEventListener('mousedown', e => {
+          e.preventDefault();
+          startX = e.clientX;
+          startW = th.offsetWidth;
+          handle.classList.add('dragging');
+          const onMove = ev => {
+            const newW = Math.max(40, startW + ev.clientX - startX);
+            th.style.width = newW + 'px';
+          };
+          const onUp = () => {
+            handle.classList.remove('dragging');
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+          };
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+        });
+      });
+    }
+
+    // Init resize on entries table after it renders
+    const _origLoadEntries = loadEntries;
+    loadEntries = async function() {
+      await _origLoadEntries();
+      const tbl = document.querySelector('#tb-entries')?.closest('table');
+      if (tbl) initResizableCols(tbl);
+    };
 
     init();
   </script>
