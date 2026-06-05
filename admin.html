@@ -221,6 +221,7 @@
       <button class="admin-tab" data-ttab="ips">👤 IP Profiles</button>
       <button class="admin-tab" data-ttab="contact">✉️ Messages <span class="badge-count" id="cnt-contact">0</span></button>
       <button class="admin-tab" data-ttab="accounts">👥 Accounts</button>
+      <button class="admin-tab" data-ttab="picturefix">🖼 Picture Fix</button>
     </div>
 
     <div id="ttab-burn" class="top-panel active">
@@ -439,6 +440,39 @@
       </div>
     </div>
 
+    <!-- PictureFix Panel -->
+    <div id="ttab-picturefix" class="top-panel">
+      <div class="section-hdr">
+        <span class="section-title">🖼 Picture Fix</span>
+        <button class="refresh-btn" onclick="loadPictureFix()">↺ Refresh</button>
+      </div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
+        Re-compress images using the current upload settings. Downloads the original, resizes it, and overwrites in place — the URL in the database stays unchanged.
+        Current settings: <strong id="pf-settings-display">loading…</strong>
+        &nbsp;·&nbsp; <a href="#" onclick="document.querySelector('[data-ttab=burn]').click();return false;" style="color:var(--deep-pink);font-size:0.78rem">Edit in config table</a>
+      </div>
+      <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary" id="pf-fix-btn" onclick="runPictureFix()" disabled>🔧 Fix Selected</button>
+        <button class="btn-a aa" onclick="pfSelectAll(true)">Select All</button>
+        <button class="btn-a au" onclick="pfSelectAll(false)">Deselect All</button>
+        <span id="pf-sel-count" style="font-size:0.78rem;color:var(--muted)">0 selected</span>
+      </div>
+      <div id="pf-progress" style="display:none;margin-bottom:1rem;background:var(--blush);border-radius:2px;padding:0.85rem 1rem;font-size:0.82rem;line-height:1.8"></div>
+      <div class="tbl-wrap">
+        <table id="pf-table" style="table-layout:fixed">
+          <thead><tr>
+            <th class="cb"><input type="checkbox" onchange="pfSelectAll(this.checked)" id="pf-select-all" /></th>
+            <th style="width:60px">Photo</th>
+            <th>Entry</th>
+            <th style="width:60px">Type</th>
+            <th style="width:100px;text-align:right">File Size</th>
+            <th style="width:100px">Status</th>
+          </tr></thead>
+          <tbody id="pf-tbody"><tr class="empty-row"><td colspan="6">Click Refresh to load images.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 
   <div class="toast" id="toast"></div>
@@ -496,7 +530,7 @@
       } catch(e) {} // non-fatal
     }
     // ── Image resize before upload ────────────────────────────
-    async function resizeImage(file, maxDim=1920, quality=0.82) {
+    async function resizeImage(file, maxDim=_uploadMaxPx, quality=_uploadQuality) {
       return new Promise((resolve) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
@@ -519,10 +553,17 @@
           }
         };
         img.onerror = () => { URL.revokeObjectURL(url); resolve(file); }; // fallback: upload original
-        img.src = url;
+        img.src = imgUrl(url, 'thumb');
       });
     }
     const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const imgUrl = (url, tier) => {
+      if (!url || !url.includes('supabase.co/storage')) return url;
+      const base = url.split('?')[0].replace('/object/', '/render/image/');
+      if (tier === 'thumb')  return base + '?width=200&quality=70';
+      if (tier === 'detail') return base + '?width=900&quality=82';
+      return url;
+    };
     const toTS = d => d ? new Date(d).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
     const arraysEqual = (a,b) => a.length===b.length&&[...a].sort().join()===([...b]).sort().join();
@@ -538,6 +579,7 @@
 
     // ── Login ─────────────────────────────────────────────────
     let _adminVoteWeight = 10;
+    let _uploadMaxPx = 1920, _uploadQuality = 0.82;
 
     async function init() {
       try {
@@ -548,6 +590,8 @@
           if(r.key==='badgeicon')           BADGE_ICON_URL    = r.value;
           if(r.key==='anon_mouse_image')    ANON_MOUSE_IMAGE  = r.value;
           if(r.key==='admin_vote_weight')   { _adminVoteWeight = parseFloat(r.value)||10; const el=document.getElementById('vote-explain-admin-weight'); if(el)el.textContent=_adminVoteWeight+'×'; }
+          if(r.key==='upload_max_px')        _uploadMaxPx   = parseInt(r.value)||1920;
+          if(r.key==='upload_quality')       _uploadQuality = parseFloat(r.value)||0.82;
         });
       } catch(e) {}
     }
@@ -629,10 +673,11 @@
         document.querySelectorAll('.top-panel').forEach(p=>p.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById('ttab-'+tab.dataset.ttab).classList.add('active');
-        if(tab.dataset.ttab==='contact')  loadContactMessages();
-        if(tab.dataset.ttab==='ips')      { loadIpProfiles(); loadIpActivity(); }
-        if(tab.dataset.ttab==='accounts') loadAccounts();
-        if(tab.dataset.ttab==='burn')    loadEntries();
+        if(tab.dataset.ttab==='contact')     loadContactMessages();
+        if(tab.dataset.ttab==='ips')         { loadIpProfiles(); loadIpActivity(); }
+        if(tab.dataset.ttab==='accounts')    loadAccounts();
+        if(tab.dataset.ttab==='burn')        loadEntries();
+        if(tab.dataset.ttab==='picturefix')  loadPictureFix();
         if(tab.dataset.ttab==='nap')     loadNapEntries();
       });
     });
@@ -709,7 +754,7 @@
         tb.innerHTML='';
         edits.forEach(ed=>{
           const tr=document.createElement('tr');
-          const imgCell=ed.image_url?`<img src="${esc(ed.image_url)}" />`:'—';
+          const imgCell=ed.image_url?`<img src="${esc(imgUrl(ed.image_url,'thumb'))}" />`:'—';
           const tags=(ed.hashtags||[]).join(' ')||'—';
           tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${om[ed.entry_id]||'?'}</td><td style="font-weight:600">${esc(ed.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${imgCell}</td><td style="font-size:.8rem">${esc(ed.submitter)}</td><td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(ed.created_at)}</td><td><button class="btn-a aac" onclick='acceptEdit(${JSON.stringify(JSON.stringify(ed))})'>✓ Accept</button><button class="btn-a ar" onclick="rejectEdit('${ed.id}')">✕ Reject</button></td>`;
           tb.appendChild(tr);
@@ -813,7 +858,7 @@
           const acctVal=e.user_id?(userMap[e.user_id]||'(unknown)'):'—';
           const acctCell=`<span class="cell-trunc" title="${esc(acctVal)}">${esc(acctVal)}</span>`;
           const displayCell=e.is_mean_whirls?makeBadgeMWHtml():`<span style="font-size:.82rem">${esc(e.display_author)}</span>`;
-          const imgCell=e.image_url?`<img src="${esc(e.image_url)}" />`:'—';
+          const imgCell=e.image_url?`<img src="${esc(imgUrl(e.image_url,'thumb'))}" />`:'—';
           const tags=(e.hashtags||[]).join(' ')||'—';
           const statusLabel=e.hidden?'hidden':e.status;
           const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modEntry('${e.id}','approve')">✓</button>`:'';
@@ -843,7 +888,6 @@
       if(panel.dataset.open===e.id){panel.innerHTML='';delete panel.dataset.open;return;}
       panel.dataset.open=e.id;
       editImageFile=null;
-      const isAnon = e.display_author==='Anonymous';
       panel.innerHTML=`
         <div class="edit-panel">
           <div class="edit-panel-title">✏️ Editing: #${e.ui_order||'?'} — ${esc(e.subject)}</div>
@@ -851,11 +895,17 @@
           <div class="form-group"><label class="form-label">Burn Victim Name *</label><input class="form-input" id="ep-subject" value="${esc(e.subject)}" /></div>
           <div class="form-group"><label class="form-label">The Burn <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional)</span></label><textarea class="form-textarea" id="ep-text" style="min-height:80px">${esc(e.text||'')}</textarea></div>
           <div class="form-group"><label class="form-label">Hashtags</label><input class="form-input" id="ep-hashtags" value="${esc((e.hashtags||[]).join(' '))}" placeholder="#wild #classic" /></div>
-          <div class="form-group"><label class="form-label">Displays As</label><input class="form-input" id="ep-display-author" value="${esc(e.display_author)}" ${isAnon?'disabled':''} /><label style="display:inline-flex;align-items:center;gap:0.4rem;margin-top:0.4rem;font-size:0.8rem;cursor:pointer;"><input type="checkbox" id="ep-anonymous" ${isAnon?'checked':''} onchange="const da=document.getElementById('ep-display-author');da.disabled=this.checked;if(this.checked){da.dataset.prev=da.value;da.value='Anonymous';}else{da.value=da.dataset.prev||document.getElementById('ep-submitter').value||'';}" /> Post as Anonymous</label></div>
+          <div class="form-group"><label class="form-label">Posting As</label>
+            <div style="display:flex;flex-direction:column;gap:0.45rem;margin-top:0.25rem;">
+              <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;"><input type="radio" name="ep-post-as" value="MeanWhirls" ${(e.is_mean_whirls)?'checked':''} style="accent-color:var(--deep-pink)" /><strong>MeanWhirls</strong> <span style="font-size:0.72rem;color:var(--muted)">(sets flag + display name)</span></label>
+              <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;"><input type="radio" name="ep-post-as" value="named" ${(!e.is_mean_whirls && e.display_author!=='Anonymous')?'checked':''} style="accent-color:var(--deep-pink)" /><strong>Named:</strong> <input class="form-input" id="ep-display-author" value="${esc(e.is_mean_whirls?e.submitter||'':e.display_author==='Anonymous'?e.submitter||'':e.display_author)}" style="display:inline;width:auto;flex:1;margin-left:0.4rem;padding:0.3rem 0.6rem;font-size:0.82rem;" onclick="this.closest('label').querySelector('input[type=radio]').checked=true" /></label>
+              <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;"><input type="radio" name="ep-post-as" value="Anonymous" ${(!e.is_mean_whirls && e.display_author==='Anonymous')?'checked':''} style="accent-color:var(--deep-pink)" /><strong>Anonymous</strong></label>
+            </div>
+          </div>
           <div class="form-group"><label class="form-label">Submitter Name</label><input class="form-input" id="ep-submitter" value="${esc(e.submitter||'')}" /></div>
           <div class="form-group"><label class="form-label">Owner (user account)</label><select class="form-input" id="ep-owner"><option value="">— loading users —</option></select><span style="font-size:0.72rem;color:var(--muted);display:block;margin-top:0.3rem">Current user_id: ${esc(e.user_id||'none')}</span></div>
           <div class="form-group"><label class="form-label">Photo <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(upload to replace)</span></label>
-            ${e.image_url?`<img class="current-img" src="${esc(e.image_url)}" id="ep-cur-img" />`:''}
+            ${e.image_url?`<img class="current-img" src="${esc(imgUrl(e.image_url,'detail'))}" id="ep-cur-img" />`:''}
             <div class="upload-zone" id="ep-upload"><input type="file" id="ep-image" accept="image/*" /><div class="upload-zone-text">📷 Drag &amp; drop or click to replace</div><img id="ep-preview" class="upload-preview" alt="" /></div>
           </div>
           <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
@@ -879,18 +929,23 @@
       const subject=document.getElementById('ep-subject').value.trim();
       const text=document.getElementById('ep-text').value.trim();
       const hashtags=parseHashtags(document.getElementById('ep-hashtags').value);
-      const displayAuthor=document.getElementById('ep-display-author').value.trim();
       const submitter=document.getElementById('ep-submitter').value.trim();
       const ownerSel=document.getElementById('ep-owner');
       const userId=ownerSel?ownerSel.value||null:undefined;
+      const postAs=document.querySelector('input[name="ep-post-as"]:checked')?.value||'named';
+      const isMW=postAs==='MeanWhirls';
+      const isAnon=postAs==='Anonymous';
+      const namedVal=(document.getElementById('ep-display-author')?.value||'').trim();
+      const displayAuthor=isMW?'MeanWhirls':isAnon?'Anonymous':(namedVal||submitter||'Anonymous');
       if(!subject){showEpMsg('error','Name required.');return;}
       const btn=document.querySelector('#entry-edit-panel .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
       try{
         let imageUrl=existingImg;
         if(editImageFile){const resized=await resizeImage(editImageFile);imageUrl=await uploadImage(resized);if(existingImg)await deleteStorageFile(existingImg);}
-        const patch={subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl};
+        const patch={subject,text,display_author:displayAuthor,is_mean_whirls:isMW,hashtags,image_url:imageUrl};
         if(submitter)patch.submitter=submitter;
         if(userId!==undefined)patch.user_id=userId||null;
+        if(isMW)patch.status='approved';
         await sbPatch('entries',`id=eq.${id}`,patch);
         showEpMsg('success','✅ Saved!');
         setTimeout(()=>{document.getElementById('entry-edit-panel').innerHTML='';loadEntries();},1200);
@@ -1283,7 +1338,7 @@
         tb.innerHTML='';
         edits.forEach(ed=>{
           const tr=document.createElement('tr');
-          const imgCell=ed.image_url?`<img src="${esc(ed.image_url)}" />`:'—';
+          const imgCell=ed.image_url?`<img src="${esc(imgUrl(ed.image_url,'thumb'))}" />`:'—';
           const tags=(ed.hashtags||[]).join(' ')||'—';
           tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${om[ed.entry_id]||'?'}</td><td style="font-weight:600">${esc(ed.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${imgCell}</td><td style="font-size:.8rem">${esc(ed.submitter)}</td><td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(ed.created_at)}</td><td><button class="btn-a aac" onclick='acceptNapEdit(${JSON.stringify(JSON.stringify(ed))})'>✓ Accept</button><button class="btn-a ar" onclick="rejectNapEdit('${ed.id}')">✕ Reject</button></td>`;
           tb.appendChild(tr);
@@ -1346,7 +1401,7 @@
           const isCodeSub=e.submitter&&e.submitter.toLowerCase()===CODENAME.toLowerCase();
           const subCell=isCodeSub?`<span style="font-size:.82rem;font-style:italic;color:var(--muted)">${esc(CODENAME_DISPLAY)}</span>`:`<span style="font-size:.8rem">${esc(e.submitter)}</span>`;
           const displayCell=e.is_mean_whirls?makeBadgeMWHtml():`<span style="font-size:.82rem">${esc(e.display_author)}</span>`;
-          const imgCell=e.image_url?`<img src="${esc(e.image_url)}" />`:'—';
+          const imgCell=e.image_url?`<img src="${esc(imgUrl(e.image_url,'thumb'))}" />`:'—';
           const tags=(e.hashtags||[]).join(' ')||'—';
           const statusLabel=e.hidden?'hidden':e.status;
           const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modNapEntry('${e.id}','approve')">✓</button>`:'';
@@ -1792,6 +1847,128 @@
       const tbl = document.querySelector('#tb-entries')?.closest('table');
       if (tbl) initResizableCols(tbl);
     };
+
+    // ── PictureFix ────────────────────────────────────────────
+    let _pfItems = [];
+
+    async function loadPictureFix() {
+      const tbody = document.getElementById('pf-tbody');
+      const settingsEl = document.getElementById('pf-settings-display');
+      if (settingsEl) settingsEl.textContent = `${_uploadMaxPx}px / quality ${_uploadQuality}`;
+      tbody.innerHTML = loadingRow(6);
+      document.getElementById('pf-fix-btn').disabled = true;
+      document.getElementById('pf-sel-count').textContent = '0 selected';
+      document.getElementById('pf-progress').style.display = 'none';
+      try {
+        const [burnEntries, napEntries] = await Promise.all([
+          sbGet('entries',     'image_url=not.is.null&select=id,subject,image_url,ui_order&order=ui_order.asc.nullslast'),
+          sbGet('nap_entries', 'image_url=not.is.null&select=id,subject,image_url,ui_order&order=ui_order.asc.nullslast'),
+        ]);
+        _pfItems = [
+          ...burnEntries.map(e => ({...e, type:'burn'})),
+          ...napEntries.map(e => ({...e, type:'nap'})),
+        ];
+        if (!_pfItems.length) { tbody.innerHTML = emptyRow(6, 'No images found.'); return; }
+        tbody.innerHTML = '';
+        _pfItems.forEach((item, idx) => {
+          const tr = document.createElement('tr');
+          tr.id = `pf-row-${idx}`;
+          tr.innerHTML = `
+            <td><input type="checkbox" class="pf-cb" data-idx="${idx}" onchange="pfUpdateCount()" /></td>
+            <td><img src="${esc(imgUrl(item.image_url,'thumb'))}" style="width:50px;height:38px;object-fit:contain;border-radius:1px;background:#f0e0e8" /></td>
+            <td class="cell-trunc-td" title="${esc(item.subject)}" style="font-size:0.82rem;font-weight:600">${esc(item.subject)}</td>
+            <td><span class="badge ${item.type==='burn'?'badge-approved':'badge-pending'}">${item.type}</span></td>
+            <td style="text-align:right;font-size:0.78rem;color:var(--muted)" id="pf-size-${idx}">…</td>
+            <td style="font-size:0.75rem;color:var(--muted)" id="pf-status-${idx}">—</td>`;
+          tbody.appendChild(tr);
+        });
+        // Fetch file sizes in background
+        _pfItems.forEach((item, idx) => {
+          fetch(item.image_url, {method:'HEAD'}).then(r => {
+            const bytes = parseInt(r.headers.get('content-length')||'0');
+            const el = document.getElementById(`pf-size-${idx}`);
+            if (el) el.textContent = bytes ? formatBytes(bytes) : '?';
+          }).catch(() => {
+            const el = document.getElementById(`pf-size-${idx}`);
+            if (el) el.textContent = '?';
+          });
+        });
+      } catch(err) { tbody.innerHTML = emptyRow(6, 'Failed: ' + err.message); }
+    }
+
+    function formatBytes(b) {
+      if (b >= 1048576) return (b/1048576).toFixed(1) + ' MB';
+      if (b >= 1024)    return (b/1024).toFixed(0) + ' KB';
+      return b + ' B';
+    }
+
+    function pfSelectAll(checked) {
+      document.querySelectorAll('.pf-cb').forEach(cb => cb.checked = checked);
+      const master = document.getElementById('pf-select-all');
+      if (master) master.checked = checked;
+      pfUpdateCount();
+    }
+
+    function pfUpdateCount() {
+      const n = document.querySelectorAll('.pf-cb:checked').length;
+      document.getElementById('pf-sel-count').textContent = n + ' selected';
+      document.getElementById('pf-fix-btn').disabled = n === 0;
+    }
+
+    async function runPictureFix() {
+      const checked = [...document.querySelectorAll('.pf-cb:checked')].map(cb => parseInt(cb.dataset.idx));
+      if (!checked.length) return;
+      const prog = document.getElementById('pf-progress');
+      prog.style.display = 'block';
+      prog.innerHTML = `<strong>Starting… 0 / ${checked.length}</strong>`;
+      document.getElementById('pf-fix-btn').disabled = true;
+
+      let done = 0, failed = 0;
+      for (const idx of checked) {
+        const item = _pfItems[idx];
+        const statusEl = document.getElementById(`pf-status-${idx}`);
+        const sizeEl   = document.getElementById(`pf-size-${idx}`);
+        try {
+          // 1. Download original
+          if (statusEl) { statusEl.textContent = '⬇ Downloading…'; statusEl.style.color = 'var(--muted)'; }
+          const origResp = await fetch(item.image_url);
+          if (!origResp.ok) throw new Error('Download failed');
+          const blob = await origResp.blob();
+          const origFile = new File([blob], 'image.jpg', {type: blob.type || 'image/jpeg'});
+
+          // 2. Resize using current config settings
+          if (statusEl) statusEl.textContent = '⚙ Resizing…';
+          const resized = await resizeImage(origFile, _uploadMaxPx, _uploadQuality);
+
+          // 3. Overwrite in place via PUT with upsert
+          if (statusEl) statusEl.textContent = '⬆ Uploading…';
+          const prefix = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
+          const path = item.image_url.split('?')[0].replace(prefix, '');
+          const putResp = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+            method: 'PUT',
+            headers: {
+              'apikey': SUPABASE_ANON,
+              'Authorization': 'Bearer ' + SUPABASE_ANON,
+              'Content-Type': resized.type || 'image/jpeg',
+              'x-upsert': 'true',
+            },
+            body: resized,
+          });
+          if (!putResp.ok) throw new Error('Upload failed: ' + await putResp.text());
+
+          // 4. Update size display
+          if (sizeEl) sizeEl.textContent = formatBytes(resized.size);
+          if (statusEl) { statusEl.textContent = '✅ Done'; statusEl.style.color = '#2e7d32'; }
+          done++;
+        } catch(err) {
+          if (statusEl) { statusEl.textContent = '❌ ' + err.message; statusEl.style.color = '#c62828'; }
+          failed++;
+        }
+        prog.innerHTML = `<strong>Progress: ${done + failed} / ${checked.length}</strong> — ✅ ${done} fixed, ❌ ${failed} failed`;
+      }
+      prog.innerHTML += `<br/><strong style="color:${failed?'#c62828':'#2e7d32'}">${failed ? `${done} fixed, ${failed} failed.` : `All ${done} images fixed!`}</strong>`;
+      document.getElementById('pf-fix-btn').disabled = false;
+    }
 
     init();
   </script>

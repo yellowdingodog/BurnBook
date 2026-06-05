@@ -22,7 +22,7 @@
       position:relative;overflow:hidden;
       border-bottom:none;
       background-color:#f0a0c0;
-      background-image:url("https://dhguaomtjclcldkkhlmt.supabase.co/storage/v1/object/public/meanwhirls/Background.png");
+      background-image:url("https://dhguaomtjclcldkkhlmt.supabase.co/storage/v1/render/image/public/meanwhirls/Background.png?width=1200&quality=75");
       background-size:cover;background-position:center center;
       padding:2rem 2rem 1.75rem;text-align:center;
     }
@@ -506,7 +506,10 @@
         <div class="form-group"><label class="form-label">Burn Victim Name *</label><input class="form-input" id="edit-subject" /></div>
         <div class="form-group"><label class="form-label">The Burn <span class="form-label-note">(optional)</span></label><textarea class="form-textarea" id="edit-text"></textarea></div>
         <div class="form-group"><label class="form-label">Hashtags <span class="form-label-note">(space-separated)</span></label><input class="form-input" id="edit-hashtags" placeholder="#wild #classic" /></div>
-        <div class="form-group" id="edit-submitter-group"><label class="form-label">Your Name</label><input class="form-input" id="edit-submitter" readonly style="opacity:0.7;cursor:default" /><label class="form-check"><input type="checkbox" id="edit-anonymous" /><span class="form-check-label">Post as <strong>Anonymous</strong></span></label><label class="form-check" id="edit-mw-wrap" style="display:none"><input type="checkbox" id="edit-meanwhirls" /><span class="form-check-label">Post as <strong>MeanWhirls</strong></span></label></div>
+        <div class="form-group" id="edit-submitter-group">
+          <label class="form-label">Posting As</label>
+          <div id="edit-post-as-options" style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.25rem;"></div>
+        </div>
         <div class="form-group"><label class="form-label">Photo <span class="form-label-note">(upload to replace)</span></label>
           <img id="edit-current-img" class="current-img" src="" alt="" style="display:none" />
           <div class="upload-zone" id="edit-upload-zone"><input type="file" id="edit-image" accept="image/*" /><div class="upload-zone-icon">📷</div><div class="upload-zone-text" id="edit-upload-text">Drag &amp; drop or click to replace</div><img id="edit-upload-preview" class="upload-preview" alt="" /></div>
@@ -601,7 +604,7 @@
       } catch(e) {} // non-fatal
     }
     // ── Image resize before upload ────────────────────────────
-    async function resizeImage(file, maxDim=1920, quality=0.82) {
+    async function resizeImage(file, maxDim=_uploadMaxPx, quality=_uploadQuality) {
       return new Promise((resolve) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
@@ -644,6 +647,7 @@
     // ── IP profile helpers ────────────────────────────────────
     let _ipProfile = null;
     let _adminVoteWeight = 10;
+    let _uploadMaxPx = 1920, _uploadQuality = 0.82;
 
     async function getIpProfile() {
       if (_ipProfile) return _ipProfile;
@@ -674,6 +678,15 @@
 
     // ── Utils ─────────────────────────────────────────────────
     const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    // Image URL helper — applies Supabase transform params for display tiers
+    // tier: 'thumb' (card grid), 'detail' (detail sheet), raw otherwise (download)
+    const imgUrl = (url, tier) => {
+      if (!url || !url.includes('supabase.co/storage')) return url;
+      const base = url.split('?')[0].replace('/object/', '/render/image/');
+      if (tier === 'thumb')  return base + '?width=200&quality=70';
+      if (tier === 'detail') return base + '?width=900&quality=82';
+      return url;
+    };
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
     const arraysEqual = (a,b) => a.length===b.length&&[...a].sort().join()===([...b]).sort().join();
     const showToast = msg => { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
@@ -727,6 +740,8 @@
           if(r.key==='badgeicon')           BADGE_ICON_URL        =r.value;
           if(r.key==='anon_mouse_image')    ANON_MOUSE_IMAGE      =r.value;
           if(r.key==='admin_vote_weight')   _adminVoteWeight      =parseFloat(r.value)||10;
+          if(r.key==='upload_max_px')         _uploadMaxPx          =parseInt(r.value)||1920;
+          if(r.key==='upload_quality')        _uploadQuality        =parseFloat(r.value)||0.82;
         });
       } catch(e){}
       const hash=window.location.hash;
@@ -990,7 +1005,7 @@
       document.getElementById('detail-header-title').textContent=entry.subject;
       // Photo
       const imgEl=document.getElementById('detail-img'),phEl=document.getElementById('detail-placeholder'),dlBtn=document.getElementById('detail-download'),numBadge=document.getElementById('detail-img-num');
-      if(entry.image_url){imgEl.src=entry.image_url;imgEl.style.display='block';phEl.style.display='none';dlBtn.href=entry.image_url;dlBtn.style.display='inline-flex';}
+      if(entry.image_url){imgEl.src=imgUrl(entry.image_url,'detail');imgEl.style.display='block';phEl.style.display='none';dlBtn.href=entry.image_url;dlBtn.style.display='inline-flex';}
       else{imgEl.style.display='none';phEl.innerHTML=PLACEHOLDER_IMAGE_URL?`<img src="${esc(PLACEHOLDER_IMAGE_URL)}" style="max-width:100%;max-height:55vh;object-fit:contain"/>`:(PLACEHOLDER_EMOJI||'🔥');phEl.style.display='flex';dlBtn.style.display='none';}
       numBadge.textContent=entry.ui_order?'#'+entry.ui_order:'';
       // Title + text
@@ -1086,7 +1101,7 @@
       entries.forEach((e,i)=>{
         const card=document.createElement('div');card.className='entry-card';card.style.animationDelay=(i*0.05)+'s';
         card.addEventListener('click',()=>openDetail(e));
-        if(e.image_url){const wrap=document.createElement('div');wrap.className='entry-img-wrap';if(e.ui_order){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+e.ui_order;wrap.appendChild(n);}const img=document.createElement('img');img.className='entry-img';img.src=e.image_url;img.alt=e.subject;wrap.appendChild(img);card.appendChild(wrap);}
+        if(e.image_url){const wrap=document.createElement('div');wrap.className='entry-img-wrap';if(e.ui_order){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+e.ui_order;wrap.appendChild(n);}const img=document.createElement('img');img.className='entry-img';img.src=imgUrl(e.image_url,'thumb');img.alt=e.subject;wrap.appendChild(img);card.appendChild(wrap);}
         else card.appendChild(makePlaceholder(e.ui_order));
         const body=document.createElement('div');body.className='entry-body';
         body.innerHTML=`<div class="entry-subject">${esc(e.subject)}</div>`;
@@ -1174,8 +1189,31 @@
     // ── Edit modal ────────────────────────────────────────────
     const editModal=document.getElementById('edit-modal');
     let editImageFile=null;
-    function openEditModal(entry,isAdmin){
-      document.getElementById('edit-entry-id').value=entry.id;document.getElementById('edit-subject').value=entry.subject;document.getElementById('edit-text').value=entry.text||'';document.getElementById('edit-hashtags').value=(entry.hashtags||[]).join(' ');document.getElementById('edit-submitter').value=getDisplayName();document.getElementById('edit-anonymous').checked=entry.display_author==='Anonymous';const _emwEl=document.getElementById('edit-meanwhirls');if(_emwEl)_emwEl.checked=entry.is_mean_whirls||false;document.getElementById('edit-existing-image').value=entry.image_url||'';document.getElementById('edit-orig-subject').value=entry.subject;document.getElementById('edit-orig-text').value=entry.text||'';document.getElementById('edit-orig-hashtags').value=(entry.hashtags||[]).sort().join(' ');document.getElementById('edit-status').style.display='none';editImageFile=null;document.getElementById('edit-upload-text').textContent='Drag & drop or click to replace';document.getElementById('edit-upload-preview').style.display='none';document.getElementById('edit-image').value='';
+    function openEditModal(entry,_unused){
+      document.getElementById('edit-entry-id').value=entry.id;
+      document.getElementById('edit-subject').value=entry.subject;
+      document.getElementById('edit-text').value=entry.text||'';
+      document.getElementById('edit-hashtags').value=(entry.hashtags||[]).join(' ');
+      document.getElementById('edit-existing-image').value=entry.image_url||'';
+      document.getElementById('edit-orig-subject').value=entry.subject;
+      document.getElementById('edit-orig-text').value=entry.text||'';
+      document.getElementById('edit-orig-hashtags').value=(entry.hashtags||[]).sort().join(' ');
+      document.getElementById('edit-status').style.display='none';
+      editImageFile=null;
+      document.getElementById('edit-upload-text').textContent='Drag & drop or click to replace';
+      document.getElementById('edit-upload-preview').style.display='none';
+      document.getElementById('edit-image').value='';
+      // Build post-as radios
+      const name=getDisplayName();
+      const admin=isAdmin();
+      const currentVal=entry.is_mean_whirls?'MeanWhirls':(entry.display_author==='Anonymous'?'Anonymous':name);
+      const options=admin
+        ?[['edit-post-mw','MeanWhirls'],['edit-post-name',name],['edit-post-anon','Anonymous']]
+        :[['edit-post-name',name],['edit-post-anon','Anonymous']];
+      const radioStyle='display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;';
+      document.getElementById('edit-post-as-options').innerHTML=options.map(o=>
+        `<label style="${radioStyle}"><input type="radio" name="edit-post-as" value="${o[1]}" ${(o[1]===currentVal||(currentVal===name&&o[0]==='edit-post-name'))?'checked':''} style="accent-color:var(--deep-pink)" /><strong>${o[1]}</strong></label>`
+      ).join('');
       document.getElementById('edit-modal-note').textContent='✏️ Only edit your own entry. Changes go through moderation. Hashtag-only changes apply immediately.';
       document.getElementById('edit-submitter-group').style.display='block';document.getElementById('edit-submit-btn').innerHTML='💗 Submit Edit for Review';
       const curImg=document.getElementById('edit-current-img');if(entry.image_url){curImg.src=entry.image_url;curImg.style.display='block';}else{curImg.style.display='none';}
@@ -1192,7 +1230,9 @@
 
     document.getElementById('edit-submit-btn').addEventListener('click',async()=>{
       const entryId=document.getElementById('edit-entry-id').value,subject=document.getElementById('edit-subject').value.trim(),text=document.getElementById('edit-text').value.trim(),hashtagRaw=document.getElementById('edit-hashtags').value.trim(),existingImg=document.getElementById('edit-existing-image').value,origSubject=document.getElementById('edit-orig-subject').value,origText=document.getElementById('edit-orig-text').value,origTagsStr=document.getElementById('edit-orig-hashtags').value;
-      const anonymous=document.getElementById('edit-anonymous').checked,postAsMW=isAdmin()&&document.getElementById('edit-meanwhirls').checked;
+      const selectedPostAs=document.querySelector('input[name="edit-post-as"]:checked')?.value||getDisplayName();
+      const postAsMW=selectedPostAs==='MeanWhirls';
+      const anonymous=selectedPostAs==='Anonymous';
       const submitter=getDisplayName();
       if (!requireAuth('edit')) return;
       if(!subject){showEditStatus('error','Burn victim name required.');return;}
@@ -1714,12 +1754,7 @@ function prefillForms() {
         style="accent-color:var(--deep-pink)" /><strong>${o[1]}</strong></label>`
     ).join('');
   }
-  // hidden submitter field no longer needs a value — we read radios at submit time
-  // Edit form
-  const esub = document.getElementById('edit-submitter');
-  if (esub) esub.value = name;
-  const emwWrap = document.getElementById('edit-mw-wrap');
-  if (emwWrap) emwWrap.style.display = admin ? 'flex' : 'none';
+  // Edit form radios are rebuilt in openEditModal, nothing to prefill here
   // Contact form
   const cname = document.getElementById('contact-name');
   if (cname) { cname.value = name; cname.readOnly = loggedIn; cname.style.opacity = loggedIn ? '0.7' : '1'; cname.style.cursor = loggedIn ? 'default' : ''; }

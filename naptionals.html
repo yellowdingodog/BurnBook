@@ -414,10 +414,8 @@
           <textarea class="form-textarea" id="f-text" placeholder="Where, when, how deeply asleep..."></textarea>
         </div>
         <div class="form-group">
-          <label class="form-label">Your Name</label>
-          <input class="form-input" id="f-submitter" readonly style="opacity:0.7;cursor:default" />
-          <label class="form-check"><input type="checkbox" id="f-anonymous" /><span class="form-check-label">Post as <strong>Anonymous</strong></span></label>
-          <label class="form-check" id="f-mw-wrap" style="display:none"><input type="checkbox" id="f-meanwhirls" /><span class="form-check-label">Post as <strong>MeanWhirls</strong></span></label>
+          <label class="form-label">Posting As</label>
+          <div id="f-author-options" style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.25rem;"></div>
         </div>
         <div class="form-group">
           <label class="form-label">Hashtags <span class="form-label-note">(optional — e.g. #deepnap #snoring)</span></label>
@@ -455,7 +453,10 @@
         <div class="form-group"><label class="form-label">Sleeper's Name *</label><input class="form-input" id="edit-subject" /></div>
         <div class="form-group"><label class="form-label">The Scene <span class="form-label-note">(optional)</span></label><textarea class="form-textarea" id="edit-text"></textarea></div>
         <div class="form-group"><label class="form-label">Hashtags</label><input class="form-input" id="edit-hashtags" placeholder="#deepnap #snoring" /></div>
-        <div class="form-group" id="edit-submitter-group"><label class="form-label">Your Name</label><input class="form-input" id="edit-submitter" readonly style="opacity:0.7;cursor:default" /><label class="form-check"><input type="checkbox" id="edit-anonymous" /><span class="form-check-label">Post as <strong>Anonymous</strong></span></label><label class="form-check" id="edit-mw-wrap" style="display:none"><input type="checkbox" id="edit-meanwhirls" /><span class="form-check-label">Post as <strong>MeanWhirls</strong></span></label></div>
+        <div class="form-group" id="edit-submitter-group">
+          <label class="form-label">Posting As</label>
+          <div id="edit-post-as-options" style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.25rem;"></div>
+        </div>
         <div class="form-group"><label class="form-label">Photo <span class="form-label-note">(upload to replace)</span></label>
           <img id="edit-current-img" class="current-img" src="" alt="" style="display:none" />
           <div class="upload-zone" id="edit-upload-zone"><input type="file" id="edit-image" accept="image/*" /><div class="upload-zone-icon">📷</div><div class="upload-zone-text" id="edit-upload-text">Drag &amp; drop or click to replace</div><img id="edit-upload-preview" class="upload-preview" alt="" /></div>
@@ -473,7 +474,7 @@
       <div class="modal-body">
         <div class="modal-note">Once submitted, this entry will be immediately hidden while we review your request.</div>
         <input type="hidden" id="del-entry-id" />
-        <div class="form-group"><label class="form-label">Your Name</label><input class="form-input" id="del-name" placeholder="Your name" /></div>
+        <div class="form-group" id="del-name-group"><label class="form-label">Your Name</label><input class="form-input" id="del-name" placeholder="Your name" /></div>
         <div class="form-group"><label class="form-label">Reason *</label><textarea class="form-textarea" id="del-reason" placeholder="Why should this be removed?" style="min-height:90px"></textarea></div>
         <button class="btn btn-primary" id="del-submit-btn">Submit Removal Request</button>
         <div id="del-status" style="display:none" class="alert"></div>
@@ -507,7 +508,8 @@
     const BUCKET = 'burnbook-images';
     const getSb = () => window._sb;
 
-    let BADGE_ICON_URL = '', ANON_MOUSE_IMAGE = '';
+    let BADGE_ICON_URL = '', ANON_MOUSE_IMAGE = '', NAP_PLACEHOLDER_IMAGE_URL = '';
+    let _uploadMaxPx = 1920, _uploadQuality = 0.82;
     let PLACEHOLDER_EMOJI = '😴', PLACEHOLDER_IMAGE_URL = '';
     let activeFilter = null, allEntries = [], currentDetailEntry = null;
     let myVotes = JSON.parse(localStorage.getItem('mw_nap_votes') || '{}');
@@ -549,7 +551,7 @@
       } catch(e) {} // non-fatal
     }
     // ── Image resize before upload ────────────────────────────
-    async function resizeImage(file, maxDim=1920, quality=0.82) {
+    async function resizeImage(file, maxDim=_uploadMaxPx, quality=_uploadQuality) {
       return new Promise((resolve) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
@@ -594,6 +596,15 @@
 
     // ── Utils ─────────────────────────────────────────────────
     const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    // Image URL helper — applies Supabase transform params for display tiers
+    // tier: 'thumb' (card grid), 'detail' (detail sheet), raw otherwise (download)
+    const imgUrl = (url, tier) => {
+      if (!url || !url.includes('supabase.co/storage')) return url;
+      const base = url.split('?')[0].replace('/object/', '/render/image/');
+      if (tier === 'thumb')  return base + '?width=200&quality=70';
+      if (tier === 'detail') return base + '?width=900&quality=82';
+      return url;
+    };
     const parseHashtags = str => (str||'').match(/#\w+/g)?.map(t=>t.toLowerCase())||[];
     const arraysEqual = (a,b) => a.length===b.length&&[...a].sort().join()===([...b]).sort().join();
     const showToast = msg => { const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); };
@@ -601,7 +612,7 @@
     function makeBadgeMW() {
       const s=document.createElement('span');s.className='badge-mw';
       if(BADGE_ICON_URL){const img=document.createElement('img');img.src=BADGE_ICON_URL;img.alt='';s.appendChild(img);}
-      else{s.appendChild(document.createTextNode('🥍 '));}
+      else{const sp=document.createElement('span');sp.className='badge-mw-text';sp.textContent='🥍';s.appendChild(sp);}
       s.appendChild(document.createTextNode('MeanWhirls'));
       return s;
     }
@@ -624,8 +635,9 @@
     function makePlaceholder(num){
       const div=document.createElement('div');div.className='entry-img-placeholder';
       if(num){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+num;div.appendChild(n);}
-      if(PLACEHOLDER_IMAGE_URL){const img=document.createElement('img');img.src=PLACEHOLDER_IMAGE_URL;img.style.cssText='width:100%;height:100%;object-fit:contain';div.appendChild(img);}
-      else div.appendChild(document.createTextNode(PLACEHOLDER_EMOJI||'😴'));
+      const _napPhUrl=NAP_PLACEHOLDER_IMAGE_URL||PLACEHOLDER_IMAGE_URL;
+      if(_napPhUrl){const img=document.createElement('img');img.src=_napPhUrl;img.style.cssText='width:100%;height:100%;object-fit:contain';div.appendChild(img);}
+      else div.appendChild(document.createTextNode(PLACEHOLDER_EMOJI||'🛌'));
       return div;
     }
 
@@ -636,8 +648,11 @@
         cfg.forEach(r=>{
           if(r.key==='badgeicon')        BADGE_ICON_URL        =r.value;
           if(r.key==='anon_mouse_image') ANON_MOUSE_IMAGE      =r.value;
-          if(r.key==='placeholderemoji') PLACEHOLDER_EMOJI     =r.value;
-          if(r.key==='placeholderimage') PLACEHOLDER_IMAGE_URL =r.value;
+          if(r.key==='placeholderemoji')       PLACEHOLDER_EMOJI         =r.value;
+          if(r.key==='placeholderimage')       PLACEHOLDER_IMAGE_URL     =r.value;
+          if(r.key==='nap_placeholder_image')  NAP_PLACEHOLDER_IMAGE_URL =r.value;
+          if(r.key==='upload_max_px')          _uploadMaxPx              =parseInt(r.value)||1920;
+          if(r.key==='upload_quality')         _uploadQuality            =parseFloat(r.value)||0.82;
         });
       }catch(e){}
       const hash=window.location.hash;
@@ -692,7 +707,7 @@
       entries.forEach((e,i)=>{
         const card=document.createElement('div');card.className='entry-card';card.style.animationDelay=(i*0.05)+'s';
         card.addEventListener('click',()=>openDetail(e));
-        if(e.image_url){const wrap=document.createElement('div');wrap.className='entry-img-wrap';if(e.ui_order){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+e.ui_order;wrap.appendChild(n);}const img=document.createElement('img');img.className='entry-img';img.src=e.image_url;img.alt=e.subject;wrap.appendChild(img);card.appendChild(wrap);}
+        if(e.image_url){const wrap=document.createElement('div');wrap.className='entry-img-wrap';if(e.ui_order){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+e.ui_order;wrap.appendChild(n);}const img=document.createElement('img');img.className='entry-img';img.src=imgUrl(e.image_url,'thumb');img.alt=e.subject;wrap.appendChild(img);card.appendChild(wrap);}
         else card.appendChild(makePlaceholder(e.ui_order));
         const body=document.createElement('div');body.className='entry-body';
         body.innerHTML=`<div class="entry-subject">${esc(e.subject)}</div>`;
@@ -721,8 +736,8 @@
       document.getElementById('detail-header-title').textContent=entry.subject;
       // Photo
       const imgEl=document.getElementById('detail-img'),phEl=document.getElementById('detail-placeholder'),dlBtn=document.getElementById('detail-download'),numBadge=document.getElementById('detail-img-num');
-      if(entry.image_url){imgEl.src=entry.image_url;imgEl.style.display='block';phEl.style.display='none';dlBtn.href=entry.image_url;dlBtn.style.display='inline-flex';}
-      else{imgEl.style.display='none';phEl.textContent=PLACEHOLDER_IMAGE_URL?'':PLACEHOLDER_EMOJI||'😴';phEl.style.display='flex';dlBtn.style.display='none';}
+      if(entry.image_url){imgEl.src=imgUrl(entry.image_url,'detail');imgEl.style.display='block';phEl.style.display='none';dlBtn.href=entry.image_url;dlBtn.style.display='inline-flex';}
+      else{imgEl.style.display='none';phEl.innerHTML=(NAP_PLACEHOLDER_IMAGE_URL||PLACEHOLDER_IMAGE_URL)?`<img src="${esc(NAP_PLACEHOLDER_IMAGE_URL||PLACEHOLDER_IMAGE_URL)}" style="max-width:100%;max-height:55vh;object-fit:contain"/>`:(PLACEHOLDER_EMOJI||'🛌');phEl.style.display='flex';dlBtn.style.display='none';}
       numBadge.textContent=entry.ui_order?'#'+entry.ui_order:'';
       // Title + text
       document.getElementById('detail-subject').textContent=entry.subject;
@@ -858,7 +873,7 @@
         comments.forEach(c=>{
           const isOwn=c.ip_hash===ipHash;
           const item=document.createElement('div');item.className='comment-item';
-          item.innerHTML=`<div class="comment-author">${esc(c.author)}</div><div class="comment-text">${esc(c.text)}</div>`;
+          item.innerHTML=`<div class="comment-author">${esc(c.author)}</div><div class="comment-text" data-ctext="${esc(c.id)}">${esc(c.text)}</div>`;
           const meta=document.createElement('div');meta.className='comment-meta';
           const date=document.createElement('span');date.className='comment-date';date.textContent=new Date(c.created_at).toLocaleString();meta.appendChild(date);
           if(isOwn){
@@ -927,8 +942,8 @@
           card.addEventListener('click',()=>{goHome();setTimeout(()=>{const entry=allEntries.find(en=>en.id===e.id);if(entry)openDetail(entry);},150);});
           const rankEl=document.createElement('div');rankEl.className='hot-rank';rankEl.textContent=i+1;
           const imgEl=document.createElement('div');imgEl.className='hot-img';
-          if(e.image_url){const img=document.createElement('img');img.src=e.image_url;img.alt=e.subject;imgEl.appendChild(img);}
-          else imgEl.textContent=PLACEHOLDER_EMOJI||'😴';
+          if(e.image_url){const img=document.createElement('img');img.src=imgUrl(e.image_url,'thumb');img.alt=e.subject;imgEl.appendChild(img);}
+          else imgEl.textContent=PLACEHOLDER_EMOJI||'🛌';
           const body=document.createElement('div');body.className='hot-body';
           body.innerHTML=`<div class="hot-subject">#${e.ui_order||'?'} — ${esc(e.subject)}</div><div class="hot-text">${esc(e.text||'')}</div><div class="hot-comments">💬 <span>${e.commentCount}</span> comment${e.commentCount!==1?'s':''}</div>`;
           card.appendChild(rankEl);card.appendChild(imgEl);card.appendChild(body);list.appendChild(card);
@@ -947,7 +962,8 @@
 
     document.getElementById('submit-btn').addEventListener('click',async()=>{
       const subject=document.getElementById('f-subject').value.trim(),text=document.getElementById('f-text').value.trim(),hashtagRaw=document.getElementById('f-hashtags').value.trim();
-      const anonymous=document.getElementById('f-anonymous').checked,postAsMW=isAdmin()&&document.getElementById('f-meanwhirls').checked;
+      const _selPostAs=document.querySelector('input[name="f-post-as"]:checked')?.value||getDisplayName();
+      const postAsMW=_selPostAs==='MeanWhirls',anonymous=_selPostAs==='Anonymous';
       const submitter=getDisplayName();
       if(!subject){showStatus('error','Who got caught sleeping?');return;}
       if(!isLoggedIn()){showStatus('error','Sign in to submit.');return;}
@@ -966,11 +982,21 @@
       btn.disabled=false;btn.innerHTML='😴 Submit to the Nap Wall';
     });
 
-    function resetSubmitForm(){['f-subject','f-text','f-hashtags'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-anonymous').checked=false;const fmw=document.getElementById('f-meanwhirls');if(fmw)fmw.checked=false;selectedFile=null;document.getElementById('upload-text').textContent='Drag & drop or click to upload';const p=document.getElementById('upload-preview');p.style.display='none';p.src='';document.getElementById('f-image').value='';}
+    function resetSubmitForm(){['f-subject','f-text','f-hashtags'].forEach(id=>document.getElementById(id).value='');const firstRadio=document.querySelector('input[name="f-post-as"]');if(firstRadio)firstRadio.checked=true;selectedFile=null;document.getElementById('upload-text').textContent='Drag & drop or click to upload';const p=document.getElementById('upload-preview');p.style.display='none';p.src='';document.getElementById('f-image').value='';}
 
     // ── Delete request ────────────────────────────────────────
     const deleteModal=document.getElementById('delete-modal');
-    function openDeleteRequestModal(entry){if(!entry)return;document.getElementById('del-entry-id').value=entry.id;document.getElementById('del-reason').value='';document.getElementById('del-status').style.display='none';const _dn=document.getElementById('del-name');if(_dn)_dn.value=isLoggedIn()?getDisplayName():'';deleteModal.classList.add('open');document.body.style.overflow='hidden';}
+    function openDeleteRequestModal(entry){
+  if(!entry)return;
+  document.getElementById('del-entry-id').value=entry.id;
+  document.getElementById('del-reason').value='';
+  document.getElementById('del-status').style.display='none';
+  const nameGroup=document.getElementById('del-name-group');
+  const nameInput=document.getElementById('del-name');
+  if(nameGroup)nameGroup.style.display='block';
+  if(nameInput)nameInput.value=isLoggedIn()?getDisplayName():'';
+  deleteModal.classList.add('open');document.body.style.overflow='hidden';
+}
     function closeDeleteModal(){deleteModal.classList.remove('open');document.body.style.overflow='';}
     document.getElementById('delete-modal-close').addEventListener('click',closeDeleteModal);
     deleteModal.addEventListener('click',e=>{if(e.target===deleteModal)closeDeleteModal();});
@@ -991,9 +1017,29 @@
     const editModal=document.getElementById('edit-modal');
     let editImageFile=null;
     function openEditModal(entry){
-      document.getElementById('edit-entry-id').value=entry.id;document.getElementById('edit-subject').value=entry.subject;document.getElementById('edit-text').value=entry.text||'';document.getElementById('edit-hashtags').value=(entry.hashtags||[]).join(' ');document.getElementById('edit-submitter').value=getDisplayName();document.getElementById('edit-anonymous').checked=entry.display_author==='Anonymous';const _emwEl=document.getElementById('edit-meanwhirls');if(_emwEl)_emwEl.checked=entry.is_mean_whirls||false;document.getElementById('edit-existing-image').value=entry.image_url||'';document.getElementById('edit-orig-subject').value=entry.subject;document.getElementById('edit-orig-text').value=entry.text||'';document.getElementById('edit-orig-hashtags').value=(entry.hashtags||[]).sort().join(' ');document.getElementById('edit-status').style.display='none';editImageFile=null;document.getElementById('edit-upload-text').textContent='Drag & drop or click to replace';document.getElementById('edit-upload-preview').style.display='none';document.getElementById('edit-image').value='';
+      document.getElementById('edit-entry-id').value=entry.id;
+      document.getElementById('edit-subject').value=entry.subject;
+      document.getElementById('edit-text').value=entry.text||'';
+      document.getElementById('edit-hashtags').value=(entry.hashtags||[]).join(' ');
+      document.getElementById('edit-existing-image').value=entry.image_url||'';
+      document.getElementById('edit-orig-subject').value=entry.subject;
+      document.getElementById('edit-orig-text').value=entry.text||'';
+      document.getElementById('edit-orig-hashtags').value=(entry.hashtags||[]).sort().join(' ');
+      document.getElementById('edit-status').style.display='none';
+      editImageFile=null;
+      document.getElementById('edit-upload-text').textContent='Drag & drop or click to replace';
+      document.getElementById('edit-upload-preview').style.display='none';
+      document.getElementById('edit-image').value='';
+      // Build post-as radios
+      const _eName=getDisplayName(),_eAdmin=isAdmin();
+      const _eCurVal=entry.is_mean_whirls?'MeanWhirls':(entry.display_author==='Anonymous'?'Anonymous':_eName);
+      const _eOpts=_eAdmin?[['edit-post-mw','MeanWhirls'],['edit-post-name',_eName],['edit-post-anon','Anonymous']]:[['edit-post-name',_eName],['edit-post-anon','Anonymous']];
+      const _eRadioStyle='display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;';
+      document.getElementById('edit-post-as-options').innerHTML=_eOpts.map(o=>
+        `<label style="${_eRadioStyle}"><input type="radio" name="edit-post-as" value="${o[1]}" ${(o[1]===_eCurVal||(o[0]==='edit-post-name'&&_eCurVal===_eName))?'checked':''} style="accent-color:var(--sky)" /><strong>${o[1]}</strong></label>`
+      ).join('');
       document.getElementById('edit-modal-note').textContent='✏️ Only edit your own entry. Changes go through moderation. Hashtag-only changes apply immediately.';
-      document.getElementById('edit-submitter-group').style.display='block';document.getElementById('edit-submit-btn').innerHTML='Submit Edit for Review';
+      document.getElementById('edit-submitter-group').style.display='block';document.getElementById('edit-submit-btn').innerHTML='😴 Submit Edit for Review';
       const curImg=document.getElementById('edit-current-img');if(entry.image_url){curImg.src=entry.image_url;curImg.style.display='block';}else{curImg.style.display='none';}
       editModal.classList.add('open');document.body.style.overflow='hidden';
     }
@@ -1008,7 +1054,8 @@
 
     document.getElementById('edit-submit-btn').addEventListener('click',async()=>{
       const entryId=document.getElementById('edit-entry-id').value,subject=document.getElementById('edit-subject').value.trim(),text=document.getElementById('edit-text').value.trim(),hashtagRaw=document.getElementById('edit-hashtags').value.trim(),existingImg=document.getElementById('edit-existing-image').value,origSubject=document.getElementById('edit-orig-subject').value,origText=document.getElementById('edit-orig-text').value,origTagsStr=document.getElementById('edit-orig-hashtags').value;
-      const anonymous=document.getElementById('edit-anonymous').checked,postAsMW=isAdmin()&&document.getElementById('edit-meanwhirls').checked;
+      const _editPostAs=document.querySelector('input[name="edit-post-as"]:checked')?.value||getDisplayName();
+      const postAsMW=_editPostAs==='MeanWhirls',anonymous=_editPostAs==='Anonymous';
       const submitter=getDisplayName();
       if(!subject){showEditStatus('error','Sleeper name required.');return;}
       if(await isBlocked()){showEditStatus('error','Your access has been restricted.');return;}
@@ -1196,6 +1243,7 @@ async function signOut() {
   await getSb().auth.signOut();
   _currentUser = null; _currentProfile = null;
   updateAuthUI();
+  loadEntries();
 }
 
 // ── Password recovery ─────────────────────────────────
@@ -1468,14 +1516,18 @@ function updateAuthUI() {
 function prefillForms() {
   const name = isLoggedIn() ? getDisplayName() : '';
   const admin = isAdmin();
-  const fsub = document.getElementById('f-submitter');
-  if (fsub) fsub.value = name;
-  const fmwWrap = document.getElementById('f-mw-wrap');
-  if (fmwWrap) fmwWrap.style.display = admin ? 'flex' : 'none';
-  const esub = document.getElementById('edit-submitter');
-  if (esub) esub.value = name;
-  const emwWrap = document.getElementById('edit-mw-wrap');
-  if (emwWrap) emwWrap.style.display = admin ? 'flex' : 'none';
+  // Build submit post-as radios
+  const authorOpts = document.getElementById('f-author-options');
+  if (authorOpts) {
+    const radioStyle = 'display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;';
+    const options = admin
+      ? [['f-post-mw','MeanWhirls'], ['f-post-name',name], ['f-post-anon','Anonymous']]
+      : [['f-post-name',name], ['f-post-anon','Anonymous']];
+    authorOpts.innerHTML = options.map((o,i) =>
+      `<label style="${radioStyle}"><input type="radio" name="f-post-as" id="${o[0]}" value="${o[1]}" ${i===0?'checked':''} style="accent-color:var(--sky)" /><strong>${o[1]}</strong></label>`
+    ).join('');
+  }
+  // Edit form radios are rebuilt in openEditModal
   const cname = document.getElementById('contact-name');
   if (cname) { cname.value = name; }
 }
@@ -1499,6 +1551,7 @@ function requireAuth(action) {
     function onAuthSuccess() {
       updateAuthUI();
       loadEntries();
+      if (currentDetailEntry) openDetail(currentDetailEntry);
     }
 
     init();
