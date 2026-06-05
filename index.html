@@ -134,10 +134,16 @@
     .card-comment-count{font-size:0.68rem;color:var(--muted);padding:0.35rem 1.25rem 0.65rem;display:flex;align-items:center;gap:0.3rem;}
     .card-comment-count span{color:var(--deep-pink);font-weight:700;}
 
-    /* Detail page */
-    #detail-page{display:none;}
-    .detail-back{display:inline-flex;align-items:center;gap:0.5rem;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;margin-bottom:1.75rem;border:1.5px solid rgba(200,30,90,0.2);padding:0.45rem 1rem;border-radius:2px;transition:all 0.2s;background:none;}
-    .detail-back:hover{border-color:var(--pink);color:var(--deep-pink);background:var(--blush);}
+    /* Detail sheet overlay */
+    #detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+    #detail-overlay.open{opacity:1;pointer-events:all;}
+    #detail-page{position:fixed;bottom:0;left:0;right:0;z-index:201;background:var(--white);border-radius:18px 18px 0 0;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.32,0.72,0,1);box-shadow:0 -4px 40px rgba(0,0,0,0.22);}
+    #detail-page.open{transform:translateY(0);}
+    .detail-sheet-handle{width:40px;height:4px;background:rgba(0,0,0,0.15);border-radius:2px;margin:10px auto 0;flex-shrink:0;}
+    .detail-sheet-header{display:flex;align-items:center;justify-content:space-between;padding:0.65rem 1rem 0.5rem;position:sticky;top:0;background:var(--white);z-index:2;border-bottom:1px solid rgba(200,30,90,0.1);}
+    .detail-close-btn{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.35rem 0.85rem;background:none;transition:all 0.2s;}
+    .detail-close-btn:hover{border-color:var(--pink);color:var(--deep-pink);background:var(--blush);}
+    .detail-sheet-body{padding:1rem 1rem 2rem;}
     .detail-wrap{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;align-items:start;}
     @media(max-width:700px){.detail-wrap{grid-template-columns:1fr;}}
     .detail-img-panel{background:linear-gradient(135deg,#1a0a12,#3d0f25);border-radius:2px;overflow:hidden;box-shadow:4px 6px 32px var(--shadow);display:flex;align-items:center;justify-content:center;min-height:280px;position:relative;}
@@ -367,8 +373,14 @@
       </div>
 
       <!-- Detail view -->
+      <div id="detail-overlay" onclick="closeDetail()"></div>
       <div id="detail-page">
-        <button class="detail-back" onclick="closeDetail()">← Back to Burn Book</button>
+        <div class="detail-sheet-handle"></div>
+        <div class="detail-sheet-header">
+          <button class="detail-close-btn" onclick="closeDetail()">← Back to Burn Book</button>
+          <span id="detail-header-title" style="font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:700;color:var(--deep-pink);max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:0;transition:opacity 0.2s"></span>
+        </div>
+        <div class="detail-sheet-body">
         <div class="detail-wrap">
           <!-- Left: image + share + removal -->
           <div>
@@ -406,6 +418,7 @@
             <!-- Comments -->
             <div id="detail-comments" class="comments-section"></div>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -963,12 +976,13 @@
       form.appendChild(ta);form.appendChild(btn);item.appendChild(form);ta.focus();
     }
 
-    // ── Detail page ───────────────────────────────────────────
     async function openDetail(entry) {
       currentDetailEntry=entry;
-      document.getElementById('book-grid-view').style.display='none';
-      document.getElementById('detail-page').style.display='block';
+      const sheet=document.getElementById('detail-page');
+      const overlay=document.getElementById('detail-overlay');
       window.location.hash='entry-'+entry.id;
+      // Populate header title
+      document.getElementById('detail-header-title').textContent=entry.subject;
       const imgEl=document.getElementById('detail-img'),phEl=document.getElementById('detail-placeholder'),dlBtn=document.getElementById('detail-download'),numBadge=document.getElementById('detail-img-num');
       if(entry.image_url){imgEl.src=entry.image_url;imgEl.style.display='block';phEl.style.display='none';dlBtn.href=entry.image_url;dlBtn.style.display='inline-flex';}
       else{imgEl.style.display='none';phEl.innerHTML=PLACEHOLDER_IMAGE_URL?`<img src="${esc(PLACEHOLDER_IMAGE_URL)}" style="max-width:100%;max-height:520px;object-fit:contain"/>`:(PLACEHOLDER_EMOJI||'🔥');phEl.style.display='flex';dlBtn.style.display='none';}
@@ -981,7 +995,6 @@
       const metaEl=document.getElementById('detail-meta-row');metaEl.innerHTML='';
       if(entry.is_mean_whirls)metaEl.appendChild(makeBadgeMW());
       else{const a=document.createElement('span');a.className='entry-author';const byNode=document.createTextNode('by ');const strong=document.createElement('strong');if(entry.display_author==='Anonymous'){strong.appendChild(makeAnonDisplay());}else{strong.textContent=entry.display_author;}a.appendChild(byNode);a.appendChild(strong);metaEl.appendChild(a);}
-      // Show Edit only to entry owner or admin
       const _prof = await getIpProfile();
       const _ip   = await getIpHash();
       const _isOwner = (entry.user_id && entry.user_id === getUserId()) || (entry.ip_hash && entry.ip_hash === _ip);
@@ -996,12 +1009,34 @@
       document.getElementById('share-url').value=shareUrl;
       document.getElementById('share-fb').href=`https://www.facebook.com/sharer/sharer.php?u=${enc}`;
       document.getElementById('share-tw').href=`https://twitter.com/intent/tweet?url=${enc}&text=${txt}`;
-      // Load victim statement and comments
+      // Scroll sheet to top before opening
+      sheet.scrollTop=0;
+      // Open sheet
+      overlay.classList.add('open');
+      sheet.classList.add('open');
+      document.body.style.overflow='hidden';
+      // Fade in header title after scroll threshold
+      const onSheetScroll=()=>{
+        const titleEl=document.getElementById('detail-header-title');
+        if(titleEl) titleEl.style.opacity=sheet.scrollTop>60?'1':'0';
+      };
+      sheet.removeEventListener('scroll',sheet._scrollHandler);
+      sheet._scrollHandler=onSheetScroll;
+      sheet.addEventListener('scroll',onSheetScroll);
+      // Load data
       const ipHash = await getIpHash();
       loadVictimStatement(entry.id, ipHash);
       loadComments(entry.id, ipHash);
     }
-    function closeDetail(){document.getElementById('book-grid-view').style.display='block';document.getElementById('detail-page').style.display='none';currentDetailEntry=null;history.replaceState(null,'',window.location.pathname);}
+    function closeDetail(){
+      const sheet=document.getElementById('detail-page');
+      const overlay=document.getElementById('detail-overlay');
+      overlay.classList.remove('open');
+      sheet.classList.remove('open');
+      document.body.style.overflow='';
+      currentDetailEntry=null;
+      history.replaceState(null,'',window.location.pathname);
+    }
     function copyShareUrl(){navigator.clipboard.writeText(document.getElementById('share-url').value).then(()=>showToast('Link copied! 💗'));}
 
     // ── Load entries ──────────────────────────────────────────
@@ -1218,7 +1253,16 @@
     });
     function showContactStatus(type, msg) { const el=document.getElementById('contact-status'); el.className='alert alert-'+type; el.textContent=msg; el.style.display='block'; }
 
-    document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(contactModal.classList.contains('open')){closeContactModal();return;}if(deleteModal.classList.contains('open')){closeDeleteModal();return;}if(editModal.classList.contains('open')){closeEditModal();return;}if(document.getElementById('detail-page').style.display!=='none'){closeDetail();}});
+    document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(contactModal.classList.contains('open')){closeContactModal();return;}if(deleteModal.classList.contains('open')){closeDeleteModal();return;}if(editModal.classList.contains('open')){closeEditModal();return;}if(document.getElementById('detail-page').classList.contains('open')){closeDetail();}});
+
+    // Swipe down to dismiss detail sheet
+    (()=>{
+      const sheet=document.getElementById('detail-page');
+      let _sy=0,_dy=0,_dragging=false;
+      sheet.addEventListener('touchstart',e=>{if(sheet.scrollTop>0)return;_sy=e.touches[0].clientY;_dy=0;_dragging=true;},{passive:true});
+      sheet.addEventListener('touchmove',e=>{if(!_dragging)return;_dy=e.touches[0].clientY-_sy;if(_dy>0){sheet.style.transform=`translateY(${_dy}px)`;sheet.style.transition='none';}},{passive:true});
+      sheet.addEventListener('touchend',()=>{if(!_dragging)return;_dragging=false;sheet.style.transition='';sheet.style.transform='';if(_dy>80)closeDetail();});
+    })();
 
 
     // ── Rickroll ──────────────────────────────────────────────
