@@ -861,19 +861,6 @@
       }).catch(()=>{});
       panel.scrollIntoView({behavior:'smooth',block:'nearest'});
     }
-            <div class="upload-zone" id="ep-upload"><input type="file" id="ep-image" accept="image/*" /><div class="upload-zone-text">📷 Drag &amp; drop or click to replace</div><img id="ep-preview" class="upload-preview" alt="" /></div>
-          </div>
-          <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-            <button class="btn btn-primary" onclick="saveEntryEdit('${e.id}','${esc(e.image_url||'')}')">💾 Save Changes</button>
-            <button class="btn-a ar" onclick="document.getElementById('entry-edit-panel').innerHTML=''">Cancel</button>
-          </div>
-          <div id="ep-msg" style="display:none" class="alert"></div>
-        </div>`;
-      document.getElementById('ep-image').addEventListener('change',function(){if(this.files[0])handleEditImg(this.files[0]);});
-      document.getElementById('ep-upload').addEventListener('dragover',e=>e.preventDefault());
-      document.getElementById('ep-upload').addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])handleEditImg(e.dataTransfer.files[0]);});
-      panel.scrollIntoView({behavior:'smooth',block:'nearest'});
-    }
     function handleEditImg(file){editImageFile=file;const r=new FileReader();r.onload=ev=>{const p=document.getElementById('ep-preview');p.src=ev.target.result;p.style.display='block';const c=document.getElementById('ep-cur-img');if(c)c.style.display='none';};r.readAsDataURL(file);}
     async function saveEntryEdit(id, existingImg){
       const subject=document.getElementById('ep-subject').value.trim();
