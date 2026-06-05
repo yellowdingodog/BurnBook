@@ -97,8 +97,8 @@
     @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 
     /* Images */
-    .entry-img-wrap{position:relative;width:100%;border-bottom:1.5px solid rgba(200,30,90,0.1);background:linear-gradient(135deg,#2a1a24,#3d0f25);display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;overflow:hidden;}
-    .entry-img{width:100%;height:100%;display:block;object-fit:contain;}
+    .entry-img-wrap{position:relative;width:100%;border-bottom:1.5px solid rgba(200,30,90,0.1);background:linear-gradient(135deg,#2a1a24,#3d0f25);display:flex;align-items:center;justify-content:center;min-height:180px;}
+    .entry-img{width:100%;max-height:360px;display:block;object-fit:contain;}
     .entry-img-num{position:absolute;top:8px;left:8px;z-index:2;background:rgba(0,0,0,0.55);color:#fff;font-size:0.65rem;font-weight:700;letter-spacing:0.08em;padding:0.2rem 0.55rem;border-radius:20px;}
     .entry-img-placeholder{width:100%;min-height:180px;aspect-ratio:4/3;background:linear-gradient(135deg,var(--blush),#fce4ec);display:flex;align-items:center;justify-content:center;font-size:3.5rem;border-bottom:1.5px solid rgba(200,30,90,0.1);position:relative;}
     .entry-img-placeholder img{width:100%;height:100%;object-fit:contain;}
@@ -1005,7 +1005,7 @@
       document.getElementById('detail-header-title').textContent=entry.subject;
       // Photo
       const imgEl=document.getElementById('detail-img'),phEl=document.getElementById('detail-placeholder'),dlBtn=document.getElementById('detail-download'),numBadge=document.getElementById('detail-img-num');
-      if(entry.image_url){imgEl.src=imgUrl(entry.image_url,'detail');imgEl.style.display='block';phEl.style.display='none';dlBtn.href=entry.image_url;dlBtn.style.display='inline-flex';}
+      if(entry.image_url){imgEl.src=imgUrl(entry.image_url,'detail');imgEl.onerror=function(){this.onerror=null;this.src=entry.image_url;};imgEl.style.display='block';phEl.style.display='none';dlBtn.href=entry.image_url;dlBtn.style.display='inline-flex';}
       else{imgEl.style.display='none';phEl.innerHTML=PLACEHOLDER_IMAGE_URL?`<img src="${esc(PLACEHOLDER_IMAGE_URL)}" style="max-width:100%;max-height:55vh;object-fit:contain"/>`:(PLACEHOLDER_EMOJI||'🔥');phEl.style.display='flex';dlBtn.style.display='none';}
       numBadge.textContent=entry.ui_order?'#'+entry.ui_order:'';
       // Title + text
@@ -1101,7 +1101,7 @@
       entries.forEach((e,i)=>{
         const card=document.createElement('div');card.className='entry-card';card.style.animationDelay=(i*0.05)+'s';
         card.addEventListener('click',()=>openDetail(e));
-        if(e.image_url){const wrap=document.createElement('div');wrap.className='entry-img-wrap';if(e.ui_order){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+e.ui_order;wrap.appendChild(n);}const img=document.createElement('img');img.className='entry-img';img.src=imgUrl(e.image_url,'thumb');img.alt=e.subject;wrap.appendChild(img);card.appendChild(wrap);}
+        if(e.image_url){const wrap=document.createElement('div');wrap.className='entry-img-wrap';if(e.ui_order){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+e.ui_order;wrap.appendChild(n);}const img=document.createElement('img');img.className='entry-img';img.src=imgUrl(e.image_url,'thumb');img.alt=e.subject;img.onerror=function(){this.onerror=null;this.src=e.image_url;};wrap.appendChild(img);card.appendChild(wrap);}
         else card.appendChild(makePlaceholder(e.ui_order));
         const body=document.createElement('div');body.className='entry-body';
         body.innerHTML=`<div class="entry-subject">${esc(e.subject)}</div>`;
