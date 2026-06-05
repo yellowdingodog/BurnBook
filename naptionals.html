@@ -296,6 +296,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+  <div id="auth-top-bar" style="background:#0d2137;display:flex;justify-content:flex-end;align-items:center;padding:0.35rem 1rem;gap:0.5rem;border-bottom:1px solid rgba(255,255,255,0.08);min-height:34px;">
+    <div id="auth-widget" style="display:flex;align-items:center;gap:0.5rem;"></div>
+  </div>
+
   <header class="hero">
     <p class="hero-eyebrow"><span>2026 Whirlyball Nationals</span></p>
     <div class="hero-zzz">z z z</div>
@@ -308,7 +312,6 @@
     <button class="nav-btn active" data-tab="book">😴 The Nap Wall</button>
     <button class="nav-btn" data-tab="hot">🏆 Hall of Shame</button>
     <button class="nav-btn" data-tab="submit">📸 Caught One!</button>
-    <div id="auth-widget" style="display:flex;align-items:center;gap:0.5rem;padding:0 0.75rem;margin-left:auto;"></div>
   </nav>
 
   <main class="main">
@@ -1212,19 +1215,6 @@ const AUTH_MODAL_HTML = `
       </div>
 
       <!-- Forgot password form -->
-      <!-- Check email confirmation panel -->
-      <div id="auth-checkemail-form" style="display:none">
-        <div style="text-align:center;padding:1.5rem 0.5rem">
-          <div style="font-size:2.5rem;margin-bottom:0.75rem">📬</div>
-          <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:0.75rem">Check your email!</div>
-          <div style="font-size:0.88rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.6">We sent a confirmation link to <strong id="auth-checkemail-addr"></strong>.<br/>Click it to activate your account, then come back and sign in.</div>
-          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Didn't get it? Check your spam folder. Still nothing?</div>
-          <button class="btn btn-primary" onclick="resendConfirmation()" id="auth-resend-btn">📧 Resend Confirmation Email</button>
-          <div id="auth-resend-msg" style="display:none;margin-top:0.75rem" class="alert"></div>
-          <div style="margin-top:1rem"><a href="#" onclick="showSigninForm();return false;" style="font-size:0.78rem;color:var(--muted)">← Back to sign in</a></div>
-        </div>
-      </div>
-
       <div id="auth-forgot-form" style="display:none">
         <div class="modal-note">Enter your email and we'll send you a link to reset your password. It might take a minute. We're busy.</div>
         <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="auth-forgot-email" type="email" placeholder="your@email.com" /></div>
@@ -1285,7 +1275,6 @@ function showSigninForm() {
   document.getElementById('auth-modal-title').textContent = 'Sign In';
   document.getElementById('auth-signin-form').style.display       = 'block';
   document.getElementById('auth-signup-form').style.display       = 'none';
-  document.getElementById('auth-checkemail-form').style.display   = 'none';
   document.getElementById('auth-forgot-form').style.display       = 'none';
   document.getElementById('auth-setpw-form').style.display        = 'none';
 }
@@ -1293,7 +1282,6 @@ function showSignupForm() {
   document.getElementById('auth-modal-title').textContent = 'Create Account';
   document.getElementById('auth-signin-form').style.display       = 'none';
   document.getElementById('auth-signup-form').style.display       = 'block';
-  document.getElementById('auth-checkemail-form').style.display   = 'none';
   document.getElementById('auth-forgot-form').style.display       = 'none';
   document.getElementById('auth-setpw-form').style.display        = 'none';
 }
@@ -1301,20 +1289,8 @@ function showForgotForm() {
   document.getElementById('auth-modal-title').textContent = 'Reset Password';
   document.getElementById('auth-signin-form').style.display       = 'none';
   document.getElementById('auth-signup-form').style.display       = 'none';
-  document.getElementById('auth-checkemail-form').style.display   = 'none';
   document.getElementById('auth-forgot-form').style.display       = 'block';
   document.getElementById('auth-setpw-form').style.display        = 'none';
-}
-function showCheckEmailForm(email) {
-  document.getElementById('auth-modal-title').textContent = 'Almost there!';
-  document.getElementById('auth-signin-form').style.display       = 'none';
-  document.getElementById('auth-signup-form').style.display       = 'none';
-  document.getElementById('auth-checkemail-form').style.display   = 'block';
-  document.getElementById('auth-forgot-form').style.display       = 'none';
-  document.getElementById('auth-setpw-form').style.display        = 'none';
-  document.getElementById('auth-checkemail-addr').textContent     = email;
-  document.getElementById('auth-resend-msg').style.display        = 'none';
-  window._pendingConfirmEmail = email;
 }
 function openSetPasswordModal() {
   const m = document.getElementById('setpw-modal');
@@ -1334,21 +1310,7 @@ async function handleSignIn() {
     showToast('💗 Welcome back, ' + getDisplayName() + '!');
     if (typeof onAuthSuccess === 'function') onAuthSuccess();
   } catch(e) {
-    const msg = e.message || '';
-    if (msg.toLowerCase().includes('email not confirmed') || msg.toLowerCase().includes('not confirmed')) {
-      btn.disabled = false; btn.innerHTML = '💗 Sign In';
-      window._pendingConfirmEmail = email;
-      // Show resend option inline
-      err.innerHTML = '';
-      const _msg = document.createTextNode("Your email isn’t confirmed yet. ");
-      const _link = document.createElement('a');
-      _link.href = '#'; _link.style.color = 'var(--deep-pink)';
-      _link.textContent = 'Resend confirmation →';
-      _link.onclick = (ev) => { ev.preventDefault(); showCheckEmailForm(email); };
-      err.appendChild(_msg); err.appendChild(_link); err.style.display = 'block';
-      return;
-    }
-    showAuthErr(err, msg);
+    showAuthErr(err, e.message || '');
   }
   btn.disabled = false; btn.innerHTML = '💗 Sign In';
 }
@@ -1372,30 +1334,14 @@ async function handleSignUp() {
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Creating...'; }
   try {
     await signUp(email, pw, name);
-    showCheckEmailForm(email);
+    closeAuthModal();
+    showToast('💗 Account created! You\'re in.');
   } catch(e) { showAuthErr(err, e.message); }
   if (btn) { btn.disabled = false; btn.innerHTML = '💗 Create Account'; }
 }
 
 function showAuthErr(el, msg, isHtml=false) { if(isHtml){el.innerHTML=msg;}else{el.textContent=msg;} el.style.display='block'; }
 
-async function resendConfirmation() {
-  const email = window._pendingConfirmEmail;
-  if (!email) return;
-  const btn = document.getElementById('auth-resend-btn');
-  const msg = document.getElementById('auth-resend-msg');
-  btn.disabled = true; btn.textContent = 'Sending...';
-  try {
-    const { error } = await getSb().auth.resend({ type: 'signup', email });
-    if (error) throw error;
-    msg.className = 'alert alert-success'; msg.textContent = '✅ Confirmation email resent! Check your inbox (and spam).'; msg.style.display = 'block';
-    btn.textContent = '✅ Sent!';
-    setTimeout(() => { btn.disabled = false; btn.textContent = '📧 Resend Confirmation Email'; }, 5000);
-  } catch(e) {
-    msg.className = 'alert alert-error'; msg.textContent = 'Failed to resend: ' + e.message; msg.style.display = 'block';
-    btn.disabled = false; btn.textContent = '📧 Resend Confirmation Email';
-  }
-}
 
 async function handleForgotPassword() {
   const email = document.getElementById('auth-forgot-email').value.trim();
@@ -1442,7 +1388,7 @@ function updateAuthUI() {
     widget.innerHTML = `<span style="font-size:0.7rem;color:rgba(255,255,255,0.7);letter-spacing:0.05em">👤 ${getDisplayName()}</span>
       ${_adminLink}
       <a href="account.html" style="box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;height:24px;padding:0 8px;font-family:Raleway,sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.25);border-radius:2px;text-decoration:none;background:none;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">My Account</a>
-      <button onclick="signOut()" style="box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;height:24px;padding:0 8px;font-family:Raleway,sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.25);border-radius:2px;background:none;cursor:pointer;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">Sign Out</button>`;
+      <button onclick="signOut()" style="box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;height:20px;padding:0 7px;font-family:Raleway,sans-serif;font-size:0.6rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#0d2137;border:1px solid rgba(255,255,255,0.5);border-radius:2px;background:rgba(255,255,255,0.75);cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='#fff';this.style.color='#0a1a2e'" onmouseout="this.style.background='rgba(255,255,255,0.75)';this.style.color='#0d2137'">Sign Out</button>`;
   } else {
     widget.innerHTML = `<button onclick="openAuthModal()" style="background:none;border:1px solid rgba(255,255,255,0.35);border-radius:2px;padding:0.3rem 0.85rem;font-family:Raleway,sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.8);cursor:pointer;transition:all 0.2s" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.8)';this.style.borderColor='rgba(255,255,255,0.35)'">Sign In / Join</button>`;
   }
