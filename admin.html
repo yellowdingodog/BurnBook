@@ -1938,18 +1938,38 @@
         ];
         if (!_pfItems.length) { tbody.innerHTML = emptyRow(7, 'No images found.'); return; }
         pfRenderTable();
-        // Fetch file sizes in background — store on item and update cell
-        _pfItems.forEach((item, idx) => {
-          fetch(item.image_url, {method:'HEAD'}).then(r => {
-            const bytes = parseInt(r.headers.get('content-length')||'0');
-            item._bytes = bytes;
-            const el = document.getElementById(`pf-size-${idx}`);
-            if (el) el.textContent = bytes ? formatBytes(bytes) : '?';
-          }).catch(() => {
-            const el = document.getElementById(`pf-size-${idx}`);
-            if (el) el.textContent = '?';
+        // Get file sizes via storage API (reliable, no CORS header issues)
+        try {
+          // Extract all file paths from URLs
+          const urlPrefix = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
+          // Group paths for list calls - get all files in bucket root
+          const { data: fileList } = await _sb.storage.from(BUCKET).list('', { limit: 1000 });
+          if (fileList) {
+            const sizeMap = {};
+            fileList.forEach(f => { if (f.metadata?.size) sizeMap[f.name] = f.metadata.size; });
+            _pfItems.forEach((item, idx) => {
+              const fname = item.image_url.split('?')[0].replace(urlPrefix, '').split('/').pop();
+              const bytes = sizeMap[fname];
+              if (bytes != null) {
+                item._bytes = bytes;
+                const el = document.getElementById(`pf-size-${idx}`);
+                if (el) el.textContent = formatBytes(bytes);
+              }
+            });
+          }
+        } catch(sizeErr) {
+          // Fallback: HEAD requests
+          _pfItems.forEach((item, idx) => {
+            fetch(item.image_url, {method:'HEAD'}).then(r => {
+              const bytes = parseInt(r.headers.get('content-length')||'0');
+              if (bytes) {
+                item._bytes = bytes;
+                const el = document.getElementById(`pf-size-${idx}`);
+                if (el) el.textContent = formatBytes(bytes);
+              }
+            }).catch(()=>{});
           });
-        });
+        }
       } catch(err) { tbody.innerHTML = emptyRow(7, 'Failed: ' + err.message); }
     }
 
