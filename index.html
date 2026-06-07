@@ -1551,7 +1551,13 @@
         const limit=parseInt(document.getElementById('hot-count').value)||0;const shown=limit?scored.slice(0,limit):scored;
         if(!shown.length){container.innerHTML=`<div class="empty"><div class="empty-icon">🌡️</div><h3>No votes yet</h3><p style="font-size:.85rem">Be the first to rate a burn!</p></div>`;return;}
         const list=document.createElement('div');list.className='hot-list';let rank=1;
-        shown.forEach((e,i)=>{const tied=i>0&&e.avg===shown[i-1].avg;if(!tied&&i>0)rank++;const isTied=tied||(i<shown.length-1&&e.avg===shown[i+1]?.avg);
+        shown.forEach((e,i)=>{
+          const prev=shown[i-1];
+          const next=shown[i+1];
+          const sameAsPrev=i>0&&e.avg===prev.avg&&e.voteCount===prev.voteCount;
+          const sameAsNext=i<shown.length-1&&e.avg===next?.avg&&e.voteCount===next?.voteCount;
+          if(!sameAsPrev&&i>0)rank++;
+          const isTied=sameAsPrev||sameAsNext;
           const card=document.createElement('div');card.className='hot-card';card.style.animationDelay=(i*0.04)+'s';card.addEventListener('click',()=>{goHome();setTimeout(()=>{const entry=allEntries.find(en=>en.id===e.id);if(entry)openDetail(entry);},150);});
           const rankEl=document.createElement('div');rankEl.className='hot-rank'+(isTied?' tie-rank':'');rankEl.innerHTML=rank+(isTied?`<span class="tie-badge">tie</span>`:'');
           const imgEl=document.createElement('div');imgEl.className='hot-img';if(e.image_url){const img=document.createElement('img');img.src=e.image_url;img.alt=e.subject;imgEl.appendChild(img);}else{imgEl.textContent=PLACEHOLDER_EMOJI||'🔥';}

@@ -263,9 +263,6 @@
       <div class="section-hdr"><span class="section-title">📋 All Entries</span><button class="refresh-btn" onclick="loadEntries()">↺ Refresh</button></div>
       <div id="entry-edit-panel"></div>
       <div class="bulk-bar">
-        <label>Add hashtag to selected:</label>
-        <input id="bulk-tag-input" placeholder="#newtag" />
-        <button onclick="applyBulkTag()">Apply</button>
         <span class="bulk-count" id="bulk-count">0 selected</span>
       </div>
       <div class="tbl-wrap">
@@ -998,12 +995,6 @@
     function updateBulkCount(){document.getElementById('bulk-count').textContent=getSelectedIds().length+' selected';}
     function getSelectedIds(){return[...document.querySelectorAll('.row-cb:checked')].map(cb=>cb.dataset.id);}
     function toggleSelectAll(cb){document.querySelectorAll('.row-cb').forEach(c=>{c.checked=cb.checked;});updateBulkCount();}
-    async function applyBulkTag(){
-      const ids=getSelectedIds(),tags=parseHashtags(document.getElementById('bulk-tag-input').value.trim());
-      if(!ids.length){showToast('No entries selected.');return;}if(!tags.length){showToast('Enter at least one hashtag.');return;}
-      try{const entries=await sbGet('entries',`id=in.(${ids.join(',')})&select=id,hashtags`);await Promise.all(entries.map(e=>sbPatch('entries',`id=eq.${e.id}`,{hashtags:[...new Set([...(e.hashtags||[]),...tags])]})));showToast(`Added ${tags.join(' ')} to ${ids.length} entr${ids.length!==1?'ies':'y'}.`);document.getElementById('bulk-tag-input').value='';document.getElementById('select-all').checked=false;loadEntries();}
-      catch(err){alert('Failed: '+err.message);}
-    }
 
     // ── REORDER ───────────────────────────────────────────────
     let reorderData=[];
