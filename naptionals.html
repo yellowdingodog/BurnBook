@@ -342,19 +342,23 @@
         </div>
         <div class="detail-sheet-body">
 
-          <!-- 1. Title + burn -->
+          <!-- 1. Title -->
           <div class="detail-subject" id="detail-subject"></div>
+
+          <!-- 2. Author (byline under title) -->
+          <div class="detail-meta-row" id="detail-meta-row" style="margin-top:-0.5rem"></div>
+
+          <!-- 3. Burn text -->
           <p class="detail-text" id="detail-text"></p>
 
-          <!-- 2. Photo -->
+          <!-- 4. Photo -->
           <div class="detail-img-panel" id="detail-img-panel">
             <div class="detail-placeholder" id="detail-placeholder" style="display:none"></div>
             <img id="detail-img" class="detail-img" src="" alt="" style="display:none" />
             <div class="detail-img-num" id="detail-img-num"></div>
           </div>
 
-          <!-- 3. Author + hashtags -->
-          <div class="detail-meta-row" id="detail-meta-row"></div>
+          <!-- 5. Hashtags -->
           <div class="detail-hashtags" id="detail-hashtags"></div>
 
           <!-- 4. Actions -->
@@ -422,7 +426,7 @@
           <input class="form-input" id="f-hashtags" placeholder="#deepnap #snoring #legendary" />
         </div>
         <div class="form-group" id="f-quality-group">
-            <label class="form-label">Photo Quality <span class="form-label-note">(only applies if you upload a photo)</span></label>
+            <label class="form-label">Image Quality</label>
             <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.25rem;">
               <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer;"><input type="radio" name="f-quality" value="H" style="accent-color:var(--sky)" /><strong>High</strong> <span style="color:var(--muted);font-size:0.78rem">1920px</span></label>
               <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer;"><input type="radio" name="f-quality" value="M" checked style="accent-color:var(--sky)" /><strong>Medium</strong> <span style="color:var(--muted);font-size:0.78rem">1200px</span></label>
