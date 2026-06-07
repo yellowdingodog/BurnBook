@@ -331,7 +331,8 @@
   </script>
 </head>
 <body>
-  <div id="auth-top-bar" style="background:#7a3050;display:flex;justify-content:flex-end;align-items:center;padding:0.35rem 1rem;gap:0.5rem;border-bottom:1px solid rgba(255,255,255,0.08);min-height:34px;">
+  <div id="auth-top-bar" style="background:#7a3050;display:flex;justify-content:space-between;align-items:center;padding:0.35rem 1rem;gap:0.5rem;border-bottom:1px solid rgba(255,255,255,0.08);min-height:34px;">
+    <button onclick="openContactModal(null,'general')" style="background:none;border:none;font-family:Raleway,sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);cursor:pointer;padding:0;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.6)'">✉️ Contact Us</button>
     <div id="auth-widget" style="display:flex;align-items:center;gap:0.5rem;"></div>
   </div>
 
@@ -565,10 +566,10 @@
     <div class="modal">
       <div class="modal-header"><span class="modal-title">✉️ Contact MeanWhirls</span><button class="modal-close" id="contact-modal-close">✕</button></div>
       <div class="modal-body">
-        <div class="modal-note">Send a message to the Mean Whirls crew about this entry — whether you want to challenge something, correct the record, or flag a concern. We'll review it privately.</div>
+        <div class="modal-note" id="contact-modal-note">Send a message to the Mean Whirls crew — whether you want to challenge something, correct the record, or just say hi.</div>
         <input type="hidden" id="contact-entry-id" />
         <input type="hidden" id="contact-entry-type" value="burn" />
-        <div class="form-group"><label class="form-label">Your Name</label><input class="form-input" id="contact-name" readonly style="opacity:0.7;cursor:default" /></div>
+        <div class="form-group"><label class="form-label">Your Name</label><input class="form-input" id="contact-name" placeholder="Your name" /></div>
         <div class="form-group"><label class="form-label">Subject *</label><input class="form-input" id="contact-subject" placeholder="e.g. I'm not trying to start drama, but..." /></div>
         <div class="form-group"><label class="form-label">Message *</label><textarea class="form-textarea" id="contact-message" placeholder="Tell us what's on your mind..." style="min-height:100px"></textarea></div>
         <button class="btn btn-primary" id="contact-submit-btn">✉️ Send Message</button>
@@ -835,7 +836,7 @@
     function makeCompactHeat(entry){ const vd=allVoteData[entry.id]||{}; const wrap=document.createElement('div'); wrap.className='heat-compact'; wrap.dataset.heatCompact=entry.id; const btn=document.createElement('button'); btn.className='heat-fire-btn'+(vd.myVote?' voted':''); btn.textContent=vd.myVote?`🔥 ${vd.myVote}/10`:'🔥 Rate'; btn.addEventListener('click',e=>{e.stopPropagation();openHeatPicker(entry.id,btn);}); const avg=document.createElement('span'); avg.className='heat-avg'+((vd.avg&&vd.avg>=7)?' hot':''); avg.textContent=vd.avg?`avg ${vd.avg} (${vd.count} vote${vd.count!==1?'s':''})`:''; wrap.appendChild(btn);wrap.appendChild(avg);return wrap; }
     function openHeatPicker(entryId,anchor){ if(pickerOpen){pickerOpen.remove();pickerOpen=null;} const picker=document.createElement('div'); picker.style.cssText='position:fixed;z-index:500;background:#fff;border:1.5px solid rgba(200,30,90,0.2);border-radius:4px;padding:0.6rem;box-shadow:0 4px 20px rgba(0,0,0,0.15);display:flex;gap:0.3rem;flex-wrap:wrap;max-width:220px;'; const vd=allVoteData[entryId]||{}; for(let i=1;i<=10;i++){const pip=document.createElement('button');pip.style.cssText='width:32px;height:32px;border-radius:50%;border:2px solid rgba(200,30,90,0.2);background:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.15s;color:#8c6678;';pip.textContent=i;if(vd.myVote===i)pip.style.cssText+='background:#ff6d00;border-color:#ff6d00;color:#fff;';pip.addEventListener('click',e=>{e.stopPropagation();picker.remove();pickerOpen=null;castHeatVote(entryId,i);});picker.appendChild(pip);} if(vd.myVote){const clr=document.createElement('button');clr.style.cssText='width:100%;font-size:0.65rem;color:#8c6678;text-decoration:underline;background:none;border:none;cursor:pointer;margin-top:0.2rem;';clr.textContent='Clear my vote';clr.addEventListener('click',e=>{e.stopPropagation();picker.remove();pickerOpen=null;castHeatVote(entryId,vd.myVote);});picker.appendChild(clr);} const rect=anchor.getBoundingClientRect(); picker.style.top=(rect.bottom+4)+'px'; picker.style.left=Math.min(rect.left,window.innerWidth-230)+'px'; document.body.appendChild(picker); pickerOpen=picker; setTimeout(()=>{document.addEventListener('click',closePicker,{once:true});},0); }
     function closePicker(){ if(pickerOpen){pickerOpen.remove();pickerOpen=null;} }
-    function renderDetailHeat(entry){ const vd=allVoteData[entry.id]||{}; const el=document.getElementById('detail-heat'); el.innerHTML=''; const label=document.createElement('div');label.className='heat-full-label';label.textContent='🔥 How hot is this burn?';el.appendChild(label); const scale=document.createElement('div');scale.className='heat-scale'; for(let i=1;i<=10;i++){const pip=document.createElement('div');pip.className='heat-pip';if(vd.myVote===i)pip.classList.add('selected');pip.textContent=i;pip.addEventListener('click',()=>castHeatVote(entry.id,i));scale.appendChild(pip);} el.appendChild(scale); if(vd.myVote){const clr=document.createElement('span');clr.className='heat-clear';clr.textContent='Clear my vote';clr.addEventListener('click',()=>castHeatVote(entry.id,vd.myVote));el.appendChild(clr);} if(vd.avg){const result=document.createElement('div');result.className='heat-result';result.innerHTML=`<span>${heatEmoji(vd.avg)}</span> Average: <strong>${vd.avg}/10</strong> from ${vd.count} vote${vd.count!==1?'s':''}`;el.appendChild(result);} }
+    function renderDetailHeat(entry){ const el=document.getElementById('detail-heat'); el.innerHTML=''; const compact=makeCompactHeat(entry); el.appendChild(compact); }
 
     // ── Victim Statement ──────────────────────────────────────
     // Multiple victims allowed; no moderation; account-based ownership; name shown per statement
@@ -1306,12 +1307,22 @@
     const contactModal = document.getElementById('contact-modal');
     function openContactModal(entryId, entryType) {
       document.getElementById('contact-entry-id').value = entryId || '';
-      document.getElementById('contact-entry-type').value = entryType || 'burn';
+      document.getElementById('contact-entry-type').value = entryType || 'general';
       document.getElementById('contact-subject').value = '';
       document.getElementById('contact-message').value = '';
       document.getElementById('contact-status').style.display = 'none';
-      const _cNameEl = document.getElementById('contact-name');
-      if (_cNameEl) _cNameEl.value = getDisplayName();
+      const noteEl = document.getElementById('contact-modal-note');
+      const nameEl = document.getElementById('contact-name');
+      const isGeneral = !entryId;
+      if (noteEl) noteEl.textContent = isGeneral
+        ? 'Got something to say to the Mean Whirls crew? We\'re listening. Probably.'
+        : 'Send a message about this entry — whether you want to challenge something, correct the record, or flag a concern.';
+      if (nameEl) {
+        nameEl.value = isLoggedIn() ? getDisplayName() : '';
+        nameEl.readOnly = isLoggedIn();
+        nameEl.style.opacity = isLoggedIn() ? '0.7' : '1';
+        nameEl.style.cursor = isLoggedIn() ? 'default' : 'text';
+      }
       contactModal.classList.add('open');
       document.body.style.overflow = 'hidden';
     }

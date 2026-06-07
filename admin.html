@@ -1617,6 +1617,7 @@
           const viewBtn = isLegacy ? '' : `<button class="btn-a ae" onclick="openUserDrawer('${p.id}','${esc(p.display_name)}')">👤 View</button>`;
           const tr = document.createElement('tr');
           const reRollBtn = isLegacy ? '' : (p.rickrolled ? `<button class="btn-a ae" title="Reset rickroll" onclick="adminResetRickroll('${p.id}')">🎵 Re-roll</button>` : '');
+           const deleteBtn = isLegacy ? '' : `<button class="btn-a ar" onclick="deleteAccount('${p.id}','${esc(p.display_name)}')">🗑 Delete</button>`;
           tr.innerHTML = `<td style="font-weight:600">${esc(p.display_name)}${isLegacy?'<br><span style="font-size:.65rem;color:var(--muted)">(legacy)</span>':''}</td><td style="font-size:.75rem;color:var(--muted)">${isLegacy?'—':esc(p.email||'—')}</td><td>${adminBadge}</td><td style="white-space:nowrap">${weightInput}</td><td>${statusBadge}</td><td>${noteInput}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(p.created_at)}</td><td style="font-size:.8rem;text-align:center">${p.visit_count||0}</td><td style="white-space:nowrap">${viewBtn} ${reRollBtn} ${blockBtn} ${adminBtn}</td>`;
           tb.appendChild(tr);
         });
@@ -1628,6 +1629,25 @@
       try { await sbPatch('user_profiles', `id=eq.${userId}`, { is_blocked: block }); showToast(block?'⛔ Blocked.':'✅ Unblocked.'); loadAccounts(); }
       catch(err) { alert('Failed: '+err.message); }
     }
+
+    async function deleteAccount(userId, displayName) {
+      if (!confirm(`Permanently delete the account for "${displayName}"?\n\nThis removes their login, profile, and all linked data. Their submitted entries will remain but be unlinked. This cannot be undone.`)) return;
+      try {
+        // Delete from auth (requires admin API — use Supabase JS client)
+        const { error } = await _sb.auth.admin.deleteUser(userId);
+        if (error) throw error;
+        showToast(`🗑 Account deleted: ${displayName}`);
+        loadAccounts();
+      } catch(err) {
+        // auth.admin requires service role key — fall back to just deleting profile
+        try {
+          await sbDelete('user_profiles', `id=eq.${userId}`);
+          showToast(`🗑 Profile deleted: ${displayName}. Auth record may remain — delete from Supabase dashboard if needed.`);
+          loadAccounts();
+        } catch(e2) { alert('Failed: ' + e2.message); }
+      }
+    }
+
     async function toggleAccountAdmin(userId, grant) {
       if (grant  && !confirm('Grant admin access?')) return;
       if (!grant && !confirm('Revoke admin access? Are you sure?')) return;

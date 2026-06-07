@@ -295,7 +295,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <div id="auth-top-bar" style="background:#0d1b2a;display:flex;justify-content:flex-end;align-items:center;padding:0.35rem 1rem;gap:0.5rem;border-bottom:1px solid rgba(255,255,255,0.08);min-height:34px;">
+  <div id="auth-top-bar" style="background:#0d1b2a;display:flex;justify-content:space-between;align-items:center;padding:0.35rem 1rem;gap:0.5rem;border-bottom:1px solid rgba(255,255,255,0.08);min-height:34px;">
+    <button onclick="openContactModal(null,'general')" style="background:none;border:none;font-family:Raleway,sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);cursor:pointer;padding:0;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.6)'">✉️ Contact Us</button>
     <div id="auth-widget" style="display:flex;align-items:center;gap:0.5rem;"></div>
   </div>
 
@@ -509,10 +510,10 @@
     <div class="modal">
       <div class="modal-header"><span class="modal-title">✉️ Contact MeanWhirls</span><button class="modal-close" id="contact-modal-close">✕</button></div>
       <div class="modal-body">
-        <div class="modal-note">Send a message to the Mean Whirls crew about this entry — whether you want to challenge something, correct the record, or flag a concern. We'll review it privately.</div>
+        <div class="modal-note" id="contact-modal-note">Send a message to the Mean Whirls crew.</div>
         <input type="hidden" id="contact-entry-id" />
         <input type="hidden" id="contact-entry-type" value="nap" />
-        <div class="form-group"><label class="form-label">Your Name</label><input class="form-input" id="contact-name" readonly style="opacity:0.7;cursor:default" /></div>
+        <div class="form-group"><label class="form-label">Your Name</label><input class="form-input" id="contact-name" placeholder="Your name" /></div>
         <div class="form-group"><label class="form-label">Subject *</label><input class="form-input" id="contact-subject" placeholder="e.g. I was NOT asleep" /></div>
         <div class="form-group"><label class="form-label">Message *</label><textarea class="form-textarea" id="contact-message" placeholder="Tell us what's on your mind..." style="min-height:100px"></textarea></div>
         <button class="btn btn-primary" id="contact-submit-btn">✉️ Send Message</button>
