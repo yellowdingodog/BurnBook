@@ -1629,20 +1629,11 @@
       catch(err) { alert('Failed: '+err.message); }
     }
     async function toggleAccountAdmin(userId, grant) {
-      if (grant  && !confirm('Grant admin access? This will also set their vote weight to 100 and apply it to all past votes.')) return;
+      if (grant  && !confirm('Grant admin access?')) return;
       if (!grant && !confirm('Revoke admin access? Are you sure?')) return;
       try {
-        if (grant) {
-          await sbPatch('user_profiles', `id=eq.${userId}`, { is_admin: true, vote_weight: 100 });
-          await Promise.all([
-            sbPatch('votes',     `user_id=eq.${userId}`, { weight: 100 }),
-            sbPatch('nap_votes', `user_id=eq.${userId}`, { weight: 100 }),
-          ]);
-          showToast('✅ Admin granted. Vote weight set to 100×.');
-        } else {
-          await sbPatch('user_profiles', `id=eq.${userId}`, { is_admin: false });
-          showToast('Admin revoked.');
-        }
+        await sbPatch('user_profiles', `id=eq.${userId}`, { is_admin: grant });
+        showToast(grant ? '✅ Admin granted.' : 'Admin revoked.');
         loadAccounts();
       } catch(err) { alert('Failed: '+err.message); }
     }
@@ -2064,6 +2055,13 @@
           // Update local item
           item.image_url = newUrl;
           item.image_quality = tier;
+          item._bytes = resized.size;
+          // Update visible cells
+          if (statusEl) { statusEl.textContent = '✅ Done'; statusEl.style.color = '#2e7d32'; }
+          const qEl = document.getElementById(`pf-qual-${idx}`);
+          const qc = tier==='H'?'#2e7d32':tier==='M'?'#e65100':'#c62828';
+          if (qEl) { qEl.textContent = tier; qEl.style.color = qc; }
+          if (sizeEl) sizeEl.textContent = formatBytes(resized.size);
           done++;
         } catch(err) {
           if (statusEl) { statusEl.textContent = '❌ ' + err.message; statusEl.style.color = '#c62828'; }
@@ -2072,6 +2070,8 @@
         prog.innerHTML = `<strong>Progress: ${done + failed} / ${checked.length}</strong> &nbsp;·&nbsp; Compressing to <em>${label}</em><br>✅ ${done} fixed &nbsp; ❌ ${failed} failed`;
       }
       prog.innerHTML += `<br/><strong style="color:${failed?'#c62828':'#2e7d32'}">${failed ? `${done} fixed, ${failed} failed.` : `All ${done} images fixed!`}</strong>`;
+      // Re-sort table to reflect new sizes/quality
+      pfRenderTable();
       document.getElementById('pf-fix-btn').disabled = false;
     }
 

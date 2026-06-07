@@ -426,7 +426,7 @@
     <!-- HOTTEST BURNS -->
     <div id="tab-hot" class="tab-panel">
       <h2 class="section-title">🔥 Hottest Burns</h2>
-      <p class="section-sub">Voting works the way we want it to, Chicago-style. And when all votes are tallied, somebody is going to get cheese fries!</p>
+      <p class="section-sub">Are votes rigged? Maybe!? &nbsp; Cheese fries for the winner! 🧀🍟</p>
       <div class="hot-controls">
         <label for="hot-count">Show top</label>
         <select id="hot-count" onchange="loadHottestBurns()">
@@ -475,7 +475,7 @@
           <input class="form-input" id="f-hashtags" placeholder="#wild #classic #legend" />
         </div>
         <div class="form-group" id="f-quality-group">
-            <label class="form-label">Photo Quality <span class="form-label-note">(only applies if you upload a photo)</span></label>
+            <label class="form-label">Image Quality</label>
             <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.25rem;">
               <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer;"><input type="radio" name="f-quality" value="H" style="accent-color:var(--deep-pink)" /><strong>High</strong> <span style="color:var(--muted);font-size:0.78rem">1920px</span></label>
               <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer;"><input type="radio" name="f-quality" value="M" checked style="accent-color:var(--deep-pink)" /><strong>Medium</strong> <span style="color:var(--muted);font-size:0.78rem">1200px</span></label>
@@ -1433,6 +1433,17 @@ async function linkIpToAccount() {
       visit_count: (_currentProfile?.visit_count || 0) + 1
     }).eq('id', _currentUser.id);
     if (_currentProfile) _currentProfile.visit_count = (_currentProfile.visit_count || 0) + 1;
+    // 103rd visit easter egg
+    if (_currentProfile?.visit_count === 103) {
+      setTimeout(() => {
+        const overlay = document.getElementById('oct3-overlay');
+        const frame = document.getElementById('oct3-frame');
+        if (overlay && frame) {
+          frame.src = 'https://www.youtube.com/embed/gWzb84rVg78?autoplay=1&controls=1&rel=0';
+          overlay.style.display = 'flex';
+        }
+      }, 2000);
+    }
   } catch(e) {}
 }
 
@@ -1813,6 +1824,27 @@ function requireAuth(action) {
   </script>
 
   <!-- Rickroll Modal -->
+  <div id="oct3-overlay" style="display:none;position:fixed;inset:0;z-index:9400;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:1.5rem;">
+    <div style="background:#fff;border-radius:4px;max-width:540px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.6);overflow:hidden;position:relative;">
+      <button onclick="document.getElementById('oct3-overlay').style.display='none';document.getElementById('oct3-frame').src='';" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#555;z-index:1;line-height:1;">✕</button>
+      <div style="background:linear-gradient(135deg,#1a0a12,#3d0f25);padding:1.25rem 1.5rem 1rem;border-bottom:2px solid #d4a843;">
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;color:#fff;">Wow, you really are obsessed with us!</div>
+        <div style="font-family:'Raleway',sans-serif;font-size:0.82rem;color:rgba(255,255,255,0.6);margin-top:0.35rem;font-style:italic;">This is your 103rd visit to the site!</div>
+      </div>
+      <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
+        <iframe id="oct3-frame"
+          src=""
+          style="position:absolute;inset:0;width:100%;height:100%;border:none;"
+          allow="autoplay; encrypted-media"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div style="padding:1rem 1.5rem;font-family:'Raleway',sans-serif;font-size:0.8rem;color:#8c6678;font-style:italic;text-align:center;background:#fff8f0;">
+        On October 3rd, she asked what day it was. On your 103rd visit, we noticed.
+      </div>
+    </div>
+  </div>
+
   <div id="rickroll-overlay" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:1.5rem;">
     <div style="background:#fff;border-radius:4px;max-width:540px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.6);overflow:hidden;position:relative;">
       <button onclick="closeRickroll()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#555;z-index:1;line-height:1;">✕</button>
@@ -1829,7 +1861,7 @@ function requireAuth(action) {
         </iframe>
       </div>
       <div style="padding:1rem 1.5rem;font-family:'Raleway',sans-serif;font-size:0.8rem;color:#8c6678;font-style:italic;text-align:center;background:#fff8f0;">
-        Four for you, Rick Astley. You go, Rick Astley. None for everyone else.
+        Congratulations on your terrible decision. We accept you. We also judge you. Simultaneously.
       </div>
     </div>
   </div>
