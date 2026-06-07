@@ -475,12 +475,12 @@
         <table id="pf-table">
           <thead><tr>
             <th class="cb"><input type="checkbox" onchange="pfSelectAll(this.checked)" id="pf-select-all" /></th>
-            <th class="resizable" style="width:60px">Photo</th>
-            <th class="resizable" style="cursor:pointer;user-select:none" onclick="pfSort('num')" title="Sort by entry number"># <span id="pf-sort-num">↕</span></th>
-            <th class="resizable" style="width:50px">Type</th>
-            <th class="resizable" style="width:55px">Quality</th>
-            <th class="resizable" style="width:90px;text-align:right;cursor:pointer;user-select:none" onclick="pfSort('size')" title="Sort by file size">Size <span id="pf-sort-size">↕</span></th>
-            <th class="resizable" style="width:100px">Status</th>
+            <th style="width:50px">Photo</th>
+            <th>Entry</th>
+            <th style="width:42px">Type</th>
+            <th style="width:42px">Q</th>
+            <th style="width:65px;text-align:right;cursor:pointer;user-select:none" onclick="pfSort('size')" title="Sort by file size">Size <span id="pf-sort-size">↕</span></th>
+            <th style="width:75px">Status</th>
           </tr></thead>
           <tbody id="pf-tbody"><tr class="empty-row"><td colspan="6">Click Refresh to load images.</td></tr></tbody>
         </table>
@@ -560,29 +560,51 @@
     }
     // ── Image resize before upload ────────────────────────────
     async function resizeImage(file, maxDim=1920, quality=0.82) {
+      // Size threshold for second-pass re-encode (bytes). PNG→JPEG can be large on first pass.
+      const SIZE_THRESHOLD = 350 * 1024; // 350KB
+
+      const encodeCanvas = (canvas, q) => new Promise(res =>
+        canvas.toBlob(blob => res(blob), 'image/jpeg', q)
+      );
+      const blobToImg = (blob) => new Promise((res, rej) => {
+        const img = new Image();
+        const url = URL.createObjectURL(blob);
+        img.onload = () => { URL.revokeObjectURL(url); res(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); rej(); };
+        img.src = url;
+      });
+      const makeFile = (blob, name) =>
+        new File([blob], name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'});
+
       return new Promise((resolve) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
-        img.onload = () => {
+        img.onload = async () => {
           URL.revokeObjectURL(url);
           let {width:w, height:h} = img;
-          if (w <= maxDim && h <= maxDim) {
-            // Already small enough — still re-encode to JPEG to save space
-            const canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0);
-            canvas.toBlob(blob => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'})), 'image/jpeg', quality);
-          } else {
+          if (w > maxDim || h > maxDim) {
             const ratio = Math.min(maxDim/w, maxDim/h);
             w = Math.round(w*ratio); h = Math.round(h*ratio);
-            const canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            canvas.toBlob(blob => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'})), 'image/jpeg', quality);
           }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          let blob = await encodeCanvas(canvas, quality);
+          // Second pass: if still large (e.g. PNG source), re-encode the JPEG
+          if (blob.size > SIZE_THRESHOLD) {
+            try {
+              const img2 = await blobToImg(blob);
+              const canvas2 = document.createElement('canvas');
+              canvas2.width = w; canvas2.height = h;
+              canvas2.getContext('2d').drawImage(img2, 0, 0, w, h);
+              const blob2 = await encodeCanvas(canvas2, quality);
+              if (blob2.size < blob.size) blob = blob2;
+            } catch(_) {}
+          }
+          resolve(makeFile(blob, file.name));
         };
-        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); }; // fallback: upload original
-        img.src = imgUrl(url, 'thumb');
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+        img.src = url;
       });
     }
     const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -932,6 +954,12 @@
           <div class="form-group"><label class="form-label">Owner (user account)</label><select class="form-input" id="ep-owner"><option value="">— loading users —</option></select><span style="font-size:0.72rem;color:var(--muted);display:block;margin-top:0.3rem">Current user_id: ${esc(e.user_id||'none')}</span></div>
           <div class="form-group"><label class="form-label">Photo <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(upload to replace)</span></label>
             ${e.image_url?`<img class="current-img" src="${esc(imgUrl(e.image_url,'detail'))}" id="ep-cur-img" />`:''}
+<div style="margin-bottom:0.5rem;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Photo Quality (if replacing)</div>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+              <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;cursor:pointer;"><input type="radio" name="ep-quality" value="H" style="accent-color:var(--deep-pink)" /><strong>High</strong> <span style="color:var(--muted);font-size:0.72rem">1920px</span></label>
+              <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;cursor:pointer;"><input type="radio" name="ep-quality" value="M" checked style="accent-color:var(--deep-pink)" /><strong>Medium</strong> <span style="color:var(--muted);font-size:0.72rem">1200px</span></label>
+              <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;cursor:pointer;"><input type="radio" name="ep-quality" value="L" style="accent-color:var(--deep-pink)" /><strong>Low</strong> <span style="color:var(--muted);font-size:0.72rem">900px</span></label>
+            </div>
             <div class="upload-zone" id="ep-upload"><input type="file" id="ep-image" accept="image/*" /><div class="upload-zone-text">📷 Drag &amp; drop or click to replace</div><img id="ep-preview" class="upload-preview" alt="" /></div>
           </div>
           <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
@@ -967,7 +995,7 @@
       const btn=document.querySelector('#entry-edit-panel .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
       try{
         let imageUrl=existingImg;
-        if(editImageFile){const resized=await resizeImage(editImageFile);imageUrl=await uploadImage(resized);if(existingImg)await deleteStorageFile(existingImg);}
+        if(editImageFile){const _epTier=tierFromRadio('ep-quality');const _epP=tierParams(_epTier);const resized=await resizeImage(editImageFile,_epP.px,_epP.q);imageUrl=await uploadImage(resized);if(existingImg)await deleteStorageFile(existingImg);patch.image_quality=_epTier;}
         const patch={subject,text,display_author:displayAuthor,is_mean_whirls:isMW,hashtags,image_url:imageUrl};
         if(submitter)patch.submitter=submitter;
         if(userId!==undefined)patch.user_id=userId||null;
@@ -1457,6 +1485,12 @@
           <div class="form-group"><label class="form-label">Displays As</label><input class="form-input" id="nep-display-author" value="${esc(e.display_author)}" /></div>
           <div class="form-group"><label class="form-label">Photo</label>
             ${e.image_url?`<img class="current-img" src="${esc(e.image_url)}" id="nep-cur-img" />`:''}
+<div style="margin-bottom:0.5rem;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Photo Quality (if replacing)</div>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+              <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;cursor:pointer;"><input type="radio" name="nep-quality" value="H" style="accent-color:var(--deep-pink)" /><strong>High</strong> <span style="color:var(--muted);font-size:0.72rem">1920px</span></label>
+              <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;cursor:pointer;"><input type="radio" name="nep-quality" value="M" checked style="accent-color:var(--deep-pink)" /><strong>Medium</strong> <span style="color:var(--muted);font-size:0.72rem">1200px</span></label>
+              <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;cursor:pointer;"><input type="radio" name="nep-quality" value="L" style="accent-color:var(--deep-pink)" /><strong>Low</strong> <span style="color:var(--muted);font-size:0.72rem">900px</span></label>
+            </div>
             <div class="upload-zone" id="nep-upload"><input type="file" id="nep-image" accept="image/*" /><div class="upload-zone-text">📷 Click to replace</div><img id="nep-preview" class="upload-preview" alt="" /></div>
           </div>
           <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
@@ -1473,7 +1507,7 @@
       const subject=document.getElementById('nep-subject').value.trim();const text=document.getElementById('nep-text').value.trim();const hashtags=parseHashtags(document.getElementById('nep-hashtags').value);const displayAuthor=document.getElementById('nep-display-author').value.trim();
       if(!subject){showNepMsg('error','Name required.');return;}
       const btn=document.querySelector('#nap-entry-edit-panel .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
-      try{let imageUrl=existingImg;if(napEditImageFile){const resized=await resizeImage(napEditImageFile);imageUrl=await uploadImage(resized);}await sbPatch('nap_entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});await logAdminAction('admin_edit',id,`Admin edited nap: "${subject}"`);showNepMsg('success','✅ Saved!');setTimeout(()=>{document.getElementById('nap-entry-edit-panel').innerHTML='';loadNapEntries();},1200);}
+      try{let imageUrl=existingImg;if(napEditImageFile){const _nepTier=tierFromRadio('nep-quality');const _nepP=tierParams(_nepTier);const resized=await resizeImage(napEditImageFile,_nepP.px,_nepP.q);imageUrl=await uploadImage(resized);_napPatch.image_quality=_nepTier;}await sbPatch('nap_entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});await logAdminAction('admin_edit',id,`Admin edited nap: "${subject}"`);showNepMsg('success','✅ Saved!');setTimeout(()=>{document.getElementById('nap-entry-edit-panel').innerHTML='';loadNapEntries();},1200);}
       catch(err){showNepMsg('error','Failed: '+err.message);}
       btn.disabled=false;btn.innerHTML='💾 Save Changes';
     }
@@ -1932,7 +1966,7 @@
 
     async function loadPictureFix() {
       const tbody = document.getElementById('pf-tbody');
-      tbody.innerHTML = loadingRow(7);
+      tbody.innerHTML = loadingRow(6);
       document.getElementById('pf-fix-btn').disabled = true;
       document.getElementById('pf-sel-count').textContent = '0 selected';
       document.getElementById('pf-progress').style.display = 'none';
@@ -1948,7 +1982,7 @@
           ...burnEntries.map(e => ({...e, type:'burn', _bytes:null})),
           ...napEntries.map(e =>  ({...e, type:'nap',  _bytes:null})),
         ];
-        if (!_pfItems.length) { tbody.innerHTML = emptyRow(7, 'No images found.'); return; }
+        if (!_pfItems.length) { tbody.innerHTML = emptyRow(6, 'No images found.'); return; }
         pfRenderTable();
         // Get file sizes via Supabase storage REST API
         try {
@@ -1991,7 +2025,7 @@
           }
         } catch(sizeErr) {
         }
-      } catch(err) { tbody.innerHTML = emptyRow(7, 'Failed: ' + err.message); }
+      } catch(err) { tbody.innerHTML = emptyRow(6, 'Failed: ' + err.message); }
     }
 
 
