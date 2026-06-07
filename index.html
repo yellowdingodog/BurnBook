@@ -147,11 +147,6 @@
     .tag-autocomplete-item{padding:0.4rem 0.75rem;font-size:0.75rem;cursor:pointer;font-family:'Raleway',sans-serif;}
     .tag-autocomplete-item:hover{background:var(--blush);}
     /* Multi-select mode */
-    .multi-select-mode .entry-card{position:relative;}
-    .entry-card-cb{display:none;position:absolute;top:8px;right:8px;z-index:5;width:22px;height:22px;cursor:pointer;accent-color:var(--deep-pink);}
-    .multi-select-mode .entry-card-cb{display:block;}
-    .multi-select-bar{display:none;background:var(--deep-pink);color:#fff;padding:0.6rem 1rem;font-family:'Raleway',sans-serif;font-size:0.8rem;font-weight:600;position:sticky;top:0;z-index:100;align-items:center;gap:0.75rem;flex-wrap:wrap;}
-    .multi-select-bar.active{display:flex;}
     .tag-filter-actions{display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;}
     .tag-filter-btn{font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.3rem 0.7rem;border-radius:2px;border:1.5px solid rgba(200,30,90,0.3);background:none;color:var(--deep-pink);cursor:pointer;transition:all 0.2s;}
     .tag-filter-btn:hover{background:var(--deep-pink);color:#fff;}
@@ -382,20 +377,15 @@
           <h2 class="section-title">The Burn Book</h2>
           <p class="section-sub">Moderated &amp; approved entries only &mdash; we are mean but have standards.</p>
         </div>
-        <div id="multi-select-bar" class="multi-select-bar">
-          <span id="multi-select-label">0 selected</span>
-          <button class="tag-filter-btn" onclick="confirmTagAction()">✓ Confirm</button>
-          <button class="tag-filter-btn" onclick="cancelTagMode()">✕ Cancel</button>
-        </div>
-        <div id="filter-bar" class="filter-bar" style="display:none">
+<div id="filter-bar" class="filter-bar" style="display:none">
           <span style="font-size:0.72rem;font-weight:600;color:#7a0030;letter-spacing:0.08em;text-transform:uppercase">Filter by tag:</span>
           <select class="filter-select" id="filter-select" onchange="setFilterFromSelect(this.value)">
             <option value="">— All entries —</option>
           </select>
           <button class="filter-clear" id="filter-clear" style="display:none" onclick="clearFilter()">✕ clear</button>
           <div class="tag-filter-actions" id="tag-filter-actions" style="display:none">
-            <button class="tag-filter-btn" onclick="startTagMode('add')">+ Add entries to tag</button>
-            <button class="tag-filter-btn" onclick="startTagMode('remove')">− Remove entries from tag</button>
+            <button class="tag-filter-btn" onclick="openTagMgmt('add')">+ Add entries to tag</button>
+            <button class="tag-filter-btn" onclick="openTagMgmt('remove')">− Remove entries from tag</button>
           </div>
         </div>
         <div id="entries-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
@@ -828,6 +818,104 @@
       if(tagActions) tagActions.style.display=(tag&&isLoggedIn())?'flex':'none';
       renderEntries(tag?allEntries.filter(e=>(e.hashtags||[]).includes(tag)):allEntries);
     }
+    function clearFilter(){ setFilter(null); }
+
+    // ── Tag management modal ──────────────────────────────────
+    let _tagMgmtMode = null;
+
+    function openTagMgmt(mode) {
+      if (!activeFilter || !isLoggedIn()) return;
+      _tagMgmtMode = mode;
+      const modal = document.getElementById('tag-mgmt-modal');
+      const title = document.getElementById('tag-mgmt-title');
+      const list  = document.getElementById('tag-mgmt-list');
+      const confirmBtn = document.getElementById('tag-mgmt-confirm');
+      title.textContent = mode==='add'
+        ? `Add entries to ${activeFilter}`
+        : `Remove entries from ${activeFilter}`;
+      confirmBtn.textContent = mode==='add' ? '+ Add Selected' : '− Remove Selected';
+      const candidates = mode==='add'
+        ? allEntries.filter(e => !(e.hashtags||[]).includes(activeFilter))
+        : allEntries.filter(e =>  (e.hashtags||[]).includes(activeFilter));
+      list.innerHTML = '';
+      if (!candidates.length) {
+        list.innerHTML = `<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:0.85rem">${
+          mode==='add' ? 'All entries already have this tag.' : 'No entries have this tag yet.'
+        }</div>`;
+        confirmBtn.disabled = true;
+      } else {
+        confirmBtn.disabled = false;
+        candidates.forEach(e => {
+          const row = document.createElement('label');
+          row.style.cssText = 'display:flex;align-items:center;gap:0.75rem;padding:0.55rem 1.25rem;cursor:pointer;border-bottom:1px solid var(--blush);';
+          row.addEventListener('mouseenter', () => row.style.background='var(--blush)');
+          row.addEventListener('mouseleave', () => row.style.background='');
+          const cb = document.createElement('input');
+          cb.type='checkbox'; cb.value=e.id;
+          cb.style.cssText='flex-shrink:0;accent-color:var(--deep-pink);width:16px;height:16px;';
+          cb.addEventListener('change', tagMgmtUpdateCount);
+          row.appendChild(cb);
+          if (e.image_url) {
+            const img = document.createElement('img');
+            img.src = imgUrl(e.image_url,'thumb');
+            img.style.cssText='width:44px;height:33px;object-fit:contain;border-radius:2px;background:#f0e0e8;flex-shrink:0;';
+            img.onerror=function(){this.style.display='none';};
+            row.appendChild(img);
+          }
+          const info = document.createElement('div');
+          info.style.cssText='flex:1;min-width:0;';
+          const subj = document.createElement('div');
+          subj.style.cssText='font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+          subj.textContent = e.subject;
+          const tags = document.createElement('div');
+          tags.style.cssText='font-size:0.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+          tags.textContent = (e.hashtags||[]).join(' ')||'—';
+          info.appendChild(subj); info.appendChild(tags);
+          row.appendChild(info);
+          list.appendChild(row);
+        });
+      }
+      document.getElementById('tag-mgmt-select-all').checked=false;
+      document.getElementById('tag-mgmt-count').textContent='0 selected';
+      modal.classList.add('open');
+      document.body.style.overflow='hidden';
+    }
+    function tagMgmtSelectAll(checked){
+      document.querySelectorAll('#tag-mgmt-list input[type=checkbox]').forEach(cb=>cb.checked=checked);
+      tagMgmtUpdateCount();
+    }
+    function tagMgmtUpdateCount(){
+      const n=document.querySelectorAll('#tag-mgmt-list input[type=checkbox]:checked').length;
+      document.getElementById('tag-mgmt-count').textContent=n+' selected';
+      document.getElementById('tag-mgmt-select-all').checked=
+        n>0&&n===document.querySelectorAll('#tag-mgmt-list input[type=checkbox]').length;
+    }
+    function closeTagMgmt(){
+      document.getElementById('tag-mgmt-modal').classList.remove('open');
+      document.body.style.overflow='';
+      _tagMgmtMode=null;
+    }
+
+    // ── Tag mgmt event wiring (deferred) ─────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('tag-mgmt-close').addEventListener('click', closeTagMgmt);
+      document.getElementById('tag-mgmt-modal').addEventListener('click', e => {
+        if (e.target===document.getElementById('tag-mgmt-modal')) closeTagMgmt();
+      });
+      document.getElementById('tag-mgmt-confirm').addEventListener('click', async () => {
+        const checked=[...document.querySelectorAll('#tag-mgmt-list input[type=checkbox]:checked')];
+        if (!checked.length) { closeTagMgmt(); return; }
+        const btn=document.getElementById('tag-mgmt-confirm');
+        btn.disabled=true; btn.textContent='Working…';
+        for (const cb of checked) {
+          if (_tagMgmtMode==='add') await addHashtag(cb.value, activeFilter, 'burn');
+          else await removeHashtag(cb.value, activeFilter, 'burn');
+        }
+        closeTagMgmt();
+        await loadEntries();
+        showToast(`✅ ${checked.length} entr${checked.length===1?'y':'ies'} updated!`);
+      });
+    });
 
     // ── Tag editing ───────────────────────────────────────────
     let _allKnownTags = [];
@@ -940,53 +1028,6 @@
       hEl.appendChild(wrap);
     }
 
-    // ── Multi-select tag mode ─────────────────────────────────
-    let _tagMode = null; // 'add' or 'remove'
-    function startTagMode(mode) {
-      if (!activeFilter || !isLoggedIn()) return;
-      _tagMode = mode;
-      document.getElementById('entries-container').classList.add('multi-select-mode');
-      const bar = document.getElementById('multi-select-bar');
-      bar.classList.add('active');
-      document.getElementById('multi-select-label').textContent =
-        mode==='add' ? `Select entries to add ${activeFilter} →` : `Select entries to remove ${activeFilter} →`;
-      // Add checkboxes to all cards
-      document.querySelectorAll('.entry-card').forEach(card => {
-        if (card.querySelector('.entry-card-cb')) return;
-        const cb = document.createElement('input');
-        cb.type = 'checkbox'; cb.className = 'entry-card-cb';
-        cb.addEventListener('change', updateMultiSelectCount);
-        card.appendChild(cb);
-      });
-    }
-    function updateMultiSelectCount() {
-      const n = document.querySelectorAll('.entry-card-cb:checked').length;
-      document.getElementById('multi-select-label').textContent =
-        `${n} selected — ${_tagMode==='add'?'add':'remove'} ${activeFilter}`;
-    }
-    function cancelTagMode() {
-      _tagMode = null;
-      document.getElementById('entries-container').classList.remove('multi-select-mode');
-      document.getElementById('multi-select-bar').classList.remove('active');
-      document.querySelectorAll('.entry-card-cb').forEach(cb=>cb.remove());
-    }
-    async function confirmTagAction() {
-      if (!_tagMode || !activeFilter) return;
-      const checked = [...document.querySelectorAll('.entry-card-cb:checked')];
-      if (!checked.length) { cancelTagMode(); return; }
-      const btn = document.querySelector('#multi-select-bar .tag-filter-btn');
-      if (btn) { btn.textContent='Working…'; btn.disabled=true; }
-      for (const cb of checked) {
-        const card = cb.closest('.entry-card');
-        const entryId = card?.dataset.entryId;
-        if (!entryId) continue;
-        if (_tagMode==='add') await addHashtag(entryId, activeFilter, 'burn');
-        else await removeHashtag(entryId, activeFilter, 'burn');
-      }
-      cancelTagMode();
-      await loadEntries();
-      showToast(`✅ ${checked.length} entr${checked.length===1?'y':'ies'} updated!`);
-    }
     function buildFilterBar(entries){
       const counts={};entries.forEach(e=>(e.hashtags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;}));
       const tags=Object.keys(counts).sort();
@@ -2034,6 +2075,27 @@ function requireAuth(action) {
   </script>
 
   <!-- Rickroll Modal -->
+  <!-- Tag Management Modal -->
+  <div class="modal-overlay" id="tag-mgmt-modal" style="z-index:1100">
+    <div class="modal" style="max-width:560px;max-height:80vh;display:flex;flex-direction:column;">
+      <div class="modal-header">
+        <span class="modal-title" id="tag-mgmt-title">Manage Tag</span>
+        <button class="modal-close" id="tag-mgmt-close">✕</button>
+      </div>
+      <div style="padding:0.6rem 1.25rem;border-bottom:1px solid var(--blush);display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;cursor:pointer;">
+          <input type="checkbox" id="tag-mgmt-select-all" onchange="tagMgmtSelectAll(this.checked)" style="accent-color:var(--deep-pink)"> Select All
+        </label>
+        <span id="tag-mgmt-count" style="font-size:0.78rem;color:var(--muted);margin-left:auto">0 selected</span>
+      </div>
+      <div id="tag-mgmt-list" style="flex:1;overflow-y:auto;padding:0.5rem 0;"></div>
+      <div style="padding:0.85rem 1.25rem;border-top:1px solid var(--blush);display:flex;gap:0.5rem;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="closeTagMgmt()">Cancel</button>
+        <button class="btn btn-primary" id="tag-mgmt-confirm">✓ Apply</button>
+      </div>
+    </div>
+  </div>
+
   <div id="oct3-overlay" style="display:none;position:fixed;inset:0;z-index:9400;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:1.5rem;">
     <div style="background:#fff;border-radius:4px;max-width:540px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.6);overflow:hidden;position:relative;">
       <button onclick="document.getElementById('oct3-overlay').style.display='none';document.getElementById('oct3-frame').src='';" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#555;z-index:1;line-height:1;">✕</button>
