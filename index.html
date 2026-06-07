@@ -2029,7 +2029,9 @@ function showAuthErr(el, msg, isHtml=false) { if(isHtml){el.innerHTML=msg;}else{
 function updateAuthUI() {
   const widget = document.getElementById('auth-widget');
   if (!widget) return;
+  const newTagBtn = document.getElementById('new-tag-btn');
   if (isLoggedIn()) {
+    if (newTagBtn) newTagBtn.style.display = 'inline-flex';
     const _adminLink = isAdmin()
       ? `<a href="admin.html" style="box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;height:24px;padding:0 8px;font-family:Raleway,sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.25);border-radius:2px;text-decoration:none;background:none;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">Admin</a>`
       : '';
@@ -2038,6 +2040,7 @@ function updateAuthUI() {
       <a href="account.html" style="box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;height:24px;padding:0 8px;font-family:Raleway,sans-serif;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.25);border-radius:2px;text-decoration:none;background:none;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">My Account</a>
       <button onclick="signOut()" style="box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;height:20px;padding:0 7px;font-family:Raleway,sans-serif;font-size:0.6rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#4b1a2a;border:1px solid rgba(255,255,255,0.5);border-radius:2px;background:rgba(255,255,255,0.75);cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='#fff';this.style.color='#3d0f25'" onmouseout="this.style.background='rgba(255,255,255,0.75)';this.style.color='#4b1a2a'">Sign Out</button>`;
   } else {
+    if (newTagBtn) newTagBtn.style.display = 'none';
     widget.innerHTML = `<button onclick="openAuthModal()" style="background:none;border:1px solid rgba(255,255,255,0.35);border-radius:2px;padding:0.3rem 0.85rem;font-family:Raleway,sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.8);cursor:pointer;transition:all 0.2s" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.8)';this.style.borderColor='rgba(255,255,255,0.35)'">Sign In / Join</button>`;
   }
   prefillForms();
