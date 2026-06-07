@@ -387,6 +387,7 @@
             <button class="tag-filter-btn" onclick="openTagMgmt('add')">+ Add entries to tag</button>
             <button class="tag-filter-btn" onclick="openTagMgmt('remove')">− Remove entries from tag</button>
           </div>
+          <button class="tag-filter-btn" id="new-tag-btn" style="display:none" onclick="openNewTagPrompt()">+ New Tag</button>
         </div>
         <div id="entries-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
       </div>
@@ -816,9 +817,32 @@
       document.querySelectorAll('.filter-tag').forEach(el=>el.classList.toggle('active',el.dataset.tag===tag));
       const tagActions=document.getElementById('tag-filter-actions');
       if(tagActions) tagActions.style.display=(tag&&isLoggedIn())?'flex':'none';
+      const newTagBtn=document.getElementById('new-tag-btn');
+      if(newTagBtn) newTagBtn.style.display=isLoggedIn()?'inline-flex':'none';
       renderEntries(tag?allEntries.filter(e=>(e.hashtags||[]).includes(tag)):allEntries);
     }
     function clearFilter(){ setFilter(null); }
+
+    function openNewTagPrompt() {
+      if (!isLoggedIn()) return;
+      let val = prompt('Enter a new tag name (e.g. #chicago or just chicago):');
+      if (!val) return;
+      val = val.trim();
+      if (!val.startsWith('#')) val = '#' + val;
+      val = val.toLowerCase().replace(/[^#a-z0-9_]/g,'');
+      if (val.length < 2) { showToast('Tag too short.'); return; }
+      if (_allKnownTags.includes(val)) {
+        // Tag already exists — ask if they want to add entries to it
+        if (confirm(`"${val}" already exists. Open it to add entries?`)) {
+          setFilter(val);
+          openTagMgmt('add');
+        }
+        return;
+      }
+      // New tag — jump straight to add-entries modal with the new tag as active filter
+      activeFilter = val;
+      openTagMgmt('add');
+    }
 
     // ── Tag management modal ──────────────────────────────────
     let _tagMgmtMode = null;
@@ -2067,6 +2091,8 @@ function requireAuth(action) {
       updateAuthUI();
       loadEntries();
       if (currentDetailEntry) openDetail(currentDetailEntry);
+      const newTagBtn=document.getElementById('new-tag-btn');
+      if(newTagBtn) newTagBtn.style.display='inline-flex';
     }
 
     init();
