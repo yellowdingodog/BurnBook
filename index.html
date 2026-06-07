@@ -134,6 +134,27 @@
     .card-comment-count{font-size:0.68rem;color:var(--muted);padding:0.35rem 1.25rem 0.65rem;display:flex;align-items:center;gap:0.3rem;}
     .card-comment-count span{color:var(--deep-pink);font-weight:700;}
 
+
+    /* Tag editing */
+    .detail-hashtags-wrap{display:flex;flex-wrap:wrap;gap:0.35rem;align-items:center;}
+    .detail-hashtag-remove{font-size:0.6rem;margin-left:0.2rem;opacity:0.6;cursor:pointer;vertical-align:middle;}
+    .detail-hashtag-remove:hover{opacity:1;}
+    .tag-add-wrap{display:flex;gap:0.35rem;align-items:center;margin-top:0.1rem;position:relative;}
+    .tag-add-input{font-family:'Raleway',sans-serif;font-size:0.72rem;padding:0.2rem 0.5rem;border:1.5px solid rgba(200,30,90,0.25);border-radius:20px;outline:none;width:110px;color:var(--ink);}
+    .tag-add-input:focus{border-color:var(--pink);}
+    .tag-add-btn{font-size:0.68rem;font-weight:700;color:var(--deep-pink);background:none;border:none;cursor:pointer;padding:0.1rem 0.3rem;}
+    .tag-autocomplete{position:absolute;top:100%;left:0;background:#fff;border:1.5px solid rgba(200,30,90,0.18);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.1);z-index:50;min-width:140px;max-height:160px;overflow-y:auto;margin-top:2px;}
+    .tag-autocomplete-item{padding:0.4rem 0.75rem;font-size:0.75rem;cursor:pointer;font-family:'Raleway',sans-serif;}
+    .tag-autocomplete-item:hover{background:var(--blush);}
+    /* Multi-select mode */
+    .multi-select-mode .entry-card{position:relative;}
+    .entry-card-cb{display:none;position:absolute;top:8px;right:8px;z-index:5;width:22px;height:22px;cursor:pointer;accent-color:var(--deep-pink);}
+    .multi-select-mode .entry-card-cb{display:block;}
+    .multi-select-bar{display:none;background:var(--deep-pink);color:#fff;padding:0.6rem 1rem;font-family:'Raleway',sans-serif;font-size:0.8rem;font-weight:600;position:sticky;top:0;z-index:100;align-items:center;gap:0.75rem;flex-wrap:wrap;}
+    .multi-select-bar.active{display:flex;}
+    .tag-filter-actions{display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;}
+    .tag-filter-btn{font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.3rem 0.7rem;border-radius:2px;border:1.5px solid rgba(200,30,90,0.3);background:none;color:var(--deep-pink);cursor:pointer;transition:all 0.2s;}
+    .tag-filter-btn:hover{background:var(--deep-pink);color:#fff;}
     /* Detail sheet overlay */
     #detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s;}
     #detail-overlay.open{opacity:1;pointer-events:all;}
@@ -361,12 +382,21 @@
           <h2 class="section-title">The Burn Book</h2>
           <p class="section-sub">Moderated &amp; approved entries only &mdash; we are mean but have standards.</p>
         </div>
+        <div id="multi-select-bar" class="multi-select-bar">
+          <span id="multi-select-label">0 selected</span>
+          <button class="tag-filter-btn" onclick="confirmTagAction()">✓ Confirm</button>
+          <button class="tag-filter-btn" onclick="cancelTagMode()">✕ Cancel</button>
+        </div>
         <div id="filter-bar" class="filter-bar" style="display:none">
           <span style="font-size:0.72rem;font-weight:600;color:#7a0030;letter-spacing:0.08em;text-transform:uppercase">Filter by tag:</span>
           <select class="filter-select" id="filter-select" onchange="setFilterFromSelect(this.value)">
             <option value="">— All entries —</option>
           </select>
           <button class="filter-clear" id="filter-clear" style="display:none" onclick="clearFilter()">✕ clear</button>
+          <div class="tag-filter-actions" id="tag-filter-actions" style="display:none">
+            <button class="tag-filter-btn" onclick="startTagMode('add')">+ Add entries to tag</button>
+            <button class="tag-filter-btn" onclick="startTagMode('remove')">− Remove entries from tag</button>
+          </div>
         </div>
         <div id="entries-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
       </div>
@@ -790,8 +820,173 @@
     function goHome(){ document.querySelector('.nav-btn[data-tab="book"]').click(); }
 
     // ── Filter ────────────────────────────────────────────────
-    function setFilter(tag){ activeFilter=tag; document.getElementById('filter-clear').style.display=tag?'inline':'none'; document.querySelectorAll('.filter-tag').forEach(el=>el.classList.toggle('active',el.dataset.tag===tag)); renderEntries(tag?allEntries.filter(e=>(e.hashtags||[]).includes(tag)):allEntries); }
-    function clearFilter(){ setFilter(null); }
+    function setFilter(tag){
+      activeFilter=tag;
+      document.getElementById('filter-clear').style.display=tag?'inline':'none';
+      document.querySelectorAll('.filter-tag').forEach(el=>el.classList.toggle('active',el.dataset.tag===tag));
+      const tagActions=document.getElementById('tag-filter-actions');
+      if(tagActions) tagActions.style.display=(tag&&isLoggedIn())?'flex':'none';
+      renderEntries(tag?allEntries.filter(e=>(e.hashtags||[]).includes(tag)):allEntries);
+    }
+
+    // ── Tag editing ───────────────────────────────────────────
+    let _allKnownTags = [];
+    function collectKnownTags(entries){ _allKnownTags=[...new Set(entries.flatMap(e=>e.hashtags||[]))].sort(); }
+
+    async function addHashtag(entryId, tag, tableType='burn') {
+      if (!tag || !tag.startsWith('#')) return;
+      tag = tag.toLowerCase().replace(/[^#a-z0-9_]/g,'');
+      if (tag.length < 2) return;
+      await getSb().rpc('add_entry_hashtag', { entry_id: entryId, tag, table_name: tableType });
+      await logActivity('tag_add', entryId, `#${tag.slice(1)} added to: "${currentDetailEntry?.subject||''}"`);
+      if (!_allKnownTags.includes(tag)) _allKnownTags.push(tag);
+    }
+
+    async function removeHashtag(entryId, tag, tableType='burn') {
+      await getSb().rpc('remove_entry_hashtag', { entry_id: entryId, tag, table_name: tableType });
+      await logActivity('tag_remove', entryId, `#${tag.slice(1)} removed from: "${currentDetailEntry?.subject||''}"`);
+    }
+
+    function renderDetailHashtags(entry, tableType='burn') {
+      const hEl = document.getElementById('detail-hashtags');
+      hEl.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'detail-hashtags-wrap';
+      (entry.hashtags||[]).forEach(tag => {
+        const chip = document.createElement('span');
+        chip.className = 'detail-hashtag';
+        chip.style.cursor = 'default';
+        const label = document.createElement('span');
+        label.textContent = tag;
+        label.style.cursor = 'pointer';
+        label.addEventListener('click', () => { closeDetail(); setTimeout(()=>setFilter(tag),100); });
+        chip.appendChild(label);
+        if (isLoggedIn()) {
+          const rm = document.createElement('span');
+          rm.className = 'detail-hashtag-remove';
+          rm.textContent = '×';
+          rm.title = 'Remove tag';
+          rm.addEventListener('click', async () => {
+            rm.textContent = '…';
+            await removeHashtag(entry.id, tag, tableType);
+            entry.hashtags = (entry.hashtags||[]).filter(t=>t!==tag);
+            // Update allEntries
+            const ae = allEntries.find(e=>e.id===entry.id);
+            if(ae) ae.hashtags = entry.hashtags;
+            renderDetailHashtags(entry, tableType);
+            buildFilterBar(allEntries);
+          });
+          chip.appendChild(rm);
+        }
+        wrap.appendChild(chip);
+      });
+      // Add tag input (logged in users)
+      if (isLoggedIn()) {
+        const addWrap = document.createElement('div');
+        addWrap.className = 'tag-add-wrap';
+        const input = document.createElement('input');
+        input.className = 'tag-add-input';
+        input.placeholder = '+ add tag';
+        input.maxLength = 30;
+        const ac = document.createElement('div');
+        ac.className = 'tag-autocomplete';
+        ac.style.display = 'none';
+        input.addEventListener('input', () => {
+          const val = input.value.replace(/^#*/,'').toLowerCase();
+          if (!val) { ac.style.display='none'; return; }
+          const matches = _allKnownTags.filter(t=>t.slice(1).startsWith(val) && !(entry.hashtags||[]).includes(t));
+          if (!matches.length) { ac.style.display='none'; return; }
+          ac.innerHTML = '';
+          matches.slice(0,8).forEach(t => {
+            const item = document.createElement('div');
+            item.className = 'tag-autocomplete-item';
+            item.textContent = t;
+            item.addEventListener('mousedown', async e => {
+              e.preventDefault();
+              ac.style.display='none'; input.value='';
+              if ((entry.hashtags||[]).includes(t)) return;
+              await addHashtag(entry.id, t, tableType);
+              entry.hashtags = [...(entry.hashtags||[]), t];
+              const ae=allEntries.find(e=>e.id===entry.id); if(ae) ae.hashtags=entry.hashtags;
+              renderDetailHashtags(entry, tableType);
+              buildFilterBar(allEntries);
+            });
+            ac.appendChild(item);
+          });
+          ac.style.display = 'block';
+        });
+        input.addEventListener('keydown', async e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            let val = input.value.trim();
+            if (!val) return;
+            if (!val.startsWith('#')) val = '#' + val;
+            val = val.toLowerCase().replace(/[^#a-z0-9_]/g,'');
+            if (val.length < 2 || (entry.hashtags||[]).includes(val)) { input.value=''; ac.style.display='none'; return; }
+            ac.style.display='none'; input.value='';
+            await addHashtag(entry.id, val, tableType);
+            entry.hashtags = [...(entry.hashtags||[]), val];
+            const ae=allEntries.find(e=>e.id===entry.id); if(ae) ae.hashtags=entry.hashtags;
+            renderDetailHashtags(entry, tableType);
+            buildFilterBar(allEntries);
+          }
+          if (e.key==='Escape') { ac.style.display='none'; input.value=''; }
+        });
+        input.addEventListener('blur', () => setTimeout(()=>{ ac.style.display='none'; }, 150));
+        addWrap.appendChild(input);
+        addWrap.appendChild(ac);
+        wrap.appendChild(addWrap);
+      }
+      hEl.appendChild(wrap);
+    }
+
+    // ── Multi-select tag mode ─────────────────────────────────
+    let _tagMode = null; // 'add' or 'remove'
+    function startTagMode(mode) {
+      if (!activeFilter || !isLoggedIn()) return;
+      _tagMode = mode;
+      document.getElementById('entries-container').classList.add('multi-select-mode');
+      const bar = document.getElementById('multi-select-bar');
+      bar.classList.add('active');
+      document.getElementById('multi-select-label').textContent =
+        mode==='add' ? `Select entries to add ${activeFilter} →` : `Select entries to remove ${activeFilter} →`;
+      // Add checkboxes to all cards
+      document.querySelectorAll('.entry-card').forEach(card => {
+        if (card.querySelector('.entry-card-cb')) return;
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.className = 'entry-card-cb';
+        cb.addEventListener('change', updateMultiSelectCount);
+        card.appendChild(cb);
+      });
+    }
+    function updateMultiSelectCount() {
+      const n = document.querySelectorAll('.entry-card-cb:checked').length;
+      document.getElementById('multi-select-label').textContent =
+        `${n} selected — ${_tagMode==='add'?'add':'remove'} ${activeFilter}`;
+    }
+    function cancelTagMode() {
+      _tagMode = null;
+      document.getElementById('entries-container').classList.remove('multi-select-mode');
+      document.getElementById('multi-select-bar').classList.remove('active');
+      document.querySelectorAll('.entry-card-cb').forEach(cb=>cb.remove());
+    }
+    async function confirmTagAction() {
+      if (!_tagMode || !activeFilter) return;
+      const checked = [...document.querySelectorAll('.entry-card-cb:checked')];
+      if (!checked.length) { cancelTagMode(); return; }
+      const btn = document.querySelector('#multi-select-bar .tag-filter-btn');
+      if (btn) { btn.textContent='Working…'; btn.disabled=true; }
+      for (const cb of checked) {
+        const card = cb.closest('.entry-card');
+        const entryId = card?.dataset.entryId;
+        if (!entryId) continue;
+        if (_tagMode==='add') await addHashtag(entryId, activeFilter, 'burn');
+        else await removeHashtag(entryId, activeFilter, 'burn');
+      }
+      cancelTagMode();
+      await loadEntries();
+      showToast(`✅ ${checked.length} entr${checked.length===1?'y':'ies'} updated!`);
+    }
     function buildFilterBar(entries){
       const counts={};entries.forEach(e=>(e.hashtags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;}));
       const tags=Object.keys(counts).sort();
@@ -1039,7 +1234,7 @@
       document.getElementById('detail-text').textContent=entry.text||'';
       // Hashtags
       const hEl=document.getElementById('detail-hashtags');hEl.innerHTML='';
-      (entry.hashtags||[]).forEach(tag=>{const t=document.createElement('span');t.className='detail-hashtag';t.textContent=tag;t.addEventListener('click',()=>{closeDetail();setTimeout(()=>setFilter(tag),100);});hEl.appendChild(t);});
+      renderDetailHashtags(entry, 'burn');
       // Author row
       const metaEl=document.getElementById('detail-meta-row');metaEl.innerHTML='';
       if(entry.is_mean_whirls)metaEl.appendChild(makeBadgeMW());
@@ -1115,7 +1310,7 @@
           victimMap[s.entry_id].count++;
         });
         const commentCountMap={};commentCounts.forEach(c=>{commentCountMap[c.entry_id]=(commentCountMap[c.entry_id]||0)+1;});
-        allEntries=entries;buildFilterBar(entries);
+        allEntries=entries;buildFilterBar(entries);collectKnownTags(entries);
         renderEntries(activeFilter?entries.filter(e=>(e.hashtags||[]).includes(activeFilter)):entries,victimMap,commentCountMap);
       }catch(err){document.getElementById('entries-container').innerHTML=`<div class="empty"><div class="empty-icon">😬</div><h3>Could not load entries</h3><p>${esc(err.message)}</p></div>`;}
     }
@@ -1125,7 +1320,7 @@
       if(!entries.length){el.innerHTML=`<div class="empty"><div class="empty-icon">📓</div><h3>The burn book is empty</h3><p style="font-size:.85rem">${activeFilter?'No entries with '+activeFilter:'No approved entries yet.'}</p></div>`;return;}
       const grid=document.createElement('div');grid.className='entries-grid';
       entries.forEach((e,i)=>{
-        const card=document.createElement('div');card.className='entry-card';card.style.animationDelay=(i*0.05)+'s';
+        const card=document.createElement('div');card.className='entry-card';card.dataset.entryId=e.id;card.style.animationDelay=(i*0.05)+'s';
         card.addEventListener('click',()=>openDetail(e));
         if(e.image_url){const wrap=document.createElement('div');wrap.className='entry-img-wrap';if(e.ui_order){const n=document.createElement('div');n.className='entry-img-num';n.textContent='#'+e.ui_order;wrap.appendChild(n);}const img=document.createElement('img');img.className='entry-img';img.src=imgUrl(e.image_url,'thumb');img.alt=e.subject;img.onerror=function(){this.onerror=null;this.src=e.image_url;};wrap.appendChild(img);card.appendChild(wrap);}
         else card.appendChild(makePlaceholder(e.ui_order));
