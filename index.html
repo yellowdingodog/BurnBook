@@ -294,6 +294,8 @@
 
     .btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.85rem 2rem;font-family:'Raleway',sans-serif;font-size:0.78rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border:none;border-radius:2px;cursor:pointer;transition:all 0.2s;}
     .btn-primary{background:linear-gradient(135deg,var(--deep-pink),var(--pink));color:#fff;box-shadow:0 4px 16px rgba(194,24,91,0.35);}
+    .btn-ghost{background:none;color:var(--deep-pink);border:1.5px solid var(--deep-pink);}
+    .btn-ghost:hover{background:var(--blush);}
     .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(194,24,91,0.45);}
     .btn-primary:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
     .alert{padding:1rem 1.25rem;border-radius:2px;font-size:0.85rem;margin-top:1rem;}
@@ -365,6 +367,7 @@
     <button class="nav-btn active" data-tab="book">📖 The Burn Book</button>
     <button class="nav-btn" data-tab="hot">🔥 Hottest Burns</button>
     <button class="nav-btn" data-tab="submit">✍️ Submit an Entry</button>
+    <button class="nav-btn" data-tab="shirts">👕 Shirts</button>
     <a href="naptionals.html" class="nav-btn" style="text-decoration:none;display:inline-flex;align-items:center;font-weight:800;letter-spacing:0.18em;color:rgba(255,255,255,0.7);">😴 NAPTIONALS</a>
   </nav>
 
@@ -376,6 +379,10 @@
         <div class="section-header-box">
           <h2 class="section-title">The Burn Book</h2>
           <p class="section-sub">Moderated &amp; approved entries only &mdash; we are mean but have standards.</p>
+          <div style="margin-top:0.6rem;">
+            <div class="section-sub" style="font-weight:700;margin-bottom:0.35rem;">📓 Psst</div>
+            <div class="section-sub" style="display:inline-block;text-align:center;padding:0.55rem 1.1rem;background:var(--blush);border:1.5px solid rgba(200,30,90,0.12);border-radius:2px;box-shadow:4px 6px 24px var(--shadow);line-height:1.7;">This is the digital version of the Burn Book, but the OG book is here at the center.<br>Got burns? More artist than nerd? <br>Find it. Read it. Add to it. <b>Don't get caught.</b></div>
+          </div>
         </div>
 <div id="filter-bar" class="filter-bar" style="display:none">
           <span style="font-size:0.72rem;font-weight:600;color:#7a0030;letter-spacing:0.08em;text-transform:uppercase">Filter by tag:</span>
@@ -520,6 +527,65 @@
         <button class="btn btn-primary" id="submit-btn">🔥 Submit to the Burn Book</button>
         <div id="submit-status" style="display:none" class="alert"></div>
       </div>
+      </div>    </div>
+
+
+    <!-- SHIRTS -->
+    <div id="tab-shirts" class="tab-panel">
+      <h2 class="section-title">👕 Mean Whirls Shirts</h2>
+      <p class="section-sub">Not everyone can be us, but you can try to dress like us. Preorder now.</p>
+
+      <div id="shirt-status-box" style="display:none;background:var(--blush);border:1.5px solid rgba(200,30,90,0.12);border-radius:2px;box-shadow:4px 6px 24px var(--shadow);padding:0.85rem 1.1rem;margin:1rem 0;">
+        <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.4rem;">Your Shirt Order(s)</div>
+        <div id="shirt-status-list" style="font-size:0.85rem;"></div>
+      </div>
+
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;margin-top:1rem;">
+        <div style="flex:1;min-width:220px;max-width:320px;">
+          <img id="shirt-image" src="" alt="Mean Whirls shirt (front)" style="width:100%;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.1);" />
+          <img id="shirt-image-back" src="" alt="Mean Whirls shirt (back)" style="width:100%;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.1);margin-top:0.75rem;display:none;" />
+        </div>
+        <div style="flex:2;min-width:260px;">
+          <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:1.3rem;margin-bottom:0.25rem;">$<span id="shirt-price">40</span> &mdash; all sizes</div>
+          <p class="section-sub" style="margin-bottom:1rem;">We're planning to consolidate shipping to each center. If you have specific needs (pickup location, timing, etc.), let us know in the note below.</p>
+
+          <!-- Login wall -->
+          <div id="shirts-login-wall" style="display:none;text-align:center;padding:2rem 1rem;background:var(--white);border-radius:6px;">
+            <div style="font-size:1.5rem;margin-bottom:0.75rem">🔒</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:0.5rem">Want to order a shirt?</div>
+            <div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="openAuthModal('Want a shirt? Sign in first.')">🔥 Sign In / Join</button>
+              <button class="btn btn-ghost" onclick="startGuestShirtOrder()">👤 Order as Guest</button>
+            </div>
+          </div>
+
+          <!-- Order form -->
+          <div id="shirts-order-form">
+            <div class="form-group" id="shirt-guest-name-group" style="display:none;">
+              <label class="form-label">Your Name</label>
+              <input class="form-input" id="shirt-guest-name" placeholder="So we know who this order is for" />
+            </div>
+            <div class="form-group" id="shirt-guest-contact-group" style="display:none;gap:0.6rem;flex-direction:row;">
+              <div style="flex:1"><label class="form-label">Email <span class="form-label-note">(optional)</span></label><input class="form-input" id="shirt-guest-email" placeholder="email@example.com" /></div>
+              <div style="flex:1"><label class="form-label">Phone <span class="form-label-note">(optional)</span></label><input class="form-input" id="shirt-guest-phone" placeholder="(555) 555-5555" /></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sizes &amp; Quantities</label>
+              <div id="shirt-size-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:0.6rem;margin-top:0.4rem;"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">How do you intend to pay?</label>
+              <div id="shirt-payment-choices" style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.4rem;"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Note <span class="form-label-note">(optional &mdash; pickup location, sizing questions, etc.)</span></label>
+              <textarea class="form-textarea" id="shirt-note" placeholder="e.g. I need this in XXS because I am a delicate flower and also better than you" style="min-height:70px"></textarea>
+            </div>
+            <button class="btn btn-primary" id="shirt-submit-btn">👕 Submit Order</button>
+            <div id="shirt-status" style="display:none" class="alert"></div>
+          </div>
+
+        </div>
       </div>
     </div>
 
@@ -711,6 +777,8 @@
     // ── IP profile helpers ────────────────────────────────────
     let _ipProfile = null;
     let _adminVoteWeight = 10;
+    let SHIRT_IMAGE_URL = '', SHIRT_IMAGE_BACK_URL = '', SHIRT_PRICE = '40', PAY_VENMO = '', PAY_ZELLE = '', PAY_PAYPAL = '';
+    const SHIRT_SIZES = ['XS','S','M','L','XL','XXL','XXXL'];
 
     async function getIpProfile() {
       if (_ipProfile) return _ipProfile;
@@ -811,6 +879,12 @@
           if(r.key==='badgeicon')           BADGE_ICON_URL        =r.value;
           if(r.key==='anon_mouse_image')    ANON_MOUSE_IMAGE      =r.value;
           if(r.key==='admin_vote_weight')   _adminVoteWeight      =parseFloat(r.value)||10;
+          if(r.key==='shirt_image_url')     SHIRT_IMAGE_URL       =r.value;
+          if(r.key==='shirt_image_back_url') SHIRT_IMAGE_BACK_URL  =r.value;
+          if(r.key==='shirt_price')         SHIRT_PRICE           =r.value||'40';
+          if(r.key==='payment_venmo')       PAY_VENMO             =r.value;
+          if(r.key==='payment_zelle')       PAY_ZELLE             =r.value;
+          if(r.key==='payment_paypal')      PAY_PAYPAL            =r.value;
         });
       } catch(e){}
       const hash=window.location.hash;
@@ -828,6 +902,7 @@
         if(btn.dataset.tab==='book'){closeDetail();loadEntries();}
         if(btn.dataset.tab==='hot') loadHottestBurns();
         if(btn.dataset.tab==='submit') prefillForms();
+        if(btn.dataset.tab==='shirts') loadShirtsTab();
       });
     });
     function goHome(){ document.querySelector('.nav-btn[data-tab="book"]').click(); }
@@ -2074,6 +2149,210 @@ function updateAuthUI() {
   prefillForms();
 }
 
+// ── Shirts ─────────────────────────────────────────────────
+function renderShirtSizeGrid() {
+  const grid = document.getElementById('shirt-size-grid');
+  if (!grid || grid.children.length) return;
+  grid.innerHTML = SHIRT_SIZES.map(sz => `
+    <div style="background:var(--white);border-radius:6px;padding:0.5rem 0.6rem;text-align:center;">
+      <div style="font-weight:700;font-size:0.85rem;margin-bottom:0.3rem;">${sz}</div>
+      <input type="number" min="0" max="20" value="0" class="shirt-qty-input" data-size="${sz}"
+        style="width:100%;text-align:center;padding:0.3rem;border:1.5px solid rgba(122,48,80,0.2);border-radius:4px;font-family:'Raleway',sans-serif;font-size:0.9rem;" />
+    </div>`).join('');
+}
+
+function closeShirtConfirm() {
+  document.getElementById('shirt-confirm-modal').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function shirtPaymentNoteHTML(method) {
+  if (method === 'Cash') {
+    return `Paying cash? Fine. We'll allow it. But know that a tiny part of us will judge you forever. 💅`;
+  }
+  return `Please put your name in the notes when you send payment, so we know it's you!`;
+}
+
+function shirtPaymentLinkHTML(method) {
+  if (method === 'Venmo' && PAY_VENMO) {
+    const handle = PAY_VENMO.replace(/^@/,'').trim();
+    return `<a href="https://venmo.com/u/${encodeURIComponent(handle)}" target="_blank" rel="noopener" style="color:var(--deep-pink);font-weight:600;">Pay @${esc(handle)} on Venmo →</a>`;
+  }
+  if (method === 'Zelle' && PAY_ZELLE) {
+    return `Send to <strong>${esc(PAY_ZELLE.trim())}</strong> via Zelle`;
+  }
+  if (method === 'PayPal' && PAY_PAYPAL) {
+    const p = PAY_PAYPAL.trim();
+    const link = /^https?:\/\//i.test(p) ? p : `https://paypal.me/${encodeURIComponent(p.replace(/^@/,''))}`;
+    return `<a href="${esc(link)}" target="_blank" rel="noopener" style="color:var(--deep-pink);font-weight:600;">Pay ${esc(p)} on PayPal →</a>`;
+  }
+  return `Pay <strong>cash in person</strong> to any MeanWhirl`;
+}
+
+function renderShirtPaymentInfo() {
+  const el = document.getElementById('shirt-payment-info');
+  if (!el) return;
+  const lines = [];
+  if (PAY_VENMO)  lines.push(`<strong>Venmo:</strong> ${shirtPaymentLinkHTML('Venmo')}`);
+  if (PAY_ZELLE)  lines.push(`<strong>Zelle:</strong> ${shirtPaymentLinkHTML('Zelle')}`);
+  if (PAY_PAYPAL) lines.push(`<strong>PayPal:</strong> ${shirtPaymentLinkHTML('PayPal')}`);
+  lines.push(`<strong>Cash:</strong> in person, to any MeanWhirl`);
+  el.innerHTML = lines.join('<br>');
+}
+
+
+
+function renderShirtPaymentChoices() {
+  const el = document.getElementById('shirt-payment-choices');
+  if (!el) return;
+  const opts = [];
+  if (PAY_VENMO)  opts.push(['Venmo','Venmo']);
+  if (PAY_ZELLE)  opts.push(['Zelle','Zelle']);
+  if (PAY_PAYPAL) opts.push(['PayPal','PayPal']);
+  opts.push(['Cash','Cash <span style="color:var(--muted);font-style:italic;">(we prefer anything else!)</span>']);
+  el.innerHTML = opts.map((o,i) => `
+    <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;">
+      <input type="radio" name="shirt-pay-method" value="${esc(o[0])}" ${i===0?'checked':''} style="accent-color:var(--deep-pink)" />
+      <span>${o[1]}</span>
+    </label>`).join('');
+}
+
+function shirtPaymentLabel(status) {
+  if (!status || status === 'unpaid') return null;
+  return status; // already a human-readable label set by admin
+}
+
+async function cancelShirtOrder(id) {
+  if (!confirm('Cancel this shirt order?')) return;
+  try {
+    await sbDelete('shirt_orders', `id=eq.${id}`);
+    loadUserShirtOrders();
+    showToast('Order cancelled.');
+  } catch(err) { alert('Failed to cancel: '+err.message); }
+}
+
+async function loadUserShirtOrders() {
+  const box = document.getElementById('shirt-status-box');
+  const list = document.getElementById('shirt-status-list');
+  if (!box || !list) return;
+  if (!isLoggedIn()) { box.style.display='none'; return; }
+  try {
+    const orders = await sbGet('shirt_orders', `user_id=eq.${getUserId()}&order=created_at.asc`);
+    if (!orders.length) { box.style.display='none'; return; }
+    box.style.display='block';
+    list.innerHTML = orders.map(o => {
+      const itemsStr = (o.items||[]).map(it=>`${it.size} ×${it.qty}`).join(', ');
+      const paid = shirtPaymentLabel(o.payment_status);
+      const badge = paid
+        ? `<span style="display:inline-block;background:#2e7d32;color:#fff;font-size:0.68rem;font-weight:700;padding:0.1rem 0.5rem;border-radius:10px;letter-spacing:0.05em;text-transform:uppercase;">✓ Paid (${esc(paid)})</span>`
+        : `<span style="display:inline-block;background:#999;color:#fff;font-size:0.68rem;font-weight:700;padding:0.1rem 0.5rem;border-radius:10px;letter-spacing:0.05em;text-transform:uppercase;">Not yet paid</span>`;
+      const note = o.note ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem;font-style:italic;">"${esc(o.note)}"</div>` : '';
+      return `<div style="padding:0.4rem 0;border-bottom:1px solid var(--blush);">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.4rem;">
+          <span>${esc(itemsStr)}</span>${badge}
+        </div>${note}
+        ${!paid?`<div style="font-size:0.75rem;color:var(--muted);margin-top:0.35rem;padding-top:0.35rem;border-top:1px dashed rgba(122,48,80,0.15);">
+          ${shirtPaymentLinkHTML(o.intended_payment)}<br>
+          <span style="font-style:italic;">${shirtPaymentNoteHTML(o.intended_payment)}</span><br>
+          If you already paid, give it a little time to show up here as paid, it is not automatic.
+          <div style="margin-top:0.4rem;"><button class="filter-clear" onclick="cancelShirtOrder('${o.id}')">✕ Cancel this order</button></div>
+        </div>`:''}
+      </div>`;
+    }).join('');
+  } catch(e) { box.style.display='none'; }
+}
+
+let _shirtGuestMode = false;
+function startGuestShirtOrder() {
+  _shirtGuestMode = true;
+  loadShirtsTab();
+}
+
+function loadShirtsTab() {
+  const wall = document.getElementById('shirts-login-wall');
+  const form = document.getElementById('shirts-order-form');
+  const loggedIn = isLoggedIn();
+  const guest = _shirtGuestMode;
+  if (wall) wall.style.display = (loggedIn || guest) ? 'none' : 'block';
+  if (form) form.style.display = (loggedIn || guest) ? 'block' : 'none';
+  document.getElementById('shirt-guest-name-group').style.display = guest ? 'block' : 'none';
+  document.getElementById('shirt-guest-contact-group').style.display = guest ? 'flex' : 'none';
+  document.getElementById('shirt-image').src = SHIRT_IMAGE_URL || SHIRT_PLACEHOLDER_SVG;
+  const backImg = document.getElementById('shirt-image-back');
+  if (SHIRT_IMAGE_BACK_URL) { backImg.src = SHIRT_IMAGE_BACK_URL; backImg.style.display = 'block'; }
+  else { backImg.style.display = 'none'; }
+  document.getElementById('shirt-price').textContent = SHIRT_PRICE;
+  renderShirtSizeGrid();
+  renderShirtPaymentInfo();
+  renderShirtPaymentChoices();
+  loadUserShirtOrders();
+}
+
+const SHIRT_PLACEHOLDER_SVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23fce4ec'/%3E%3Cpath d='M70 30 L40 55 L55 75 L70 65 L70 175 L130 175 L130 65 L145 75 L160 55 L130 30 L115 45 L85 45 Z' fill='%237a3050' opacity='0.85'/%3E%3Ctext x='100' y='130' font-family='Georgia,serif' font-size='18' fill='%23fff' text-anchor='middle' font-weight='bold'%3EMEAN%3C/text%3E%3Ctext x='100' y='150' font-family='Georgia,serif' font-size='18' fill='%23fff' text-anchor='middle' font-weight='bold'%3EWHIRLS%3C/text%3E%3C/svg%3E";
+
+document.getElementById('shirt-submit-btn')?.addEventListener('click', async () => {
+  const guest = _shirtGuestMode && !isLoggedIn();
+  if (!isLoggedIn() && !guest) { openAuthModal('Want a shirt? Sign in first.'); return; }
+  const items = [...document.querySelectorAll('.shirt-qty-input')]
+    .map(inp => ({ size: inp.dataset.size, qty: parseInt(inp.value)||0 }))
+    .filter(it => it.qty > 0);
+  const note = document.getElementById('shirt-note').value.trim();
+  const intendedPay = document.querySelector('input[name="shirt-pay-method"]:checked')?.value || 'Cash';
+  const statusEl = document.getElementById('shirt-status');
+  if (!items.length) {
+    statusEl.style.display='block'; statusEl.className='alert alert-error';
+    statusEl.textContent = 'Pick at least one size and quantity.';
+    return;
+  }
+  let guestName = '', guestEmail = '', guestPhone = '';
+  if (guest) {
+    guestName = document.getElementById('shirt-guest-name').value.trim();
+    guestEmail = document.getElementById('shirt-guest-email').value.trim();
+    guestPhone = document.getElementById('shirt-guest-phone').value.trim();
+    if (!guestName) {
+      statusEl.style.display='block'; statusEl.className='alert alert-error';
+      statusEl.textContent = 'Please enter your name.';
+      return;
+    }
+    if (!guestEmail && !guestPhone) {
+      if (!confirm('No email or phone entered. We may not be able to reach you about this order. Continue anyway?')) return;
+    }
+  }
+  const btn = document.getElementById('shirt-submit-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Submitting...';
+  try {
+    const payload = { items, note: note||null, intended_payment: intendedPay, payment_status: 'unpaid' };
+    if (guest) {
+      payload.user_id = null;
+      payload.walkup_name = guestName;
+      payload.walkup_email = guestEmail || null;
+      payload.walkup_phone = guestPhone || null;
+    } else {
+      payload.user_id = getUserId();
+    }
+    await sbPost('shirt_orders', payload);
+    statusEl.style.display='block'; statusEl.className='alert alert-success';
+    statusEl.textContent = '✅ Order submitted!';
+    document.querySelectorAll('.shirt-qty-input').forEach(i=>i.value='0');
+    document.getElementById('shirt-note').value='';
+    if (guest) {
+      document.getElementById('shirt-guest-name').value='';
+      document.getElementById('shirt-guest-email').value='';
+      document.getElementById('shirt-guest-phone').value='';
+    } else {
+      loadUserShirtOrders();
+    }
+    document.getElementById('shirt-confirm-payment').innerHTML = shirtPaymentLinkHTML(intendedPay);
+    document.getElementById('shirt-confirm-note').innerHTML = shirtPaymentNoteHTML(intendedPay);
+    document.getElementById('shirt-confirm-modal').classList.add('open');
+    document.body.style.overflow='hidden';
+  } catch(err) {
+    statusEl.style.display='block'; statusEl.className='alert alert-error';
+    statusEl.textContent = 'Something went wrong: '+err.message;
+  }
+  btn.disabled=false; btn.innerHTML='👕 Submit Order';
+});
+
 function prefillForms() {
   const loggedIn = isLoggedIn();
   const name = loggedIn ? getDisplayName() : '';
@@ -2124,6 +2403,7 @@ function requireAuth(action) {
       if (currentDetailEntry) openDetail(currentDetailEntry);
       const newTagBtn=document.getElementById('new-tag-btn');
       if(newTagBtn) newTagBtn.style.display='inline-flex';
+      if (document.getElementById('tab-shirts')?.classList.contains('active')) loadShirtsTab();
     }
 
     init();
@@ -2133,6 +2413,19 @@ function requireAuth(action) {
 
   <!-- Rickroll Modal -->
   <!-- Tag Management Modal -->
+  <!-- Shirt Order Confirmation / Payment Modal -->
+  <div class="modal-overlay" id="shirt-confirm-modal" style="z-index:1100">
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-header"><span class="modal-title">👕 Order Submitted!</span><button class="modal-close" onclick="closeShirtConfirm()">✕</button></div>
+      <div class="modal-body">
+        <p style="margin-bottom:0.75rem;">Your shirt order is in! One last thing &mdash; you still need to pay.</p>
+        <div style="background:var(--blush);border:1.5px solid rgba(200,30,90,0.12);border-radius:2px;padding:0.75rem 1rem;font-size:0.9rem;line-height:1.7;margin-bottom:0.75rem;" id="shirt-confirm-payment"></div>
+        <p style="font-size:0.8rem;color:var(--muted);font-style:italic;" id="shirt-confirm-note"></p>
+        <button class="btn btn-primary" onclick="closeShirtConfirm()" style="margin-top:0.5rem;">Got it!</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="tag-mgmt-modal" style="z-index:1100">
     <div class="modal" style="max-width:560px;max-height:80vh;display:flex;flex-direction:column;">
       <div class="modal-header">

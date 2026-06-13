@@ -177,6 +177,14 @@
     .ud-item-meta{font-size:0.7rem;color:var(--muted);}
     .ud-item-deleted{opacity:0.45;text-decoration:line-through;}
     .ud-bulk-bar{display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1500;display:none;align-items:center;justify-content:center;padding:1rem;}
+    .modal-overlay.open{display:flex;}
+    .modal{background:var(--white);border-radius:4px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.3);}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid var(--blush);}
+    .modal-title{font-family:'Playfair Display',serif;font-weight:700;font-size:1.05rem;}
+    .modal-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted);line-height:1;}
+    .modal-close:hover{color:var(--deep-pink);}
+    .modal-body{padding:1.25rem;}
     .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:899;display:none;pointer-events:none;}
     .drawer-overlay.open{display:block;pointer-events:auto;}
   </style>
@@ -222,6 +230,7 @@
       <button class="admin-tab" data-ttab="contact">✉️ Messages <span class="badge-count" id="cnt-contact">0</span></button>
       <button class="admin-tab" data-ttab="accounts">👥 Accounts</button>
       <button class="admin-tab" data-ttab="picturefix">🖼 Picture Fix</button>
+      <button class="admin-tab" data-ttab="shirts">👕 Shirts <span class="badge-count" id="cnt-shirts">0</span></button>
     </div>
 
     <div id="ttab-burn" class="top-panel active">
@@ -487,6 +496,85 @@
       </div>
     </div>
 
+    <!-- Shirts Panel -->
+    <div id="ttab-shirts" class="top-panel">
+      <div class="section-hdr">
+        <span class="section-title">👕 Shirt Orders</span>
+        <button class="refresh-btn" onclick="loadShirtOrders()">↺ Refresh</button>
+      </div>
+      <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary" onclick="openShirtOrderModal()">+ New Order (Walk-up)</button>
+        <span id="shirt-order-summary" style="font-size:0.78rem;color:var(--muted)"></span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Name</th>
+            <th>Items</th>
+            <th style="width:90px">Intends</th>
+            <th style="width:160px">Payment Status</th>
+            <th style="width:90px">Date</th>
+            <th style="width:50px">Info</th>
+            <th style="width:50px">Del</th>
+          </tr></thead>
+          <tbody id="shirt-orders-tbody"><tr class="empty-row"><td colspan="7">Loading...</td></tr></tbody>
+        </table>
+      </div>
+
+      <hr style="margin:2rem 0;border:none;border-top:1px solid var(--blush)">
+      <div class="section-hdr"><span class="section-title">⚙️ Shirt Settings</span></div>
+      <div style="background:var(--white);border-radius:6px;padding:1rem 1.25rem;max-width:480px;">
+        <div class="form-group"><label class="form-label">Shirt Image URL (front)</label><input class="form-input" id="cfg-shirt-image" placeholder="https://..." /></div>
+        <div class="form-group"><label class="form-label">Shirt Image URL (back)</label><input class="form-input" id="cfg-shirt-image-back" placeholder="https://..." /></div>
+        <div class="form-group"><label class="form-label">Price (number only)</label><input class="form-input" id="cfg-shirt-price" placeholder="40" /></div>
+        <div class="form-group"><label class="form-label">Venmo</label><input class="form-input" id="cfg-pay-venmo" placeholder="@your-venmo" /></div>
+        <div class="form-group"><label class="form-label">Zelle</label><input class="form-input" id="cfg-pay-zelle" placeholder="email or phone" /></div>
+        <div class="form-group"><label class="form-label">PayPal</label><input class="form-input" id="cfg-pay-paypal" placeholder="paypal.me/..." /></div>
+        <button class="btn btn-primary" onclick="saveShirtConfig()">💾 Save Settings</button>
+        <div id="shirt-config-msg" style="display:none" class="alert"></div>
+      </div>
+    </div>
+
+    <!-- New/Edit Shirt Order Modal -->
+    <div class="modal-overlay" id="shirt-order-modal">
+      <div class="modal">
+        <div class="modal-header"><span class="modal-title">👕 New Shirt Order</span><button class="modal-close" onclick="closeShirtOrderModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Account (optional)</label>
+            <select class="form-input" id="so-user"><option value="">— Walk-up / no account —</option></select>
+          </div>
+          <div class="form-group" id="so-walkup-name-group">
+            <label class="form-label">Name</label>
+            <input class="form-input" id="so-walkup-name" placeholder="Customer name" />
+          </div>
+          <div class="form-group" id="so-walkup-contact-group" style="display:flex;gap:0.6rem;">
+            <div style="flex:1"><label class="form-label">Email <span class="form-label-note">(optional)</span></label><input class="form-input" id="so-walkup-email" placeholder="email@example.com" /></div>
+            <div style="flex:1"><label class="form-label">Phone <span class="form-label-note">(optional)</span></label><input class="form-input" id="so-walkup-phone" placeholder="(555) 555-5555" /></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sizes &amp; Quantities</label>
+            <div id="so-size-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-top:0.4rem;"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Note</label><textarea class="form-textarea" id="so-note" style="min-height:60px"></textarea></div>
+          <div class="form-group">
+            <label class="form-label">Payment Status</label>
+            <select class="form-input" id="so-payment-status"></select>
+          </div>
+          <button class="btn btn-primary" id="so-save-btn">💾 Save Order</button>
+          <div id="so-msg" style="display:none" class="alert"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shirt Order Info Modal -->
+    <div class="modal-overlay" id="shirt-info-modal">
+      <div class="modal" style="max-width:420px;">
+        <div class="modal-header"><span class="modal-title">ℹ️ Order Details</span><button class="modal-close" onclick="closeShirtInfo()">✕</button></div>
+        <div class="modal-body" id="shirt-info-body" style="font-size:0.88rem;line-height:1.8;"></div>
+      </div>
+    </div>
+
   </div>
 
   <div class="toast" id="toast"></div>
@@ -515,7 +603,7 @@
     const sbPost   = async (t,b)         => { const r=await fetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:{...getH(),'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
     const sbPatch  = async (t,p,b)       => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'PATCH',headers:{...getH(),'Prefer':'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
     const sbDelete = async (t,p)         => { const r=await fetch(`${SB}/rest/v1/${t}?${p}`,{method:'DELETE',headers:getH()}); if(!r.ok)throw new Error(await r.text()); };
-    const sbUpsert = async (t,b,oc)  => { const u=`${SB}/rest/v1/${t}`+(oc?`?on_conflict=${oc}`:''); const r=await fetch(u,{method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
+    const sbUpsert = async (t,b,oc)  => { const u=`${SB}/rest/v1/${t}`+(oc?`?on_conflict=${oc}`:''); const r=await fetch(u,{method:'POST',headers:{...getH(),'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); };
     const getIpHash = async () => {
       try { const c=sessionStorage.getItem('mw_iphash'); if(c)return c; const {ip}=await (await fetch('https://api.ipify.org?format=json')).json(); let h=0; for(let i=0;i<ip.length;i++){h=((h<<5)-h)+ip.charCodeAt(i);h|=0;} const s='v'+Math.abs(h).toString(36); sessionStorage.setItem('mw_iphash',s); return s; }
       catch { return 'anon_'+Math.random().toString(36).slice(2); }
@@ -628,6 +716,9 @@
 
     // ── Login ─────────────────────────────────────────────────
     let _adminVoteWeight = 10;
+    let SHIRT_IMAGE_URL = '', SHIRT_IMAGE_BACK_URL = '', SHIRT_PRICE = '40', PAY_VENMO = '', PAY_ZELLE = '', PAY_PAYPAL = '';
+    const SHIRT_SIZES = ['XS','S','M','L','XL','XXL','XXXL'];
+    let _shirtOrders = [], _shirtAdmins = [];
 
     async function init() {
       try {
@@ -638,6 +729,12 @@
           if(r.key==='badgeicon')           BADGE_ICON_URL    = r.value;
           if(r.key==='anon_mouse_image')    ANON_MOUSE_IMAGE  = r.value;
           if(r.key==='admin_vote_weight')   { _adminVoteWeight = parseFloat(r.value)||10; const el=document.getElementById('vote-explain-admin-weight'); if(el)el.textContent=_adminVoteWeight+'×'; }
+          if(r.key==='shirt_image_url')     SHIRT_IMAGE_URL = r.value;
+          if(r.key==='shirt_image_back_url') SHIRT_IMAGE_BACK_URL = r.value;
+          if(r.key==='shirt_price')         SHIRT_PRICE     = r.value || '40';
+          if(r.key==='payment_venmo')       PAY_VENMO       = r.value;
+          if(r.key==='payment_zelle')       PAY_ZELLE       = r.value;
+          if(r.key==='payment_paypal')      PAY_PAYPAL      = r.value;
         });
       } catch(e) {}
     }
@@ -672,6 +769,12 @@
           loadAll(); return;
         }
       }
+      // No valid admin session — show login form (unless IP auto-login already unlocked it)
+      setTimeout(() => {
+        if (document.getElementById('admin-main').style.display !== 'block') {
+          document.getElementById('login-wrap').style.display = 'block';
+        }
+      }, 400);
     })();
 
     document.getElementById('admin-pass').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-btn').click(); });
@@ -726,6 +829,7 @@
         if(tab.dataset.ttab==='accounts')    loadAccounts();
         if(tab.dataset.ttab==='burn')        loadEntries();
         if(tab.dataset.ttab==='picturefix')  loadPictureFix();
+        if(tab.dataset.ttab==='shirts')      loadShirtsAdminTab();
         if(tab.dataset.ttab==='nap')     loadNapEntries();
       });
     });
@@ -2120,6 +2224,207 @@
       // Re-sort table to reflect new sizes/quality
       pfRenderTable();
       document.getElementById('pf-fix-btn').disabled = false;
+    }
+
+    // ── Shirts (admin) ──────────────────────────────────────────
+    async function loadShirtsAdminTab() {
+      document.getElementById('cfg-shirt-image').value = SHIRT_IMAGE_URL;
+      document.getElementById('cfg-shirt-image-back').value = SHIRT_IMAGE_BACK_URL;
+      document.getElementById('cfg-shirt-price').value = SHIRT_PRICE;
+      document.getElementById('cfg-pay-venmo').value = PAY_VENMO;
+      document.getElementById('cfg-pay-zelle').value = PAY_ZELLE;
+      document.getElementById('cfg-pay-paypal').value = PAY_PAYPAL;
+      try {
+        _shirtAdmins = await sbGet('user_profiles', 'is_admin=eq.true&select=id,display_name&order=display_name.asc');
+      } catch(e) { _shirtAdmins = []; }
+      loadShirtOrders();
+    }
+
+    function paymentStatusOptions(current) {
+      const opts = ['Unpaid','Venmo Received','Zelle Received','PayPal Received',
+        ...(_shirtAdmins.map(a => `Cash – ${a.display_name}`))];
+      return opts.map(o => {
+        const val = o === 'Unpaid' ? 'unpaid' : o;
+        const sel = (current||'unpaid') === val ? 'selected' : '';
+        return `<option value="${esc(val)}" ${sel}>${esc(o)}</option>`;
+      }).join('');
+    }
+
+    async function loadShirtOrders() {
+      const tbody = document.getElementById('shirt-orders-tbody');
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Loading...</td></tr>';
+      try {
+        const orders = await sbGet('shirt_orders', 'select=*&order=created_at.desc');
+        _shirtOrders = orders;
+        // Get user display names
+        const userIds = [...new Set(orders.filter(o=>o.user_id).map(o=>o.user_id))];
+        let userMap = {};
+        if (userIds.length) {
+          const ups = await sbGet('user_profiles', `id=in.(${userIds.join(',')})&select=id,display_name`);
+          ups.forEach(u => userMap[u.id] = u.display_name);
+        }
+        if (!orders.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No shirt orders yet.</td></tr>'; }
+        else {
+          tbody.innerHTML = '';
+          // Tally sizes for summary
+          const tally = {};
+          orders.forEach(o => (o.items||[]).forEach(it => { tally[it.size] = (tally[it.size]||0) + it.qty; }));
+          const summary = SHIRT_SIZES.map(sz => `${sz}: ${tally[sz]||0}`).join('  ·  ');
+          document.getElementById('shirt-order-summary').textContent = `Total — ${summary}  ·  ${orders.length} order${orders.length!==1?'s':''}`;
+
+          orders.forEach(o => {
+            const name = o.user_id ? (userMap[o.user_id]||'(unknown account)') : (o.walkup_name||'(walk-up)');
+            const itemsStr = (o.items||[]).map(it=>`${it.size} ×${it.qty}`).join(', ');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="font-weight:600">${esc(name)}</td>
+              <td>${esc(itemsStr)}</td>
+              <td style="font-size:0.78rem;color:var(--muted)">${esc(o.intended_payment||'—')}</td>
+              <td><select class="form-input" style="font-size:0.78rem;padding:0.3rem 0.5rem" onchange="updateShirtPaymentStatus('${o.id}',this.value)">${paymentStatusOptions(o.payment_status)}</select></td>
+              <td style="font-size:0.72rem;color:var(--muted);white-space:nowrap">${toTS(o.created_at)}</td>
+              <td><button class="btn-a ae" onclick="openShirtInfo('${o.id}')">ℹ️</button></td>
+              <td><button class="btn-a ar" onclick="deleteShirtOrder('${o.id}')">🗑</button></td>`;
+            tbody.appendChild(tr);
+          });
+        }
+        const cnt = document.getElementById('cnt-shirts');
+        if (cnt) cnt.textContent = orders.filter(o=>!o.payment_status||o.payment_status==='unpaid').length;
+      } catch(err) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Failed: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function updateShirtPaymentStatus(id, status) {
+      try {
+        const patch = { payment_status: status };
+        if (status === 'unpaid') { patch.paid_by = null; patch.paid_at = null; }
+        else { patch.paid_by = _adminProfile?.display_name || _adminUser?.email || 'Admin'; patch.paid_at = new Date().toISOString(); }
+        await sbPatch('shirt_orders', `id=eq.${id}`, patch);
+        showToast('✅ Payment status updated.');
+        const o = _shirtOrders.find(x=>x.id===id);
+        if (o) { o.payment_status = status; o.paid_by = patch.paid_by; o.paid_at = patch.paid_at; }
+        const cnt = document.getElementById('cnt-shirts');
+        if (cnt) {
+          cnt.textContent = _shirtOrders.filter(o=>!o.payment_status||o.payment_status==='unpaid').length;
+        }
+      } catch(err) { alert('Failed: '+err.message); }
+    }
+
+    async function deleteShirtOrder(id) {
+      if (!confirm('Delete this shirt order?')) return;
+      try { await sbDelete('shirt_orders', `id=eq.${id}`); loadShirtOrders(); }
+      catch(err) { alert('Failed: '+err.message); }
+    }
+
+    async function openShirtOrderModal() {
+      const sel = document.getElementById('so-user');
+      sel.innerHTML = '<option value="">— Walk-up / no account —</option>';
+      try {
+        const accounts = await sbGet('user_profiles', 'select=id,display_name&order=display_name.asc');
+        accounts.forEach(a => sel.innerHTML += `<option value="${a.id}">${esc(a.display_name)}</option>`);
+      } catch(e){}
+      sel.onchange = () => {
+        const isWalkup = !sel.value;
+        document.getElementById('so-walkup-name-group').style.display = isWalkup ? 'block' : 'none';
+        document.getElementById('so-walkup-contact-group').style.display = isWalkup ? 'flex' : 'none';
+      };
+      sel.value = '';
+      document.getElementById('so-walkup-name-group').style.display = 'block';
+      document.getElementById('so-walkup-contact-group').style.display = 'flex';
+      document.getElementById('so-walkup-name').value = '';
+      document.getElementById('so-walkup-email').value = '';
+      document.getElementById('so-walkup-phone').value = '';
+      document.getElementById('so-note').value = '';
+      const grid = document.getElementById('so-size-grid');
+      grid.innerHTML = SHIRT_SIZES.map(sz => `
+        <div style="text-align:center;background:var(--blush);border-radius:4px;padding:0.4rem;">
+          <div style="font-weight:700;font-size:0.78rem;margin-bottom:0.25rem">${sz}</div>
+          <input type="number" min="0" max="20" value="0" class="so-qty-input" data-size="${sz}" style="width:100%;text-align:center;padding:0.25rem;border:1px solid rgba(122,48,80,0.2);border-radius:4px;" />
+        </div>`).join('');
+      document.getElementById('so-payment-status').innerHTML = paymentStatusOptions('unpaid');
+      document.getElementById('so-msg').style.display='none';
+      document.getElementById('shirt-order-modal').classList.add('open');
+      document.body.style.overflow='hidden';
+    }
+    function closeShirtOrderModal(){
+      document.getElementById('shirt-order-modal').classList.remove('open');
+      document.body.style.overflow='';
+    }
+    document.getElementById('so-save-btn')?.addEventListener('click', async () => {
+      const userId = document.getElementById('so-user').value || null;
+      const walkupName = document.getElementById('so-walkup-name').value.trim();
+      const walkupEmail = document.getElementById('so-walkup-email').value.trim();
+      const walkupPhone = document.getElementById('so-walkup-phone').value.trim();
+      const note = document.getElementById('so-note').value.trim();
+      const status = document.getElementById('so-payment-status').value;
+      const items = [...document.querySelectorAll('.so-qty-input')]
+        .map(inp => ({ size: inp.dataset.size, qty: parseInt(inp.value)||0 }))
+        .filter(it => it.qty > 0);
+      const msg = document.getElementById('so-msg');
+      if (!items.length) { msg.style.display='block'; msg.className='alert alert-error'; msg.textContent='Pick at least one size and quantity.'; return; }
+      if (!userId && !walkupName) { msg.style.display='block'; msg.className='alert alert-error'; msg.textContent='Pick an account or enter a walk-up name.'; return; }
+      if (!userId && !walkupEmail && !walkupPhone) {
+        if (!confirm('No email or phone number entered for this walk-up order. Continue without contact info?')) return;
+      }
+      const patch = { user_id: userId, walkup_name: userId?null:walkupName, items, note: note||null, payment_status: status };
+      if (!userId) { patch.walkup_email = walkupEmail||null; patch.walkup_phone = walkupPhone||null; }
+      if (status !== 'unpaid') { patch.paid_by = _adminProfile?.display_name || _adminUser?.email || 'Admin'; patch.paid_at = new Date().toISOString(); }
+      try {
+        await sbPost('shirt_orders', patch);
+        closeShirtOrderModal();
+        loadShirtOrders();
+        showToast('✅ Order added!');
+      } catch(err) { msg.style.display='block'; msg.className='alert alert-error'; msg.textContent='Failed: '+err.message; }
+    });
+    document.getElementById('shirt-order-modal')?.addEventListener('click', e => {
+      if (e.target === document.getElementById('shirt-order-modal')) closeShirtOrderModal();
+    });
+
+    // ── Shirt order Info popup ──────────────────────────────────
+    function openShirtInfo(id) {
+      const o = _shirtOrders.find(x=>x.id===id);
+      if (!o) return;
+      const rows = [];
+      rows.push(['Note', o.note || '—']);
+      rows.push(['Intends to pay', o.intended_payment || '—']);
+      if (!o.user_id) {
+        rows.push(['Email', o.walkup_email || '—']);
+        rows.push(['Phone', o.walkup_phone || '—']);
+      }
+      rows.push(['Paid by', o.paid_by || '—']);
+      rows.push(['Paid at', o.paid_at ? toTS(o.paid_at) : '—']);
+      document.getElementById('shirt-info-body').innerHTML = rows.map(([k,v]) =>
+        `<div style="display:flex;justify-content:space-between;gap:1rem;border-bottom:1px solid var(--blush);padding:0.3rem 0;"><strong>${esc(k)}:</strong><span style="text-align:right">${esc(v)}</span></div>`
+      ).join('');
+      document.getElementById('shirt-info-modal').classList.add('open');
+      document.body.style.overflow='hidden';
+    }
+    function closeShirtInfo(){
+      document.getElementById('shirt-info-modal').classList.remove('open');
+      document.body.style.overflow='';
+    }
+    document.getElementById('shirt-info-modal')?.addEventListener('click', e => {
+      if (e.target === document.getElementById('shirt-info-modal')) closeShirtInfo();
+    });
+
+    async function saveShirtConfig() {
+      const updates = [
+        ['shirt_image_url', document.getElementById('cfg-shirt-image').value.trim()],
+        ['shirt_image_back_url', document.getElementById('cfg-shirt-image-back').value.trim()],
+        ['shirt_price',     document.getElementById('cfg-shirt-price').value.trim() || '40'],
+        ['payment_venmo',   document.getElementById('cfg-pay-venmo').value.trim()],
+        ['payment_zelle',   document.getElementById('cfg-pay-zelle').value.trim()],
+        ['payment_paypal',  document.getElementById('cfg-pay-paypal').value.trim()],
+      ];
+      const msg = document.getElementById('shirt-config-msg');
+      try {
+        for (const [key, value] of updates) {
+          await sbUpsert('config', { key, value }, 'key');
+        }
+        SHIRT_IMAGE_URL = updates[0][1]; SHIRT_IMAGE_BACK_URL = updates[1][1]; SHIRT_PRICE = updates[2][1];
+        PAY_VENMO = updates[3][1]; PAY_ZELLE = updates[4][1]; PAY_PAYPAL = updates[5][1];
+        msg.style.display='block'; msg.className='alert alert-success'; msg.textContent='✅ Saved!';
+      } catch(err) { msg.style.display='block'; msg.className='alert alert-error'; msg.textContent='Failed: '+err.message; }
     }
 
     init();
