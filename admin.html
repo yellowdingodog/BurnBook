@@ -1839,7 +1839,7 @@
           const tr = document.createElement('tr');
           const reRollBtn = isLegacy ? '' : (p.rickrolled ? `<button class="btn-a ae" title="Reset rickroll" onclick="adminResetRickroll('${p.id}')">🎵 Re-roll</button>` : '');
            const deleteBtn = isLegacy ? '' : `<button class="btn-a ar" onclick="deleteAccount('${p.id}','${esc(p.display_name)}')">🗑 Delete</button>`;
-          tr.innerHTML = `<td style="font-weight:600">${esc(p.display_name)}${isLegacy?'<br><span style="font-size:.65rem;color:var(--muted)">(legacy)</span>':''}</td><td style="font-size:.75rem;color:var(--muted)">${isLegacy?'—':esc(p.email||'—')}</td><td>${adminBadge}</td><td style="white-space:nowrap">${weightInput}</td><td>${statusBadge}</td><td>${noteInput}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(p.created_at)}</td><td style="font-size:.8rem;text-align:center">${p.visit_count||0}</td><td style="white-space:nowrap">${viewBtn} ${reRollBtn} ${blockBtn} ${adminBtn}</td>`;
+          tr.innerHTML = `<td style="font-weight:600">${esc(p.display_name)}${isLegacy?'<br><span style="font-size:.65rem;color:var(--muted)">(legacy)</span>':''}</td><td style="font-size:.75rem;color:var(--muted)">${isLegacy?'—':esc(p.email||'—')}</td><td>${adminBadge}</td><td style="white-space:nowrap">${weightInput}</td><td>${statusBadge}</td><td>${noteInput}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(p.created_at)}</td><td style="font-size:.8rem;text-align:center">${p.visit_count||0}</td><td style="white-space:nowrap">${viewBtn} ${reRollBtn} ${blockBtn} ${adminBtn} ${deleteBtn}</td>`;
           tb.appendChild(tr);
         });
       } catch(err) { tb.innerHTML = emptyRow(8, 'Failed: '+err.message); }
