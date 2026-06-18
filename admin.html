@@ -413,7 +413,7 @@
       <div class="section-hdr"><span class="section-title">✉️ Admin Messages</span><button class="refresh-btn" onclick="loadContactMessages()">↺ Refresh</button></div>
       <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Messages sent by visitors via the "Contact Admins" button on any entry. Click <strong>Mark Read</strong> to dismiss.</div>
       <div class="tbl-wrap">
-        <table><thead><tr><th class="resizable">When</th><th class="resizable">Type</th><th class="resizable">Entry</th><th class="resizable">Subject</th><th class="resizable">Message</th><th class="resizable">IP Hash</th><th class="resizable">Names</th><th class="resizable">Admin Notes</th><th class="resizable">Actions</th></tr></thead>
+        <table><thead><tr><th class="resizable">When</th><th class="resizable">Account</th><th class="resizable">Entry</th><th class="resizable">Subject</th><th class="resizable">Message</th><th class="resizable">Admin Notes</th><th style="width:160px">Status</th><th style="width:50px">Del</th></tr></thead>
         <tbody id="tb-contact"></tbody></table>
       </div>
     </div>
@@ -1730,77 +1730,92 @@
       tb.innerHTML = loadingRow(8);
       try {
         const msgs = await sbGet('contact_messages', 'order=created_at.desc');
-        const unread = msgs.filter(m => !m.read).length;
+        const unread = msgs.filter(m => !m.msg_status || m.msg_status === 'unread').length;
         setBadge('cnt-contact', unread);
 
-        // Get ip names and entry subjects
-        const ips = [...new Set(msgs.map(m => m.ip_hash))];
+        const ips = [...new Set(msgs.map(m => m.ip_hash).filter(Boolean))];
         const entryIds = [...new Set(msgs.filter(m => m.entry_id).map(m => m.entry_id))];
         let nameMap = {}, entryMap = {};
         if (ips.length) {
-          const profiles2 = await sbGet('ip_account_links', `ip_hash=in.(${ips.join(',')})&select=ip_hash,user_id`);
-          const uids=[...new Set(profiles2.filter(p=>p.user_id).map(p=>p.user_id))];
-          let ups={};
-          if(uids.length){const u=await sbGet('user_profiles',`id=in.(${uids.join(',')})&select=id,display_name`);u.forEach(u=>ups[u.id]=u.display_name);}
-          profiles2.forEach(p => nameMap[p.ip_hash] = ups[p.user_id]||'(guest)');
+          const links = await sbGet('ip_account_links', `ip_hash=in.(${ips.join(',')})&select=ip_hash,user_id`);
+          const uids = [...new Set(links.filter(p => p.user_id).map(p => p.user_id))];
+          let ups = {};
+          if (uids.length) {
+            const u = await sbGet('user_profiles', `id=in.(${uids.join(',')})&select=id,display_name`);
+            u.forEach(u => ups[u.id] = u.display_name);
+          }
+          links.forEach(p => nameMap[p.ip_hash] = ups[p.user_id] || null);
         }
-        // Try burn entries then nap entries
         if (entryIds.length) {
           const burnEntries = await sbGet('entries', `id=in.(${entryIds.join(',')})&select=id,subject,ui_order`);
-          burnEntries.forEach(e => entryMap[e.id] = { subject: e.subject, num: e.ui_order, type: 'burn' });
+          burnEntries.forEach(e => entryMap[e.id] = { subject: e.subject, num: e.ui_order });
           const napEntries = await sbGet('nap_entries', `id=in.(${entryIds.join(',')})&select=id,subject,ui_order`);
-          napEntries.forEach(e => entryMap[e.id] = { subject: e.subject, num: e.ui_order, type: 'nap' });
+          napEntries.forEach(e => entryMap[e.id] = { subject: e.subject, num: e.ui_order });
         }
+
+        const STATUS_OPTS = ['unread','working','responded','fixed'];
+        const STATUS_LABELS = { unread:'Unread', working:'Working on it', responded:'Responded', fixed:'Fixed' };
+        const STATUS_COLORS = { unread:'#e53935', working:'#f9a825', responded:'#1976d2', fixed:'#2e7d32' };
 
         if (!msgs.length) { tb.innerHTML = emptyRow(8, 'No messages yet.'); return; }
         tb.innerHTML = '';
         msgs.forEach(m => {
           const tr = document.createElement('tr');
-          if (!m.read) tr.style.background = '#fffde7';
+          const status = m.msg_status || 'unread';
+          if (status === 'unread') tr.style.background = '#fffde7';
+
           const entry = m.entry_id ? entryMap[m.entry_id] : null;
-          const entryCell = entry ? `<span style="font-size:.78rem"><strong>#${entry.num||'?'}</strong> ${esc(entry.subject)} <span style="font-size:.68rem;color:var(--muted)">(${entry.type})</span></span>` : '—';
+          const entryCell = entry ? `<span style="font-size:.78rem"><strong>#${entry.num||'?'}</strong> ${esc(entry.subject)}</span>` : '—';
+          const accountCell = nameMap[m.ip_hash] || (m.name ? esc(m.name) : '<span style="color:var(--muted)">(guest)</span>');
+
+          const statusSelect = `<select style="font-size:0.75rem;padding:0.25rem 0.4rem;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;background:var(--cream);color:${STATUS_COLORS[status]};font-weight:700;width:100%;" onchange="setMsgStatus('${m.id}',this.value)">
+            ${STATUS_OPTS.map(s=>`<option value="${s}" ${s===status?'selected':''}>${STATUS_LABELS[s]}</option>`).join('')}
+          </select>${m.status_by ? `<div style="font-size:0.68rem;color:var(--muted);margin-top:0.15rem;">by ${esc(m.status_by)}</div>` : ''}`;
+
           tr.innerHTML = `
             <td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(m.created_at)}</td>
-            <td><span class="badge badge-${m.entry_type==='nap'?'pending':'approved'}">${esc(m.entry_type||'—')}</span></td>
+            <td style="font-size:.78rem">${accountCell}</td>
             <td>${entryCell}</td>
             <td style="font-weight:600;max-width:140px">${esc(m.subject)}</td>
             <td style="max-width:220px;font-size:.8rem">${esc(m.message)}</td>
-            <td style="font-size:.74rem;font-family:monospace;color:var(--muted)">${esc(m.ip_hash)}</td>
-            <td style="font-size:.78rem">${esc(nameMap[m.ip_hash]||'—')}</td>
-            <td style="white-space:nowrap">
-              <textarea id="notes-${m.id}" style="width:100%;min-height:55px;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.3rem 0.5rem;font-family:Raleway,sans-serif;font-size:0.75rem;color:var(--ink);background:var(--cream);resize:vertical;outline:none;" placeholder="Add notes...">${esc(m.notes||'')}</textarea>
-              <button class="btn-a ae" style="margin-top:0.25rem;font-size:0.62rem;padding:0.2rem 0.5rem" onclick="saveNotes('${m.id}')">💾 Save</button>
+            <td style="min-width:160px">
+              <textarea id="notes-${m.id}" style="width:100%;min-height:55px;border:1.5px solid rgba(200,30,90,0.2);border-radius:2px;padding:0.3rem 0.5rem;font-family:Raleway,sans-serif;font-size:0.75rem;color:var(--ink);background:var(--cream);resize:vertical;outline:none;display:block;" placeholder="Add notes...">${esc(m.notes||'')}</textarea>
+              <button class="btn-a ae" style="margin-top:0.3rem;" onclick="saveNotes('${m.id}')">💾 Save Notes</button>
             </td>
-            <td style="white-space:nowrap">
-              ${!m.read ? `<button class="btn-a aac" onclick="markMsgRead('${m.id}')">✓ Mark Read</button>` : '<span style="font-size:.72rem;color:var(--muted)">Read</span>'}
-              <button class="btn-a ar" onclick="deleteMsg('${m.id}')">✕</button>
-            </td>`;
+            <td style="white-space:nowrap;vertical-align:top">${statusSelect}</td>
+            <td><button class="btn-a ar" onclick="deleteMsg('${m.id}')">✕</button></td>`;
           tb.appendChild(tr);
         });
       } catch(err) { tb.innerHTML = emptyRow(8, 'Failed: ' + err.message); }
     }
 
-    async function markMsgRead(id) {
-      try { await sbPatch('contact_messages', `id=eq.${id}`, { read: true }); loadContactMessages(); }
-      catch(err) { alert('Failed: ' + err.message); }
+    async function setMsgStatus(id, status) {
+      try {
+        await sbPatch('contact_messages', `id=eq.${id}`, {
+          msg_status: status,
+          status_by: _adminProfile?.display_name || _adminUser?.email || 'Admin',
+          read: status !== 'unread'
+        });
+        loadContactMessages();
+      } catch(err) { alert('Failed: ' + err.message); }
     }
+
     async function saveNotes(id) {
       const el = document.getElementById('notes-'+id);
       if (!el) return;
       try {
-        await sbPatch('contact_messages', `id=eq.${id}`, { notes: el.value, read: true });
+        await sbPatch('contact_messages', `id=eq.${id}`, { notes: el.value });
         showToast('Notes saved.');
-        // Refresh badge count without full reload
-        const msgs = await sbGet('contact_messages', 'select=read');
-        setBadge('cnt-contact', msgs.filter(m => !m.read).length);
       } catch(err) { alert('Failed: ' + err.message); }
     }
+
     async function deleteMsg(id) {
       if (!confirm('Delete this message?')) return;
       try { await sbDelete('contact_messages', `id=eq.${id}`); loadContactMessages(); }
       catch(err) { alert('Failed: ' + err.message); }
     }
 
+    // ── Accounts management ───────────────────────────────────
     // ── Accounts management ───────────────────────────────────
     async function loadAccounts() {
       const tb = document.getElementById('tb-accounts');
