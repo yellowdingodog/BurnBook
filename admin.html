@@ -1852,17 +1852,13 @@
     }
 
     async function deleteAccount(userId, displayName) {
-      if (!confirm(`Permanently delete the account for "${displayName}"?\n\nThis removes their profile and linked data. Their submitted entries remain but become unlinked.\n\nNOTE: You will also need to delete their auth record from the Supabase dashboard so they can re-register. A link will be provided.\n\nThis cannot be undone.`)) return;
+      if (!confirm(`Permanently delete the account for "${displayName}"?\n\nThis removes their profile and linked data. Their submitted entries remain but become unlinked.\n\nYou will also need to delete their auth record from the Supabase dashboard so they can re-register with the same email.\n\nThis cannot be undone. Continue?`)) return;
+      const openDash = confirm(`Open the Supabase Auth Users page now so you can delete their auth record after?\n\n(Click OK to open it, then come back here to confirm the profile deletion.)`);
+      if (openDash) window.open('https://supabase.com/dashboard/project/dhguaomtjclcldkkhlmt/auth/users', '_blank');
       try {
         await sbDelete('user_profiles', `id=eq.${userId}`);
         showToast(`🗑 Profile deleted: ${displayName}`);
         loadAccounts();
-        // Guide admin to finish in Supabase dashboard
-        setTimeout(() => {
-          if (confirm(`Profile deleted! To fully remove the auth record (so ${displayName} can re-register with the same email), you need to delete them from the Supabase dashboard.\n\nOpen the Supabase Auth Users page now?`)) {
-            window.open('https://supabase.com/dashboard/project/dhguaomtjclcldkkhlmt/auth/users', '_blank');
-          }
-        }, 500);
       } catch(err) { alert('Failed: ' + err.message); }
     }
 

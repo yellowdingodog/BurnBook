@@ -2099,7 +2099,7 @@ async function handleForgotPassword() {
   if (!email) { msg.className='alert alert-error'; msg.textContent='Email required.'; msg.style.display='block'; return; }
   try {
     await sendPasswordReset(email);
-    msg.className='alert alert-success'; msg.textContent='✅ Reset link sent! Check your email.'; msg.style.display='block';
+    msg.className='alert alert-success'; msg.textContent='✅ If that email has an account, a reset link is on its way. Check your inbox (and spam). It might take a minute.'; msg.style.display='block';
   } catch(e) { msg.className='alert alert-error'; msg.textContent=e.message; msg.style.display='block'; }
 }
 
