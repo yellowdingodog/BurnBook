@@ -1503,7 +1503,7 @@
         let nameMap = {};
         if (ips.length) {
           const profiles = await sbGet('ip_account_links', `ip_hash=in.(${ips.join(',')})&select=ip_hash,user_id`);
-          const uids=[...new Set(profiles.filter(p=>p.user_id).map(p=>p.user_id))];
+          const uids=[...new Set(profiles2.filter(p=>p.user_id).map(p=>p.user_id))];
           let ups={};
           if(uids.length){const u=await sbGet('user_profiles',`id=in.(${uids.join(',')})&select=id,display_name`);u.forEach(u=>ups[u.id]=u.display_name);}
           profiles.forEach(p => nameMap[p.ip_hash] = ups[p.user_id]||'(guest)');
@@ -1739,7 +1739,7 @@
         let nameMap = {}, entryMap = {};
         if (ips.length) {
           const profiles2 = await sbGet('ip_account_links', `ip_hash=in.(${ips.join(',')})&select=ip_hash,user_id`);
-          const uids=[...new Set(profiles.filter(p=>p.user_id).map(p=>p.user_id))];
+          const uids=[...new Set(profiles2.filter(p=>p.user_id).map(p=>p.user_id))];
           let ups={};
           if(uids.length){const u=await sbGet('user_profiles',`id=in.(${uids.join(',')})&select=id,display_name`);u.forEach(u=>ups[u.id]=u.display_name);}
           profiles2.forEach(p => nameMap[p.ip_hash] = ups[p.user_id]||'(guest)');
