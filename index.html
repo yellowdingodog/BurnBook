@@ -1417,7 +1417,6 @@
       const enc=encodeURIComponent(shareUrl),txt=encodeURIComponent('Check out this Mean Whirls Burn Book entry: '+entry.subject);
       document.getElementById('share-url').value=siteUrl;
       document.getElementById('share-fb').href=`https://www.facebook.com/sharer/sharer.php?u=${enc}`;
-      document.getElementById('share-tw').href=`https://twitter.com/intent/tweet?url=${enc}&text=${txt}`;
       const igEl=document.getElementById('share-ig'); if(igEl) igEl.href=`https://www.instagram.com/?url=${enc}`;
       document.getElementById('detail-share-popup').style.display='none';
       renderDetailHeat(entry);
