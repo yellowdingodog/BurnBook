@@ -389,7 +389,7 @@
               <div class="detail-share-popup-row">
                 <button class="detail-share-opt" onclick="copyShareUrl()">🔗 Copy Link</button>
                 <a class="detail-share-opt" id="share-fb" href="" target="_blank">📘 Facebook</a>
-                <a class="detail-share-opt" id="share-tw" href="" target="_blank">🐦 Twitter/X</a>
+                <a class="detail-share-opt" id="share-ig" href="" target="_blank">📸 Instagram</a>
               </div>
             </div>
             <a class="detail-sec-btn" id="detail-download" href="" download target="_blank" style="display:none">⬇ Download</a>
@@ -1046,11 +1046,13 @@
       const rb=document.createElement('button');rb.className='detail-sec-btn danger';rb.textContent='🗑 Request Removal';rb.addEventListener('click',()=>openDeleteRequestModal(currentDetailEntry));actEl.appendChild(rb);
       const cb=document.createElement('button');cb.className='detail-sec-btn';cb.textContent='✉️ Contact MeanWhirls';cb.addEventListener('click',()=>openContactModal(entry.id,'nap'));actEl.appendChild(cb);
       // Share URLs
-      const shareUrl=window.location.origin+window.location.pathname+'#nap-'+entry.id;
+      const shareUrl=`https://dhguaomtjclcldkkhlmt.supabase.co/functions/v1/share?entry=${entry.id}&type=nap`;
+      const siteUrl=window.location.origin+window.location.pathname+'#nap-'+entry.id;
       const enc=encodeURIComponent(shareUrl),txt=encodeURIComponent('Check out this Naptionals entry: '+entry.subject+' got caught sleeping!');
-      document.getElementById('share-url').value=shareUrl;
+      document.getElementById('share-url').value=siteUrl;
       document.getElementById('share-fb').href=`https://www.facebook.com/sharer/sharer.php?u=${enc}`;
       document.getElementById('share-tw').href=`https://twitter.com/intent/tweet?url=${enc}&text=${txt}`;
+      const igNapEl=document.getElementById('share-ig'); if(igNapEl) igNapEl.href=`https://www.instagram.com/?url=${enc}`;
       document.getElementById('detail-share-popup').style.display='none';
       sheet.scrollTop=0;
       overlay.classList.add('open');
