@@ -1179,7 +1179,7 @@
         const ip=await getIpHash();
         const weight=(_currentProfile?.vote_weight != null) ? _currentProfile.vote_weight : (_currentProfile?.is_admin ? _adminVoteWeight : 1);
         if(newScore===null){await sbDelete('votes',`entry_id=eq.${entryId}&user_id=eq.${getUserId()}`);delete myVotes[entryId];}
-        else{await sbUpsert('votes',{entry_id:entryId,vote:newScore,weight,user_id:getUserId()},'entry_id,user_id');myVotes[entryId]=newScore;}
+        else{await sbUpsert('votes',{entry_id:entryId,ip_hash:ip,vote:newScore,weight,user_id:getUserId()},'entry_id,user_id');myVotes[entryId]=newScore;}
         await logActivity('vote', entryId, `Score: ${newScore||'cleared'}`);
         localStorage.setItem('mw_votes_heat',JSON.stringify(myVotes));
         const votes=await sbGet('votes',`entry_id=eq.${entryId}&select=vote,weight`);
