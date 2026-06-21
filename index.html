@@ -1178,8 +1178,8 @@
       try {
         const ip=await getIpHash();
         const weight=(_currentProfile?.vote_weight != null) ? _currentProfile.vote_weight : (_currentProfile?.is_admin ? _adminVoteWeight : 1);
-        if(newScore===null){await sbDelete('votes',`entry_id=eq.${entryId}&ip_hash=eq.${ip}`);delete myVotes[entryId];}
-        else{await sbUpsert('votes',{entry_id:entryId,ip_hash:ip,vote:newScore,weight,user_id:getUserId()},'entry_id,ip_hash');myVotes[entryId]=newScore;}
+        if(newScore===null){await sbDelete('votes',`entry_id=eq.${entryId}&user_id=eq.${getUserId()}`);delete myVotes[entryId];}
+        else{await sbUpsert('votes',{entry_id:entryId,vote:newScore,weight,user_id:getUserId()},'entry_id,user_id');myVotes[entryId]=newScore;}
         await logActivity('vote', entryId, `Score: ${newScore||'cleared'}`);
         localStorage.setItem('mw_votes_heat',JSON.stringify(myVotes));
         const votes=await sbGet('votes',`entry_id=eq.${entryId}&select=vote,weight`);
@@ -1465,7 +1465,20 @@
           sbGet('victim_statements','status=neq.deleted&select=entry_id,text,author_name&order=created_at.asc'),
           sbGet('comments','select=entry_id')
         ]);
-        allVoteData=buildVoteData(votes);Object.keys(myVotes).forEach(id=>{if(allVoteData[id])allVoteData[id].myVote=myVotes[id];});
+        allVoteData=buildVoteData(votes);
+        // Load user's own votes from DB (works across devices, not just localStorage)
+        if (isLoggedIn()) {
+          try {
+            const userVotes = await sbGet('votes', `user_id=eq.${getUserId()}&select=entry_id,vote`);
+            userVotes.forEach(v => {
+              if (allVoteData[v.entry_id]) allVoteData[v.entry_id].myVote = v.vote;
+              myVotes[v.entry_id] = v.vote;
+            });
+            localStorage.setItem('mw_votes_heat', JSON.stringify(myVotes));
+          } catch(e) {}
+        }
+        // Fallback: apply any localStorage votes not already covered
+        Object.keys(myVotes).forEach(id=>{ if(allVoteData[id] && !allVoteData[id].myVote) allVoteData[id].myVote=myVotes[id]; });
         // Build victim snippet map and comment count map
         const victimMap={};
         victimStmts.forEach(s=>{

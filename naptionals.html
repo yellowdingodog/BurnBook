@@ -984,6 +984,14 @@
         const ccMap={};comments.forEach(c=>{ccMap[c.entry_id]=(ccMap[c.entry_id]||0)+1;});
         window._defMap=defMap; window._ccMap=ccMap;
         allEntries=entries;buildFilterBar(entries);collectKnownTags(entries);
+        // Load user's own votes from DB (works across devices)
+        if (isLoggedIn()) {
+          try {
+            const userVotes = await sbGet('nap_votes', `user_id=eq.${getUserId()}&select=entry_id,vote`);
+            userVotes.forEach(v => { myVotes[v.entry_id] = v.vote; });
+            localStorage.setItem('mw_nap_votes', JSON.stringify(myVotes));
+          } catch(e) {}
+        }
         renderEntries(activeFilter?entries.filter(e=>(e.hashtags||[]).includes(activeFilter)):entries,defMap,ccMap);
       }catch(err){document.getElementById('entries-container').innerHTML=`<div class="empty"><div class="empty-icon">😬</div><h3>Could not load entries</h3><p>${esc(err.message)}</p></div>`;}
     }
