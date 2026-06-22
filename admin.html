@@ -281,6 +281,16 @@
     <!-- ALL ENTRIES -->
     <div id="stab-burn-entries" class="sub-panel active">
       <div class="section-hdr"><span class="section-title">📋 All Entries</span><button class="refresh-btn" onclick="loadEntries()">↺ Refresh</button></div>
+
+      <!-- Pending Review -->
+      <div id="pending-review-section" style="display:none;margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;">
+          <span class="section-title urgent" style="font-size:0.85rem;">🕐 Pending Review</span>
+          <span id="pending-count" class="badge-count" style="background:#e53935;"></span>
+        </div>
+        <div id="pending-list" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+      </div>
+
       <div class="bulk-bar">
         <span class="bulk-count" id="bulk-count">0 selected</span>
       </div>
@@ -1037,6 +1047,44 @@
     }
 
     // ── ALL ENTRIES ───────────────────────────────────────────
+    function renderPendingSection(entries, userMap) {
+      const pending = entries.filter(e => e.status === 'pending' && !e.hidden);
+      const section = document.getElementById('pending-review-section');
+      const list = document.getElementById('pending-list');
+      const countEl = document.getElementById('pending-count');
+      if (!pending.length) { section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      countEl.textContent = pending.length;
+      list.innerHTML = '';
+      pending.forEach(e => {
+        const acct = e.user_id ? (userMap[e.user_id] || '(unknown)') : '(guest)';
+        const card = document.createElement('div');
+        card.style.cssText = 'background:var(--white);border:1.5px solid rgba(229,57,53,0.25);border-left:3px solid #e53935;border-radius:2px;padding:0.65rem 1rem;display:flex;gap:0.75rem;align-items:flex-start;flex-wrap:wrap;';
+        const thumb = e.image_url
+          ? `<img src="${esc(imgUrl(e.image_url,'thumb'))}" class="admin-thumb" data-img="${esc(imgUrl(e.image_url,'full'))}" data-subject="${esc(e.subject||'')}" data-text="${esc((e.text||'').slice(0,300))}" style="width:64px;height:48px;object-fit:cover;border-radius:1px;flex-shrink:0;cursor:zoom-in;" />`
+          : '';
+        card.innerHTML = `
+          ${thumb}
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:0.88rem;">${esc(e.subject)}</div>
+            <div style="font-size:0.78rem;color:var(--muted);margin:0.15rem 0;">${esc(e.text||'(no text)')} </div>
+            <div style="font-size:0.72rem;color:var(--muted);">by ${esc(e.submitter||'—')} &nbsp;·&nbsp; account: ${esc(acct)} &nbsp;·&nbsp; ${toTS(e.created_at)}</div>
+          </div>
+          <div style="display:flex;gap:0.4rem;flex-shrink:0;align-items:center;">
+            <button class="btn-a aa" onclick="modEntry('${e.id}','approve');this.closest('[style]').remove();loadEntries();">✓ Approve</button>
+            <button class="btn-a ar" onclick="modEntry('${e.id}','reject');this.closest('[style]').remove();loadEntries();">✕ Reject</button>
+            <button class="btn-a ae admin-edit-btn" data-entry="${esc(JSON.stringify(e))}">✏️ Edit</button>
+          </div>`;
+        card.querySelector('.admin-thumb')?.addEventListener('click', function(){
+          openAdminLightbox(this.dataset.img, this.dataset.subject, this.dataset.text);
+        });
+        card.querySelector('.admin-edit-btn')?.addEventListener('click', function(){
+          openEntryEdit(this.dataset.entry);
+        });
+        list.appendChild(card);
+      });
+    }
+
     async function loadEntries(){
       const tb=document.getElementById('tb-entries');
       tb.innerHTML=loadingRow(11);
@@ -1051,6 +1099,7 @@
         const userIds=[...new Set(entries.filter(e=>e.user_id).map(e=>e.user_id))];
         let userMap={};
         if(userIds.length){const ups=await sbGet('user_profiles',`id=in.(${userIds.join(',')})&select=id,display_name`);ups.forEach(u=>userMap[u.id]=u.display_name);}
+        renderPendingSection(entries, userMap);
         tb.innerHTML='';
         entries.forEach(e=>{
           const isCodeSub=e.submitter&&e.submitter.toLowerCase()===CODENAME.toLowerCase();
