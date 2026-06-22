@@ -343,6 +343,7 @@
           <select class="filter-select" id="filter-select" onchange="setFilterFromSelect(this.value)">
             <option value="">— All entries —</option>
           </select>
+          <div id="filter-tags" style="display:flex;flex-wrap:wrap;gap:0.35rem;"></div>
           <button class="filter-clear" id="filter-clear" style="display:none" onclick="clearFilter()">✕ clear</button>
           <div class="tag-filter-actions" id="tag-filter-actions" style="display:none">
             <button class="tag-filter-btn" onclick="openTagMgmt('add')">+ Add entries to tag</button>
@@ -969,7 +970,7 @@
     }
 
 
-    function buildFilterBar(entries){const counts={};entries.forEach(e=>(e.hashtags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;}));const tags=Object.keys(counts).sort();const bar=document.getElementById('filter-bar');const wrap=document.getElementById('filter-tags');if(!tags.length){bar.style.display='none';return;}bar.style.display='flex';wrap.innerHTML='';tags.forEach(tag=>{const el=document.createElement('span');el.className='filter-tag';el.dataset.tag=tag;el.textContent=`${tag} (${counts[tag]})`;el.addEventListener('click',()=>setFilter(activeFilter===tag?null:tag));wrap.appendChild(el);});}
+    function buildFilterBar(entries){const counts={};entries.forEach(e=>(e.hashtags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;}));const tags=Object.keys(counts).sort();const bar=document.getElementById('filter-bar');const wrap=document.getElementById('filter-tags');if(!tags.length){bar.style.display='none';return;}bar.style.display='flex';if(wrap)wrap.innerHTML='';tags.forEach(tag=>{const el=document.createElement('span');el.className='filter-tag';el.dataset.tag=tag;el.textContent=`${tag} (${counts[tag]})`;el.addEventListener('click',()=>setFilter(activeFilter===tag?null:tag));wrap.appendChild(el);});}
 
     // ── Load entries ──────────────────────────────────────────
     async function loadEntries(){
