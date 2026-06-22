@@ -962,7 +962,7 @@
               await sbPost('comments',{
                 entry_id:s.entry_id,
                 user_id:s.user_id||null,
-                author_name:s.author_name||accountName,
+                author:s.author_name||accountName,
                 text:s.text,
                 ip_hash:s.ip_hash||null
               });
