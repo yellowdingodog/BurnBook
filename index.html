@@ -674,6 +674,7 @@
 
     let PLACEHOLDER_EMOJI = '🔥', PLACEHOLDER_IMAGE_URL = '', BADGE_ICON_URL = '', ANON_MOUSE_IMAGE = '';
     let activeFilter = null, allEntries = [], allVoteData = {}, currentDetailEntry = null;
+    let _victimMap = {}, _commentCountMap = {};
     let myVotes = JSON.parse(localStorage.getItem('mw_votes_heat') || '{}');
 
     // ── Supabase ──────────────────────────────────────────────
@@ -916,7 +917,7 @@
       if(tagActions) tagActions.style.display=(tag&&isLoggedIn())?'flex':'none';
       const newTagBtn=document.getElementById('new-tag-btn');
       if(newTagBtn) newTagBtn.style.display=isLoggedIn()?'inline-flex':'none';
-      renderEntries(tag?allEntries.filter(e=>(e.hashtags||[]).includes(tag)):allEntries);
+      renderEntries(tag?allEntries.filter(e=>(e.hashtags||[]).includes(tag)):allEntries,_victimMap,_commentCountMap);
     }
     function clearFilter(){ setFilter(null); }
 
@@ -1486,8 +1487,9 @@
           victimMap[s.entry_id].count++;
         });
         const commentCountMap={};commentCounts.forEach(c=>{commentCountMap[c.entry_id]=(commentCountMap[c.entry_id]||0)+1;});
+        _victimMap=victimMap; _commentCountMap=commentCountMap;
         allEntries=entries;buildFilterBar(entries);collectKnownTags(entries);
-        renderEntries(activeFilter?entries.filter(e=>(e.hashtags||[]).includes(activeFilter)):entries,victimMap,commentCountMap);
+        renderEntries(activeFilter?entries.filter(e=>(e.hashtags||[]).includes(activeFilter)):entries,_victimMap,_commentCountMap);
       }catch(err){document.getElementById('entries-container').innerHTML=`<div class="empty"><div class="empty-icon">😬</div><h3>Could not load entries</h3><p>${esc(err.message)}</p></div>`;}
     }
 
