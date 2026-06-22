@@ -30,6 +30,15 @@
     .main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
 
     /* Tabs */
+
+    #admin-lightbox{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.88);align-items:center;justify-content:center;padding:1rem;cursor:zoom-out;}
+    #admin-lightbox.open{display:flex;}
+    #admin-lightbox-inner{max-width:680px;width:100%;background:var(--white);border-radius:4px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.6);cursor:default;}
+    #admin-lightbox img{width:100%;max-height:60vh;object-fit:contain;background:#111;display:block;}
+    #admin-lightbox-body{padding:1rem 1.25rem;}
+    #admin-lightbox-subject{font-family:'Playfair Display',serif;font-weight:700;font-size:1.1rem;margin-bottom:0.4rem;}
+    #admin-lightbox-text{font-size:0.85rem;line-height:1.6;color:var(--ink);white-space:pre-wrap;max-height:180px;overflow-y:auto;}
+
     .admin-tabs{display:flex;gap:0;background:var(--white);border:1.5px solid rgba(200,30,90,0.12);border-radius:2px;margin-bottom:2rem;overflow:hidden;flex-wrap:wrap;}
     .admin-tab{background:none;border:none;border-right:1px solid rgba(200,30,90,0.1);padding:0.85rem 1.5rem;font-family:'Raleway',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;position:relative;}
     .admin-tab:last-child{border-right:none;}
@@ -1035,7 +1044,7 @@
       tb.innerHTML=loadingRow(11);
       document.getElementById('select-all').checked=false;
       document.getElementById('bulk-count').textContent='0 selected';
-      document.getElementById('entry-edit-panel').innerHTML='';
+      document.getElementById('ep-overlay') && (document.getElementById('ep-overlay').style.display='none');
       try {
         const entries=await sbGet('entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
         setBadge('cnt-entries', entries.filter(e=>e.status==='pending'&&!e.hidden).length);
@@ -1078,11 +1087,19 @@
     let editImageFile=null;
     function openEntryEdit(jsonStr){
       const e=JSON.parse(jsonStr);
-      const panel=document.getElementById('entry-edit-panel');
-      if(panel.dataset.open===e.id){panel.innerHTML='';delete panel.dataset.open;return;}
-      panel.dataset.open=e.id;
       editImageFile=null;
-      panel.innerHTML=`
+      let overlay = document.getElementById('ep-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'ep-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.55);display:flex;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto;';
+        overlay.addEventListener('click', ev => { if(ev.target===overlay){ overlay.style.display='none'; } });
+        document.body.appendChild(overlay);
+      }
+      overlay.style.display = 'flex';
+      overlay.innerHTML = `
+        <div style="background:var(--white);border-radius:4px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;padding:1.5rem;box-shadow:0 24px 80px rgba(0,0,0,0.4);position:relative;">
+        <button onclick="document.getElementById('ep-overlay').style.display='none'" style="position:absolute;top:0.75rem;right:0.75rem;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted);">✕</button>
         <div class="edit-panel">
           <div class="edit-panel-title">✏️ Editing: #${e.ui_order||'?'} — ${esc(e.subject)}</div>
           <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.75rem">Submitted: ${toTS(e.created_at)} &nbsp;·&nbsp; ID: <span style="font-family:monospace">${e.id}</span></div>
@@ -1110,10 +1127,10 @@
           </div>
           <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
             <button class="btn btn-primary" onclick="saveEntryEdit('${e.id}','${esc(e.image_url||'')}')">💾 Save Changes</button>
-            <button class="btn-a ar" onclick="document.getElementById('entry-edit-panel').innerHTML=''">Cancel</button>
+            <button class="btn-a ar" onclick="document.getElementById('ep-overlay') && (document.getElementById('ep-overlay').style.display='none')">Cancel</button>
           </div>
           <div id="ep-msg" style="display:none" class="alert"></div>
-        </div>`;
+        </div></div>`;
       document.getElementById('ep-image').addEventListener('change',function(){if(this.files[0])handleEditImg(this.files[0]);});
       document.getElementById('ep-upload').addEventListener('dragover',e=>e.preventDefault());
       document.getElementById('ep-upload').addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])handleEditImg(e.dataTransfer.files[0]);});
@@ -1122,7 +1139,7 @@
         const sel=document.getElementById('ep-owner');if(!sel)return;
         sel.innerHTML='<option value="">— unassigned —</option>'+users.map(u=>`<option value="${u.id}"${u.id===e.user_id?' selected':''}>${esc(u.display_name)} (${u.id.slice(0,8)}…)</option>`).join('');
       }).catch(()=>{});
-      panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+      // overlay is fixed modal, no scroll needed
     }
     function handleEditImg(file){editImageFile=file;const r=new FileReader();r.onload=ev=>{const p=document.getElementById('ep-preview');p.src=ev.target.result;p.style.display='block';const c=document.getElementById('ep-cur-img');if(c)c.style.display='none';};r.readAsDataURL(file);}
     async function saveEntryEdit(id, existingImg){
@@ -1138,7 +1155,7 @@
       const namedVal=(document.getElementById('ep-display-author')?.value||'').trim();
       const displayAuthor=isMW?'MeanWhirls':isAnon?'Anonymous':(namedVal||submitter||'Anonymous');
       if(!subject){showEpMsg('error','Name required.');return;}
-      const btn=document.querySelector('#entry-edit-panel .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
+      const btn=document.querySelector('#ep-overlay .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
       try{
         let imageUrl=existingImg;
         if(editImageFile){const _epTier=tierFromRadio('ep-quality');const _epP=tierParams(_epTier);const resized=await resizeImage(editImageFile,_epP.px,_epP.q);imageUrl=await uploadImage(resized);if(existingImg)await deleteStorageFile(existingImg);patch.image_quality=_epTier;}
@@ -1148,7 +1165,7 @@
         if(isMW)patch.status='approved';
         await sbPatch('entries',`id=eq.${id}`,patch);
         showEpMsg('success','✅ Saved!');
-        setTimeout(()=>{document.getElementById('entry-edit-panel').innerHTML='';loadEntries();},1200);
+        setTimeout(()=>{ const ov=document.getElementById('ep-overlay'); if(ov)ov.style.display='none'; loadEntries();},1200);
       }catch(err){showEpMsg('error','Failed: '+err.message);}
       btn.disabled=false;btn.innerHTML='💾 Save Changes';
     }
@@ -1688,7 +1705,7 @@
 
     async function loadNapEntries(){
       const tb=document.getElementById('tb-nap-entries');tb.innerHTML=loadingRow(9);
-      document.getElementById('nap-entry-edit-panel').innerHTML='';
+      document.getElementById('nep-overlay') && (document.getElementById('nep-overlay').style.display='none');
       try{
         const entries=await sbGet('nap_entries','order=ui_order.asc.nullslast,created_at.asc&select=*');
         setBadge('cnt-nap-entries', entries.filter(e=>e.status==='pending'&&!e.hidden).length);
@@ -1722,10 +1739,19 @@
     let napEditImageFile=null;
     function openNapEdit(jsonStr){
       const e=JSON.parse(jsonStr);
-      const panel=document.getElementById('nap-entry-edit-panel');
-      if(panel.dataset.open===e.id){panel.innerHTML='';delete panel.dataset.open;return;}
-      panel.dataset.open=e.id; napEditImageFile=null;
-      panel.innerHTML=`
+      let napOverlay = document.getElementById('nep-overlay');
+      if (!napOverlay) {
+        napOverlay = document.createElement('div');
+        napOverlay.id = 'nep-overlay';
+        napOverlay.style.cssText = 'position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.55);display:flex;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto;';
+        napOverlay.addEventListener('click', ev => { if(ev.target===napOverlay) napOverlay.style.display='none'; });
+        document.body.appendChild(napOverlay);
+      }
+      napOverlay.style.display = 'flex';
+      napEditImageFile=null;
+      napOverlay.innerHTML=`
+        <div style="background:var(--white);border-radius:4px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;padding:1.5rem;box-shadow:0 24px 80px rgba(0,0,0,0.4);position:relative;">
+        <button onclick="document.getElementById('nep-overlay').style.display='none'" style="position:absolute;top:0.75rem;right:0.75rem;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted);">✕</button>
         <div class="edit-panel">
           <div class="edit-panel-title">✏️ Editing Nap: #${e.ui_order||'?'} — ${esc(e.subject)}</div>
           <div class="form-group"><label class="form-label">Sleeper's Name *</label><input class="form-input" id="nep-subject" value="${esc(e.subject)}" /></div>
@@ -1744,19 +1770,19 @@
           </div>
           <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
             <button class="btn btn-primary" onclick="saveNapEdit('${e.id}','${esc(e.image_url||'')}')">💾 Save Changes</button>
-            <button class="btn-a ar" onclick="document.getElementById('nap-entry-edit-panel').innerHTML=''">Cancel</button>
+            <button class="btn-a ar" onclick="document.getElementById('nep-overlay') && (document.getElementById('nep-overlay').style.display='none')">Cancel</button>
           </div>
           <div id="nep-msg" style="display:none" class="alert"></div>
         </div>`;
       document.getElementById('nep-image').addEventListener('change',function(){if(this.files[0]){napEditImageFile=this.files[0];const r=new FileReader();r.onload=ev=>{const p=document.getElementById('nep-preview');p.src=ev.target.result;p.style.display='block';const c=document.getElementById('nep-cur-img');if(c)c.style.display='none';};r.readAsDataURL(napEditImageFile);}});
-      panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+      // overlay is fixed modal, no scroll needed
     }
 
     async function saveNapEdit(id,existingImg){
       const subject=document.getElementById('nep-subject').value.trim();const text=document.getElementById('nep-text').value.trim();const hashtags=parseHashtags(document.getElementById('nep-hashtags').value);const displayAuthor=document.getElementById('nep-display-author').value.trim();
       if(!subject){showNepMsg('error','Name required.');return;}
-      const btn=document.querySelector('#nap-entry-edit-panel .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
-      try{let imageUrl=existingImg;if(napEditImageFile){const _nepTier=tierFromRadio('nep-quality');const _nepP=tierParams(_nepTier);const resized=await resizeImage(napEditImageFile,_nepP.px,_nepP.q);imageUrl=await uploadImage(resized);_napPatch.image_quality=_nepTier;}await sbPatch('nap_entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});await logAdminAction('admin_edit',id,`Admin edited nap: "${subject}"`);showNepMsg('success','✅ Saved!');setTimeout(()=>{document.getElementById('nap-entry-edit-panel').innerHTML='';loadNapEntries();},1200);}
+      const btn=document.querySelector('#nep-overlay .btn-primary');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Saving...';
+      try{let imageUrl=existingImg;if(napEditImageFile){const _nepTier=tierFromRadio('nep-quality');const _nepP=tierParams(_nepTier);const resized=await resizeImage(napEditImageFile,_nepP.px,_nepP.q);imageUrl=await uploadImage(resized);_napPatch.image_quality=_nepTier;}await sbPatch('nap_entries',`id=eq.${id}`,{subject,text,display_author:displayAuthor,hashtags,image_url:imageUrl});await logAdminAction('admin_edit',id,`Admin edited nap: "${subject}"`);showNepMsg('success','✅ Saved!');setTimeout(()=>{ const ov=document.getElementById('nep-overlay'); if(ov)ov.style.display='none'; loadNapEntries();},1200);}
       catch(err){showNepMsg('error','Failed: '+err.message);}
       btn.disabled=false;btn.innerHTML='💾 Save Changes';
     }
