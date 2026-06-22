@@ -955,6 +955,22 @@
           const actions=document.createElement('div');actions.style.cssText='margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;';
           const db=document.createElement('button');db.className='btn-a ar';db.textContent='✕ Remove';db.onclick=async()=>{if(!confirm('Remove this victim statement?'))return;try{await sbPatch('victim_statements',`id=eq.${s.id}`,{status:'deleted'});showToast('Statement removed.');loadVictims();}catch(e){alert(e.message);}};actions.appendChild(db);
           const eb=document.createElement('button');eb.className='btn-a ae';eb.textContent='✏️ Edit';eb.onclick=()=>openVictimEdit(item,s);actions.appendChild(eb);
+          const cb=document.createElement('button');cb.className='btn-a aac';cb.textContent='💬 Convert to Comment';cb.onclick=async()=>{
+            if(!confirm(`Convert this victim statement to a comment on "${entry.subject||'this entry'}"?\n\nThe statement will be deleted and a comment will be created with the same text.`))return;
+            cb.disabled=true;cb.textContent='Converting…';
+            try{
+              await sbPost('comments',{
+                entry_id:s.entry_id,
+                user_id:s.user_id||null,
+                author_name:s.author_name||accountName,
+                text:s.text,
+                ip_hash:s.ip_hash||null
+              });
+              await sbPatch('victim_statements',`id=eq.${s.id}`,{status:'deleted'});
+              showToast('✅ Converted to comment!');
+              loadVictims();
+            }catch(e){alert('Failed: '+e.message);cb.disabled=false;cb.textContent='💬 Convert to Comment';}
+          };actions.appendChild(cb);
           item.appendChild(actions);container.appendChild(item);
         });
       } catch(err){container.innerHTML='<p style="color:var(--deep-pink)">Failed: '+err.message+'</p>';}
