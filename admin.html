@@ -590,6 +590,19 @@
 
   </div>
 
+  <!-- Admin Lightbox -->
+  <div id="admin-lightbox" onclick="closeAdminLightbox()">
+    <div id="admin-lightbox-inner" onclick="event.stopPropagation()">
+      <img id="admin-lightbox-img" src="" alt="" />
+      <div id="admin-lightbox-body">
+        <div id="admin-lightbox-subject"></div>
+        <div id="admin-lightbox-text"></div>
+        <div style="margin-top:0.6rem;font-size:0.72rem;color:var(--muted)">Click outside to close</div>
+      </div>
+    </div>
+  </div>
+
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -919,7 +932,7 @@
         tb.innerHTML='';
         edits.forEach(ed=>{
           const tr=document.createElement('tr');
-          const imgCell=ed.image_url?`<img src="${esc(imgUrl(ed.image_url,'thumb'))}" />`:'—';
+          const imgCell=ed.image_url?`<img src="${esc(imgUrl(ed.image_url,'thumb'))}" onclick="openAdminLightbox('${esc(imgUrl(ed.image_url,'full'))}','${esc(ed.subject||'')}','${esc((ed.text||'').slice(0,300))}')" />`:'—';
           const tags=(ed.hashtags||[]).join(' ')||'—';
           tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${om[ed.entry_id]||'?'}</td><td style="font-weight:600">${esc(ed.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${imgCell}</td><td style="font-size:.8rem">${esc(ed.submitter)}</td><td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(ed.created_at)}</td><td><button class="btn-a aac" onclick='acceptEdit(${JSON.stringify(JSON.stringify(ed))})'>✓ Accept</button><button class="btn-a ar" onclick="rejectEdit('${ed.id}')">✕ Reject</button></td>`;
           tb.appendChild(tr);
@@ -1039,7 +1052,7 @@
           const acctVal=e.user_id?(userMap[e.user_id]||'(unknown)'):'—';
           const acctCell=`<span class="cell-trunc" title="${esc(acctVal)}">${esc(acctVal)}</span>`;
           const displayCell=e.is_mean_whirls?makeBadgeMWHtml():`<span style="font-size:.82rem">${esc(e.display_author)}</span>`;
-          const imgCell=e.image_url?`<img src="${esc(imgUrl(e.image_url,'thumb'))}" />`:'—';
+          const imgCell=e.image_url?`<img src="${esc(imgUrl(e.image_url,'thumb'))}" onclick="openAdminLightbox('${esc(imgUrl(e.image_url,'full'))}','${esc(e.subject||'')}','${esc((e.text||'').slice(0,300))}')" />`:'—';
           const tags=(e.hashtags||[]).join(' ')||'—';
           const statusLabel=e.hidden?'hidden':e.status;
           const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modEntry('${e.id}','approve')">✓</button>`:'';
@@ -1622,7 +1635,7 @@
         tb.innerHTML='';
         edits.forEach(ed=>{
           const tr=document.createElement('tr');
-          const imgCell=ed.image_url?`<img src="${esc(imgUrl(ed.image_url,'thumb'))}" />`:'—';
+          const imgCell=ed.image_url?`<img src="${esc(imgUrl(ed.image_url,'thumb'))}" onclick="openAdminLightbox('${esc(imgUrl(ed.image_url,'full'))}','${esc(ed.subject||'')}','${esc((ed.text||'').slice(0,300))}')" />`:'—';
           const tags=(ed.hashtags||[]).join(' ')||'—';
           tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">#${om[ed.entry_id]||'?'}</td><td style="font-weight:600">${esc(ed.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(ed.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${imgCell}</td><td style="font-size:.8rem">${esc(ed.submitter)}</td><td style="font-size:.74rem;color:var(--muted);white-space:nowrap">${toTS(ed.created_at)}</td><td><button class="btn-a aac" onclick='acceptNapEdit(${JSON.stringify(JSON.stringify(ed))})'>✓ Accept</button><button class="btn-a ar" onclick="rejectNapEdit('${ed.id}')">✕ Reject</button></td>`;
           tb.appendChild(tr);
@@ -1685,7 +1698,7 @@
           const isCodeSub=e.submitter&&e.submitter.toLowerCase()===CODENAME.toLowerCase();
           const subCell=isCodeSub?`<span style="font-size:.82rem;font-style:italic;color:var(--muted)">${esc(CODENAME_DISPLAY)}</span>`:`<span style="font-size:.8rem">${esc(e.submitter)}</span>`;
           const displayCell=e.is_mean_whirls?makeBadgeMWHtml():`<span style="font-size:.82rem">${esc(e.display_author)}</span>`;
-          const imgCell=e.image_url?`<img src="${esc(imgUrl(e.image_url,'thumb'))}" />`:'—';
+          const imgCell=e.image_url?`<img src="${esc(imgUrl(e.image_url,'thumb'))}" onclick="openAdminLightbox('${esc(imgUrl(e.image_url,'full'))}','${esc(e.subject||'')}','${esc((e.text||'').slice(0,300))}')" />`:'—';
           const tags=(e.hashtags||[]).join(' ')||'—';
           const statusLabel=e.hidden?'hidden':e.status;
           const approveBtn=(!e.hidden&&e.status!=='approved')?`<button class="btn-a aa" onclick="modNapEntry('${e.id}','approve')">✓</button>`:'';
@@ -2569,6 +2582,21 @@
         msg.style.display='block'; msg.className='alert alert-success'; msg.textContent='✅ Saved!';
       } catch(err) { msg.style.display='block'; msg.className='alert alert-error'; msg.textContent='Failed: '+err.message; }
     }
+
+
+    function openAdminLightbox(src, subject, text) {
+      document.getElementById('admin-lightbox-img').src = src;
+      document.getElementById('admin-lightbox-subject').textContent = subject || '';
+      document.getElementById('admin-lightbox-text').textContent = text || '';
+      document.getElementById('admin-lightbox').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeAdminLightbox() {
+      document.getElementById('admin-lightbox').classList.remove('open');
+      document.getElementById('admin-lightbox-img').src = '';
+      document.body.style.overflow = '';
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAdminLightbox(); });
 
     init();
     setTimeout(initAllTables, 500);
