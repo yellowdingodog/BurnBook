@@ -778,6 +778,7 @@
     // ── IP profile helpers ────────────────────────────────────
     let _ipProfile = null;
     let _adminVoteWeight = 10;
+    let MODERATION_ENABLED = true;
     let SHIRT_IMAGE_URL = '', SHIRT_IMAGE_BACK_URL = '', SHIRT_PRICE = '40', PAY_VENMO = '', PAY_ZELLE = '', PAY_PAYPAL = '';
     const SHIRT_SIZES = ['XS','S','M','L','XL','XXL','XXXL','4XL','5XL'];
 
@@ -880,6 +881,7 @@
           if(r.key==='badgeicon')           BADGE_ICON_URL        =r.value;
           if(r.key==='anon_mouse_image')    ANON_MOUSE_IMAGE      =r.value;
           if(r.key==='admin_vote_weight')   _adminVoteWeight      =parseFloat(r.value)||10;
+          if(r.key==='moderation_enabled')  MODERATION_ENABLED    =r.value!=='false';
           if(r.key==='shirt_image_url')     SHIRT_IMAGE_URL       =r.value;
           if(r.key==='shirt_image_back_url') SHIRT_IMAGE_BACK_URL  =r.value;
           if(r.key==='shirt_price')         SHIRT_PRICE           =r.value||'40';
@@ -1549,7 +1551,7 @@
       const btn=document.getElementById('submit-btn');btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> Submitting...';document.getElementById('submit-status').style.display='none';
       const hashtags=parseHashtags(hashtagRaw);
       const _sqTier=tierFromRadio('f-quality');const _sqP=tierParams(_sqTier);
-      try{let imageUrl='',imageQuality=null;if(selectedFile){const resized=await resizeImage(selectedFile,_sqP.px,_sqP.q);imageUrl=await uploadImage(resized);imageQuality=_sqTier;}const existing=await sbGet('entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');const nextOrder=((existing[0]?.ui_order)||0)+1;const _subIp=await getIpHash();const _subPayload={subject,text,image_url:imageUrl,status:isMW?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isMW,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp,user_id:getUserId()};if(imageQuality)_subPayload.image_quality=imageQuality;await sbPost('entries',_subPayload);showStatus('success',isMW?'🔥 Mean Whirls entry posted!':'✅ Submitted! Appears after moderation. 💗');
+      try{let imageUrl='',imageQuality=null;if(selectedFile){const resized=await resizeImage(selectedFile,_sqP.px,_sqP.q);imageUrl=await uploadImage(resized);imageQuality=_sqTier;}const existing=await sbGet('entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');const nextOrder=((existing[0]?.ui_order)||0)+1;const _subIp=await getIpHash();const _subPayload={subject,text,image_url:imageUrl,status:(isMW||!MODERATION_ENABLED)?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isMW,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp,user_id:getUserId()};if(imageQuality)_subPayload.image_quality=imageQuality;await sbPost('entries',_subPayload);showStatus('success',isMW?'🔥 Mean Whirls entry posted!':MODERATION_ENABLED?'✅ Submitted! Appears after moderation. 💗':'✅ Posted! 🔥');
         await logActivity('submit', null, `Submitted entry: "${subject}"`);
         resetSubmitForm();}
       catch(err){showStatus('error','Something went wrong: '+err.message);}

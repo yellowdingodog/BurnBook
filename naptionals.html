@@ -1273,9 +1273,9 @@
         let imageUrl='',imageQuality=null;if(selectedFile){const resized=await resizeImage(selectedFile,_sqP.px,_sqP.q);imageUrl=await uploadImage(resized);imageQuality=_sqTier;}
         const existing=await sbGet('nap_entries','select=ui_order&order=ui_order.desc.nullslast&limit=1');
         const nextOrder=((existing[0]?.ui_order)||0)+1;
-        const _subIp=await getIpHash();const _subPayload={subject,text,image_url:imageUrl,status:isMW?'approved':'pending',submitter,display_author:displayAuthor,is_mean_whirls:isMW,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp,user_id:getUserId()};if(imageQuality)_subPayload.image_quality=imageQuality;await sbPost('nap_entries',_subPayload);
+        const _subIp=await getIpHash();const _subPayload={subject,text,image_url:imageUrl,status:'approved',submitter,display_author:displayAuthor,is_mean_whirls:isMW,hashtags,ui_order:nextOrder,hidden:false,ip_hash:_subIp,user_id:getUserId()};if(imageQuality)_subPayload.image_quality=imageQuality;await sbPost('nap_entries',_subPayload);
         await logActivity('submit',null,`Submitted nap entry: "${subject}"`);
-        showStatus('success',isMW?'😴 Mean Whirls nap posted!':'✅ Submitted! Appears after moderation.');
+        showStatus('success',isMW?'😴 Mean Whirls nap posted!':'✅ Submitted! Sweet dreams. 😴');
         resetSubmitForm();
       }catch(err){showStatus('error','Something went wrong: '+err.message);}
       btn.disabled=false;btn.innerHTML='😴 Submit to the Nap Wall';

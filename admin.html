@@ -280,7 +280,13 @@
 
     <!-- ALL ENTRIES -->
     <div id="stab-burn-entries" class="sub-panel active">
-      <div class="section-hdr"><span class="section-title">📋 All Entries</span><button class="refresh-btn" onclick="loadEntries()">↺ Refresh</button></div>
+      <div class="section-hdr"><span class="section-title">📋 All Entries</span>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <button class="refresh-btn" onclick="document.getElementById('tb-entries').closest('.tbl-wrap').scrollIntoView({behavior:'smooth',block:'start'})" title="Scroll to top of list">↑ Top</button>
+          <button class="refresh-btn" onclick="document.getElementById('tb-entries').lastElementChild?.scrollIntoView({behavior:'smooth',block:'end'})" title="Scroll to bottom of list">↓ Bottom</button>
+          <button class="refresh-btn" onclick="loadEntries()">↺ Refresh</button>
+        </div>
+      </div>
 
       <!-- Pending Review -->
       <div id="pending-review-section" style="display:none;margin-bottom:1.5rem;">
@@ -335,6 +341,23 @@
         The 🌋/🔥/♨️ emoji on entries reflects this weighted average.
       </div>
       <div id="votes-list" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
+    </div>
+    <!-- Site Settings Panel -->
+    <div id="stab-site-settings" class="sub-panel">
+      <div class="section-hdr"><span class="section-title">⚙️ Site Settings</span></div>
+      <div style="background:var(--white);border-radius:6px;padding:1rem 1.25rem;max-width:480px;">
+        <div class="form-group" style="display:flex;align-items:center;gap:1rem;">
+          <div>
+            <label class="form-label" style="margin-bottom:0.1rem;">Entry Moderation</label>
+            <div style="font-size:0.78rem;color:var(--muted);">When on, new entries go to Pending Review before appearing publicly.</div>
+          </div>
+          <label style="flex-shrink:0;display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+            <input type="checkbox" id="cfg-moderation" style="width:18px;height:18px;accent-color:var(--deep-pink);" onchange="saveModerationSetting(this.checked)" />
+            <span id="cfg-moderation-label" style="font-size:0.82rem;font-weight:700;"></span>
+          </label>
+        </div>
+        <div id="moderation-msg" style="display:none;margin-top:0.5rem;" class="alert"></div>
+      </div>
     </div>
     </div><!-- /ttab-burn -->
 
@@ -759,6 +782,7 @@
 
     // ── Login ─────────────────────────────────────────────────
     let _adminVoteWeight = 10;
+    let MODERATION_ENABLED = true;
     let SHIRT_IMAGE_URL = '', SHIRT_IMAGE_BACK_URL = '', SHIRT_PRICE = '40', PAY_VENMO = '', PAY_ZELLE = '', PAY_PAYPAL = '';
     const SHIRT_SIZES = ['XS','S','M','L','XL','XXL','XXXL','4XL','5XL'];
     let _shirtOrders = [], _shirtAdmins = [];
@@ -772,6 +796,7 @@
           if(r.key==='badgeicon')           BADGE_ICON_URL    = r.value;
           if(r.key==='anon_mouse_image')    ANON_MOUSE_IMAGE  = r.value;
           if(r.key==='admin_vote_weight')   { _adminVoteWeight = parseFloat(r.value)||10; const el=document.getElementById('vote-explain-admin-weight'); if(el)el.textContent=_adminVoteWeight+'×'; }
+          if(r.key==='moderation_enabled') MODERATION_ENABLED = r.value !== 'false';
           if(r.key==='shirt_image_url')     SHIRT_IMAGE_URL = r.value;
           if(r.key==='shirt_image_back_url') SHIRT_IMAGE_BACK_URL = r.value;
           if(r.key==='shirt_price')         SHIRT_PRICE     = r.value || '40';
@@ -853,7 +878,33 @@
       document.getElementById('admin-main').style.display='block';
       loadAll();
     }
+
+    async function saveModerationSetting(enabled) {
+      const msg = document.getElementById('moderation-msg');
+      const label = document.getElementById('cfg-moderation-label');
+      try {
+        await sbUpsert('config', { key: 'moderation_enabled', value: enabled ? 'true' : 'false' }, 'key');
+        MODERATION_ENABLED = enabled;
+        label.textContent = enabled ? 'On' : 'Off';
+        label.style.color = enabled ? '#2e7d32' : '#e53935';
+        msg.className = 'alert alert-success'; msg.textContent = enabled ? '✅ Moderation on.' : '✅ Moderation off — entries post immediately.'; msg.style.display = 'block';
+        setTimeout(() => msg.style.display = 'none', 3000);
+      } catch(err) {
+        msg.className = 'alert alert-error'; msg.textContent = 'Failed: ' + err.message; msg.style.display = 'block';
+      }
+    }
+
+    function initModerationToggle() {
+      const cb = document.getElementById('cfg-moderation');
+      const label = document.getElementById('cfg-moderation-label');
+      if (!cb || !label) return;
+      cb.checked = MODERATION_ENABLED;
+      label.textContent = MODERATION_ENABLED ? 'On' : 'Off';
+      label.style.color = MODERATION_ENABLED ? '#2e7d32' : '#e53935';
+    }
+
     function loadAll(){
+      initModerationToggle();
       loadEntries();
       loadNapEntries();
       loadContactMessages();
@@ -1775,6 +1826,12 @@
           const unapproveBtn=(!e.hidden&&e.status==='approved')?`<button class="btn-a au" onclick="modNapEntry('${e.id}','unapprove')">⏸</button>`:'';
           const tr=document.createElement('tr');
           tr.innerHTML=`<td style="font-weight:700;color:var(--gold)">${e.ui_order||'—'}</td><td>${imgCell}</td><td style="font-weight:600;max-width:120px">${esc(e.subject)}</td><td style="max-width:140px;font-size:.78rem;font-style:italic">${esc(e.text)}</td><td style="font-size:.72rem;color:var(--muted)">${esc(tags)}</td><td>${subCell}</td><td>${displayCell}</td><td style="font-size:.72rem;color:var(--muted);white-space:nowrap">${toTS(e.created_at)}</td><td><span class="badge badge-${e.hidden?'hidden':esc(e.status)}">${statusLabel}</span></td><td style="white-space:nowrap">${approveBtn}${unapproveBtn}<button class="btn-a ae admin-nap-edit-btn" data-entry="${esc(JSON.stringify(e))}">✏️</button><button class="btn-a ar" onclick="modNapEntry('${e.id}','reject')">✕</button></td>`;
+          tr.querySelector('.admin-thumb')?.addEventListener('click', function(){
+            openAdminLightbox(this.dataset.img, this.dataset.subject, this.dataset.text);
+          });
+          tr.querySelector('.admin-nap-edit-btn')?.addEventListener('click', function(){
+            openNapEdit(this.dataset.entry);
+          });
           tb.appendChild(tr);
         });
       }catch(err){tb.innerHTML=emptyRow(9,'Failed: '+err.message);}
