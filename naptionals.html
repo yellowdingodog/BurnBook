@@ -142,8 +142,8 @@
      .tag-filter-btn{font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.3rem 0.7rem;border-radius:2px;border:1.5px solid rgba(44,74,110,0.3);background:none;color:var(--steel);cursor:pointer;transition:all 0.2s;}
      .tag-filter-btn:hover{background:var(--steel);color:#fff;}
  
-    #scroll-bottom-btn{position:fixed;bottom:1.5rem;right:1.5rem;z-index:500;background:var(--steel);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:1.1rem;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;transition:opacity 0.3s;}
-    #scroll-top-btn{position:fixed;bottom:5.5rem;right:1.5rem;z-index:500;background:var(--steel);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:1.1rem;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:none;align-items:center;justify-content:center;transition:opacity 0.3s;}
+    #scroll-bottom-btn{position:fixed;bottom:1.5rem;right:1.5rem;z-index:500;background:var(--steel);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:1.1rem;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:none;align-items:center;justify-content:center;}
+    #scroll-top-btn{position:fixed;bottom:5.5rem;right:1.5rem;z-index:500;background:var(--steel);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:1.1rem;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:none;align-items:center;justify-content:center;}
     /* Detail sheet overlay */
      #detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s;}
      #detail-overlay.open{opacity:1;pointer-events:all;}
@@ -1863,14 +1863,13 @@ function requireAuth(action) {
     }
 
 
-    // Scroll to top/bottom buttons
+    // Scroll buttons - both show once you scroll down
     window.addEventListener('scroll', () => {
+      const show = window.scrollY > 400 ? 'flex' : 'none';
       const topBtn = document.getElementById('scroll-top-btn');
       const botBtn = document.getElementById('scroll-bottom-btn');
-      if (!topBtn || !botBtn) return;
-      const scrolled = window.scrollY > 400;
-      topBtn.style.display = scrolled ? 'flex' : 'none';
-      botBtn.style.display = scrolled ? 'none' : 'flex';
+      if (topBtn) topBtn.style.display = show;
+      if (botBtn) botBtn.style.display = show;
     });
 
     init();
